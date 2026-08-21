@@ -60,3 +60,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /supabase/.temp
 /supabase/.branches
 /.pnpm-store
+
+/.vercel
+.vercel
