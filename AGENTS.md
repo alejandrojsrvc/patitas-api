@@ -4,6 +4,15 @@ API NestJS organizada como monolito modular. Prisma administra exclusivamente la
 
 ## Reglas arquitectónicas
 
+## Modo de trabajo con el usuario
+
+- Por defecto, no ejecutar comandos, migraciones, tests, builds, despliegues, llamadas externas ni acciones sobre servicios.
+- Ante un error o una tarea operativa, explicar primero qué está ocurriendo, qué debe hacerse y cómo verificarlo.
+- Si hace falta información para analizar, pedir al usuario el comando concreto que debe ejecutar y la salida relevante que debe compartir.
+- Ejecutar acciones solamente cuando el usuario lo autorice de forma explícita en el mensaje actual.
+- No interpretar una solicitud de análisis, explicación o diagnóstico como autorización para modificar archivos o ejecutar verificaciones.
+- Al proponer comandos, indicar si son de lectura, modifican archivos, alteran infraestructura o pueden afectar datos.
+
 - `domain` y `application` no importan NestJS, Prisma, Supabase ni SDKs externos.
 - `presentation` invoca casos de uso; los casos de uso dependen de ports/repositories; infrastructure implementa esos contratos.
 - Prisma solo se usa en `src/infrastructure`, persistencia concreta, `prisma/` y scripts operativos.
