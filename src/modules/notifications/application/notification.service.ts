@@ -71,6 +71,7 @@ export class NotificationService {
           destination,
           template: 'abandoned_cart',
           variables: { cartId: cart.id },
+          idempotencyKey,
         });
         await this.repository.markSent(deliveryId, result.providerMessageId);
         processed += 1;
@@ -113,6 +114,7 @@ export class NotificationService {
           destination: consent.destination,
           template: 'replenishment_reminder',
           variables: { planId: plan.id, petName: plan.petName },
+          idempotencyKey,
         });
         const next = new Date(plan.estimatedDepletionDate);
         next.setDate(next.getDate() + plan.durationDaysMax - 5);

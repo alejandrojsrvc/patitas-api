@@ -5,6 +5,7 @@ export interface NotificationInput {
   destination: string;
   template: string;
   variables: Record<string, string>;
+  idempotencyKey?: string;
 }
 
 export interface NotificationResult {

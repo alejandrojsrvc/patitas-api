@@ -7,6 +7,7 @@ export interface EnvironmentVariables {
   SUPABASE_SECRET_KEY: string;
   NODE_ENV: ApplicationEnvironment;
   PORT: number;
+  CORS_ORIGINS: string;
 }
 
 const requireValue = (
@@ -54,6 +55,12 @@ export const validateEnvironment = (
     throw new Error('PORT debe ser un puerto TCP válido.');
   }
 
+  const rawCorsOrigins = environment['CORS_ORIGINS'];
+  const corsOrigins =
+    typeof rawCorsOrigins === 'string' && rawCorsOrigins.trim()
+      ? rawCorsOrigins.trim()
+      : 'http://localhost:3000';
+
   return {
     DATABASE_URL: validateUrl(
       requireValue(environment, 'DATABASE_URL'),
@@ -72,5 +79,6 @@ export const validateEnvironment = (
     SUPABASE_SECRET_KEY: requireValue(environment, 'SUPABASE_SECRET_KEY'),
     NODE_ENV: nodeEnv as ApplicationEnvironment,
     PORT: port,
+    CORS_ORIGINS: corsOrigins,
   };
 };

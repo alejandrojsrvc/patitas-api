@@ -9,6 +9,22 @@ import { StructuredExceptionFilter } from './shared/presentation/structured-exce
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+  const corsOrigins = configService
+    .getOrThrow<string>('CORS_ORIGINS')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+
+  app.enableCors({
+    origin: corsOrigins,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+    exposedHeaders: ['X-Request-Id'],
+    credentials: false,
+    optionsSuccessStatus: 204,
+  });
+
   const apiPrefix = 'api/v1';
   app.setGlobalPrefix(apiPrefix);
   app.use(
@@ -36,7 +52,6 @@ async function bootstrap() {
     }),
   );
 
-  const configService = app.get(ConfigService);
   if (configService.getOrThrow<string>('NODE_ENV') !== 'production') {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('Patitas API')

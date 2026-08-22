@@ -23,6 +23,9 @@ export class HttpNotificationAdapter implements NotificationProvider {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(input.idempotencyKey
+          ? { 'Idempotency-Key': input.idempotencyKey }
+          : {}),
         ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
       },
       body: JSON.stringify(input),
