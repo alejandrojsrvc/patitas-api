@@ -35,7 +35,8 @@
     "db:seed": "node scripts/prisma-command.mjs db seed",
     "catalog:import": "tsx scripts/import-catalog.ts",
     "db:reset": "node scripts/prisma-command.mjs migrate reset",
-    "user:grant-admin": "tsx scripts/grant-admin.ts"
+    "user:grant-admin": "tsx scripts/grant-admin.ts",
+    "user:invite-production": "tsx scripts/invite-production-user.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

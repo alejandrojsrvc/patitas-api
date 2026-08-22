@@ -1,0 +1,51 @@
+name: Grant production admin
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: Email exacto del usuario existente
+        required: true
+        type: string
+      confirm_email:
+        description: Repite el email para confirmar la operacion
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-admin-role
+  cancel-in-progress: false
+
+jobs:
+  grant:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NODE_ENV: production
+      TARGET_EMAIL: ${{ inputs.email }}
+      CONFIRM_EMAIL: ${{ inputs.confirm_email }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Grant ADMIN role
+        run: pnpm user:grant-admin -- --email "$TARGET_EMAIL" --confirm "$CONFIRM_EMAIL"

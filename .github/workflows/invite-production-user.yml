@@ -1,0 +1,56 @@
+name: Invite production user
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: Email exacto de la persona invitada
+        required: true
+        type: string
+      confirm_email:
+        description: Repite el email para confirmar que no hay un error
+        required: true
+        type: string
+      redirect_to:
+        description: URL permitida de redireccion despues de aceptar la invitacion
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-user-invitation
+  cancel-in-progress: false
+
+jobs:
+  invite:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      TARGET_EMAIL: ${{ inputs.email }}
+      CONFIRM_EMAIL: ${{ inputs.confirm_email }}
+      REDIRECT_TO: ${{ inputs.redirect_to }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Send invitation
+        run: pnpm user:invite-production -- --email "$TARGET_EMAIL" --confirm "$CONFIRM_EMAIL" --redirect-to "$REDIRECT_TO"
