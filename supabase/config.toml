@@ -27,6 +27,11 @@ sql_paths = []
 enabled = true
 file_size_limit = "50MiB"
 
+[storage.buckets."product-media"]
+public = false
+file_size_limit = "10MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:3000"

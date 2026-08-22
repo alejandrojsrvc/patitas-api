@@ -34,3 +34,17 @@ API NestJS organizada como monolito modular. Prisma administra exclusivamente la
 ## Extensión
 
 Cada feature nueva se agrega en `src/modules/<feature>` con `domain`, `application`, `infrastructure` y `presentation`. Los nuevos proveedores globales se implementan en `src/infrastructure` detrás de ports de `src/shared/application/ports` o ports propios del módulo.
+
+## Fronteras de infraestructura
+
+- Seguir siempre `controller -> use case -> port/repository -> adapter -> proveedor`.
+- Las superficies Public, Customer y Admin comparten dominio y casos de uso; no duplicar módulos por superficie.
+- Toda ruta HTTP, incluida OpenAPI, debe exponerse bajo `/api/v1`; no crear endpoints sin versión.
+- `@supabase/supabase-js` solo puede importarse dentro de adapters concretos bajo `src/infrastructure/**/supabase`.
+- Auth depende exclusivamente de `IdentityProvider`; ningún guard, controller o caso de uso puede inyectar clientes Supabase.
+- Storage depende exclusivamente de `StorageProvider`; el cliente administrativo con secret key permanece aislado en su adapter.
+- Prisma solo puede importarse en infraestructura de base de datos, repositorios/mappers concretos, `prisma/` y scripts operativos.
+- No crear repositorios CRUD genéricos ni ports que reflejen métodos de un SDK. Los contratos expresan operaciones del negocio.
+- Las transacciones concretas se encapsulan en infrastructure y no exponen tipos Prisma a application.
+- No crear adapters ni abstracciones para capacidades futuras hasta que exista un caso de uso real.
+- La referencia completa de arquitectura está en `docs/architecture.md` y se actualiza antes de introducir una nueva superficie o proveedor.

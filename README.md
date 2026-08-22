@@ -2,6 +2,11 @@
 
 API NestJS con PostgreSQL, Prisma y adapters iniciales para Supabase Auth y Storage. El dominio y los casos de uso no dependen de NestJS, Prisma, Supabase ni otros proveedores.
 
+La API expone superficies Public, Customer y Admin desde el mismo monolito
+modular. La dirección de dependencias, las fronteras de proveedores y el camino
+de migración a infraestructura propia se documentan en
+[`docs/architecture.md`](docs/architecture.md).
+
 ## Requisitos
 
 - Node.js 22
@@ -66,11 +71,25 @@ make infra-down
 ```text
 src/
   modules/
+    auth/
+      domain/
+      application/
+      infrastructure/
+      presentation/
     users/
       domain/
       application/
       infrastructure/
       presentation/
+    catalog/
+    suppliers/
+    pricing/
+    customers/
+    cart/
+    checkout/
+    promotions/
+    shipping/
+    analytics/
   infrastructure/
     config/
     database/
@@ -81,26 +100,15 @@ src/
     application/
 ```
 
-Flujo del módulo demostrativo:
+Flujo general:
 
 ```text
-POST /users
-  -> UsersController
-  -> CreateUserUseCase
-  -> UserRepository
-  -> PrismaUserRepository
-  -> PostgreSQL
+controller -> use case -> port/repository -> adapter -> proveedor
 ```
 
-El endpoint es una demostración pública de persistencia y no representa todavía el registro autenticado definitivo.
-
-Ejemplo:
-
-```bash
-curl --request POST http://localhost:3000/users \
-  --header 'content-type: application/json' \
-  --data '{"email":"persona@example.com"}'
-```
+El registro y login pasan por `IdentityProvider`; los usuarios internos se
+vinculan mediante `external_identities`. El endpoint público demostrativo
+`POST /users` fue retirado.
 
 ## Prisma y migraciones
 
@@ -129,6 +137,16 @@ La cadena inicial se aplica en este orden:
   -> 36 variantes iniciales y sus relaciones
 20260821000000_init
   -> users y external_identities
+20260821010000_commercial_foundation
+  -> roles, catálogo normalizado, proveedores y pricing versionado
+20260822010000_public_catalog_foundation
+  -> taxonomía pública, media, calculadora e inventario
+20260822020000_public_catalog_integrity
+  -> integridad entre productos, variantes y media
+20260822030000_backoffice_operations
+  -> operaciones administrativas, inventario, pedidos y auditoría
+20260822040000_customer_ecommerce
+  -> direcciones, carritos, checkout, promociones, envíos y métricas públicas
 ```
 
 Los productos y variantes iniciales forman parte del estado versionado requerido y por eso se cargan mediante migraciones. `prisma db seed` queda reservado para datos locales descartables, como el usuario de demostración.
@@ -143,6 +161,43 @@ Las guardas rechazan `migrate dev`, `migrate reset` y `db seed` cuando `DATABASE
 - `StorageProvider` se resuelve mediante `STORAGE_PROVIDER` y usa un `SupabaseAdminClient` separado con secret key.
 - Ambos clientes deshabilitan persistencia de sesión, refresh automático y detección de sesión en URL.
 - Storage asume buckets privados y expone `getSignedUrl`; una futura URL pública tendrá un contrato separado.
+- Ningún módulo de negocio consume clientes Supabase directamente. Auth usa
+  `IdentityProvider` y Storage usa `StorageProvider`.
+
+Superficies disponibles en este hito:
+
+```text
+PUBLIC:   GET /api/v1/products, /api/v1/products/:slug,
+          /api/v1/categories, /api/v1/brands, /api/v1/offers,
+          /api/v1/recently-viewed; POST /api/v1/products/:slug/view,
+          POST /api/v1/calculator/food-duration
+CUSTOMER: GET/PATCH /api/v1/me/customer, /api/v1/me/addresses,
+          /api/v1/me/orders, /api/v1/cart, /api/v1/checkout
+ADMIN:    /api/v1/admin/products, /api/v1/admin/categories,
+          /api/v1/admin/brands, /api/v1/admin/suppliers,
+          /api/v1/admin/supplier-offers, /api/v1/admin/pricing,
+          /api/v1/admin/orders, /api/v1/admin/promotions,
+          /api/v1/admin/coupons, /api/v1/admin/shipping-options,
+          /api/v1/admin/carts/abandoned, /api/v1/admin/products/:id/views
+```
+
+`POST /api/v1/checkout/sessions` es idempotente por carrito. Si el cliente
+abandona antes de confirmar el pago, la siguiente llamada recupera la sesión,
+conserva contacto, dirección, envío y cupón, y devuelve un nuevo token temporal.
+
+Swagger se publica en `/api/v1/docs` y `/api/v1/docs-json` fuera de producción.
+
+El detalle de checkout, pagos, cobertura, recompra, consentimiento, jobs,
+marketing, combos y referidos está en [`docs/backend-handoff.md`](docs/backend-handoff.md).
+
+El primer ADMIN debe registrarse normalmente y luego promoverse mediante una
+operación explícita:
+
+```bash
+pnpm user:grant-admin -- --email persona@example.com
+```
+
+En producción el comando exige repetir el email mediante `--confirm`.
 
 Para sustituir Supabase, agrega otro adapter y cambia el binding del token en el módulo de infraestructura. Los casos de uso no cambian.
 

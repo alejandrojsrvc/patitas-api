@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import type { Session, User } from '@supabase/supabase-js';
-import { ProviderOperationError } from '../../../shared/application/provider-error';
+import {
+  ProviderAuthenticationError,
+  ProviderOperationError,
+} from '../../../shared/application/provider-error';
 import type {
   IdentityCredentials,
   IdentityProvider,
@@ -85,10 +88,19 @@ export class SupabaseIdentityAdapter implements IdentityProvider {
       provider: 'supabase',
       providerUserId: user.id,
       email: user.email ?? null,
+      emailVerified: Boolean(user.email_confirmed_at),
     };
   }
 
   private error(operation: string, cause: unknown): ProviderOperationError {
+    if (isAuthenticationFailure(operation, cause)) {
+      return new ProviderAuthenticationError(
+        'supabase',
+        operation,
+        'La operación de autenticación no fue válida.',
+        cause instanceof Error ? { cause } : undefined,
+      );
+    }
     return new ProviderOperationError(
       'supabase',
       operation,
@@ -97,3 +109,25 @@ export class SupabaseIdentityAdapter implements IdentityProvider {
     );
   }
 }
+
+const isAuthenticationFailure = (
+  operation: string,
+  cause: unknown,
+): boolean => {
+  if (!['login', 'refresh', 'verifyToken'].includes(operation)) return false;
+  if (!cause || typeof cause !== 'object') return false;
+  const error = cause as { status?: number; code?: string };
+  return (
+    error.status === 401 ||
+    error.status === 400 ||
+    error.status === 403 ||
+    [
+      'bad_jwt',
+      'email_not_confirmed',
+      'invalid_credentials',
+      'invalid_token',
+      'session_not_found',
+      'token_expired',
+    ].includes(error.code ?? '')
+  );
+};

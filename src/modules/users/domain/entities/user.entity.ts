@@ -4,8 +4,14 @@ import { InvalidUserEmailError } from '../errors/invalid-user-email.error';
 
 export interface UserProperties {
   email: string;
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export enum UserRole {
+  CUSTOMER = 'CUSTOMER',
+  ADMIN = 'ADMIN',
 }
 
 export class User extends Entity {
@@ -16,11 +22,16 @@ export class User extends Entity {
     super(id);
   }
 
-  public static create(email: string, id: string = randomUUID()): User {
+  public static create(
+    email: string,
+    id: string = randomUUID(),
+    role: UserRole = UserRole.CUSTOMER,
+  ): User {
     const normalizedEmail = this.normalizeEmail(email);
     const now = new Date();
     return new User(id, {
       email: normalizedEmail,
+      role,
       createdAt: now,
       updatedAt: now,
     });
@@ -39,6 +50,10 @@ export class User extends Entity {
 
   public get createdAt(): Date {
     return this.properties.createdAt;
+  }
+
+  public get role(): UserRole {
+    return this.properties.role;
   }
 
   public get updatedAt(): Date {

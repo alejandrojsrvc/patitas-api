@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '../../../../infrastructure/database/generated/prisma/client';
+import {
+  Prisma,
+  type UserRole as PrismaUserRole,
+} from '../../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import type { User } from '../../domain/entities/user.entity';
 import { UserEmailAlreadyExistsError } from '../../domain/errors/user-email-already-exists.error';
@@ -15,10 +18,29 @@ export class PrismaUserRepository implements UserRepository {
     return user ? PrismaUserMapper.toDomain(user) : null;
   }
 
+  public async findById(id: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    return user ? PrismaUserMapper.toDomain(user) : null;
+  }
+
   public async save(user: User): Promise<User> {
     try {
+      const persistence = PrismaUserMapper.toPersistence(user);
       const createdUser = await this.prisma.user.create({
-        data: PrismaUserMapper.toPersistence(user),
+        data: {
+          ...persistence,
+          role: persistence.role as PrismaUserRole,
+          ...(persistence.role === 'CUSTOMER'
+            ? {
+                customer: {
+                  create: {
+                    fullName: persistence.email,
+                    email: persistence.email,
+                  },
+                },
+              }
+            : {}),
+        },
       });
       return PrismaUserMapper.toDomain(createdUser);
     } catch (error) {
