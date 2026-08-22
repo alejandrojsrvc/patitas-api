@@ -23,10 +23,21 @@ import { Roles } from '../../../auth/presentation/decorators/roles.decorator';
 import { UserRole } from '../../../users/domain/entities/user.entity';
 import { CatalogService } from '../../application/catalog.service';
 import {
-  AdminProductsQueryDto, BrandReferenceDto, CreateProductDto, CreateVariantDto, ReferenceDto,
-  CreateProductMediaDto, FeedingGuideEntryDto, ReplaceFeedingGuideDto,
-  SetInventoryDto, UpdateProductDto, UpdateReferenceDto, UpdateVariantDto,
-  UpdateBrandReferenceDto, UpdateProductMediaDto, UploadProductMediaDto,
+  AdminProductsQueryDto,
+  BrandReferenceDto,
+  CreateProductDto,
+  CreateVariantDto,
+  ReferenceDto,
+  CreateProductMediaDto,
+  FeedingGuideEntryDto,
+  ReplaceFeedingGuideDto,
+  SetInventoryDto,
+  UpdateProductDto,
+  UpdateReferenceDto,
+  UpdateVariantDto,
+  UpdateBrandReferenceDto,
+  UpdateProductMediaDto,
+  UploadProductMediaDto,
 } from '../dto/catalog.dto';
 import { CatalogExceptionFilter } from '../filters/catalog-exception.filter';
 
@@ -40,16 +51,48 @@ import { CatalogExceptionFilter } from '../filters/catalog-exception.filter';
 export class AdminCatalogController {
   public constructor(private readonly catalog: CatalogService) {}
 
-  @Get('products') public async products(@Query() query: AdminProductsQueryDto) {
+  @Get('products') public async products(
+    @Query() query: AdminProductsQueryDto,
+  ) {
     const page = await this.catalog.listAdminProducts(query);
-    return { items: page.items, meta: { page: page.page, perPage: page.perPage, total: page.total, totalPages: Math.ceil(page.total / page.perPage) } };
+    return {
+      items: page.items,
+      meta: {
+        page: page.page,
+        perPage: page.perPage,
+        total: page.total,
+        totalPages: Math.ceil(page.total / page.perPage),
+      },
+    };
   }
-  @Get('products/:id') public product(@Param('id') id: string) { return this.catalog.getAdminProduct(id); }
-  @Post('products') public createProduct(@Body() input: CreateProductDto) { return this.catalog.createProduct(input); }
-  @Patch('products/:id') public updateProduct(@Param('id') id: string, @Body() input: UpdateProductDto) { return this.catalog.updateProduct(id, input); }
-  @Post('products/:id/variants') public createVariant(@Param('id') id: string, @Body() input: CreateVariantDto) { return this.catalog.createVariant(id, input); }
-  @Patch('variants/:id') public updateVariant(@Param('id') id: string, @Body() input: UpdateVariantDto) { return this.catalog.updateVariant(id, input); }
-  @Post('products/:id/media') public createMedia(@Param('id') id: string, @Body() input: CreateProductMediaDto) {
+  @Get('products/:id') public product(@Param('id') id: string) {
+    return this.catalog.getAdminProduct(id);
+  }
+  @Post('products') public createProduct(@Body() input: CreateProductDto) {
+    return this.catalog.createProduct(input);
+  }
+  @Patch('products/:id') public updateProduct(
+    @Param('id') id: string,
+    @Body() input: UpdateProductDto,
+  ) {
+    return this.catalog.updateProduct(id, input);
+  }
+  @Post('products/:id/variants') public createVariant(
+    @Param('id') id: string,
+    @Body() input: CreateVariantDto,
+  ) {
+    return this.catalog.createVariant(id, input);
+  }
+  @Patch('variants/:id') public updateVariant(
+    @Param('id') id: string,
+    @Body() input: UpdateVariantDto,
+  ) {
+    return this.catalog.updateVariant(id, input);
+  }
+  @Post('products/:id/media') public createMedia(
+    @Param('id') id: string,
+    @Body() input: CreateProductMediaDto,
+  ) {
     return this.catalog.createProductMedia(id, input);
   }
   @Post('products/:id/media/upload')
@@ -130,16 +173,42 @@ export class AdminCatalogController {
     return this.catalog.listInventoryMovements(id);
   }
 
-  @Get('categories') public categories() { return this.catalog.listCategories(); }
-  @Post('categories') public createCategory(@Body() input: ReferenceDto) { return this.catalog.createCategory(input); }
-  @Patch('categories/:id') public updateCategory(@Param('id') id: string, @Body() input: UpdateReferenceDto) { return this.catalog.updateCategory(id, input); }
-  @Get('brands') public brands() { return this.catalog.listBrands(); }
-  @Post('brands') public createBrand(@Body() input: BrandReferenceDto) { return this.catalog.createBrand(input); }
-  @Patch('brands/:id') public updateBrand(@Param('id') id: string, @Body() input: UpdateBrandReferenceDto) { return this.catalog.updateBrand(id, input); }
+  @Get('categories') public categories() {
+    return this.catalog.listCategories();
+  }
+  @Post('categories') public createCategory(@Body() input: ReferenceDto) {
+    return this.catalog.createCategory(input);
+  }
+  @Patch('categories/:id') public updateCategory(
+    @Param('id') id: string,
+    @Body() input: UpdateReferenceDto,
+  ) {
+    return this.catalog.updateCategory(id, input);
+  }
+  @Get('brands') public brands() {
+    return this.catalog.listBrands();
+  }
+  @Post('brands') public createBrand(@Body() input: BrandReferenceDto) {
+    return this.catalog.createBrand(input);
+  }
+  @Patch('brands/:id') public updateBrand(
+    @Param('id') id: string,
+    @Body() input: UpdateBrandReferenceDto,
+  ) {
+    return this.catalog.updateBrand(id, input);
+  }
   @Post('brands/:id/logo/upload')
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ schema: { type: 'object', required: ['file'], properties: { file: { type: 'string', format: 'binary' } } } })
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
+  )
   public uploadBrandLogo(
     @Param('id') id: string,
     @UploadedFile() file: UploadedProductImage | undefined,

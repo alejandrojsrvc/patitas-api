@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import { CustomerNotFoundError, CustomerValidationError } from '../domain/customer.error';
+import {
+  CustomerNotFoundError,
+  CustomerValidationError,
+} from '../domain/customer.error';
 import type { CustomerRepository } from '../domain/customer.repository';
 import type {
   CreateCustomerInput,
@@ -51,7 +54,9 @@ export class PrismaCustomerRepository implements CustomerRepository {
   }
 
   public async findByUserId(userId: string): Promise<Customer | null> {
-    const customer = await this.prisma.customer.findUnique({ where: { userId } });
+    const customer = await this.prisma.customer.findUnique({
+      where: { userId },
+    });
     return customer ? mapCustomer(customer) : null;
   }
 
@@ -59,18 +64,31 @@ export class PrismaCustomerRepository implements CustomerRepository {
     try {
       return mapCustomer(await this.prisma.customer.create({ data: input }));
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new CustomerValidationError('Ya existe un cliente asociado a ese usuario.');
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new CustomerValidationError(
+          'Ya existe un cliente asociado a ese usuario.',
+        );
       }
       throw error;
     }
   }
 
-  public async update(id: string, input: UpdateCustomerInput): Promise<Customer> {
+  public async update(
+    id: string,
+    input: UpdateCustomerInput,
+  ): Promise<Customer> {
     try {
-      return mapCustomer(await this.prisma.customer.update({ where: { id }, data: input }));
+      return mapCustomer(
+        await this.prisma.customer.update({ where: { id }, data: input }),
+      );
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new CustomerNotFoundError();
       }
       throw error;

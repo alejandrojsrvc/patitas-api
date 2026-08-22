@@ -1,10 +1,31 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../infrastructure/database/prisma.module';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { AuthModule } from '../auth/auth.module';
 import { CustomersModule } from '../customers/customers.module';
 import { ReferralService } from './application/referral.service';
-import { AdminReferralController, ReferralController } from './presentation/referral.controller';
+import {
+  REFERRAL_REPOSITORY,
+  type ReferralRepository,
+} from './domain/referral.repository';
+import { PrismaReferralRepository } from './infrastructure/prisma-referral.repository';
+import {
+  AdminReferralController,
+  ReferralController,
+} from './presentation/referral.controller';
 
-@Module({ imports: [PrismaModule, AuthModule, CustomersModule], controllers: [ReferralController, AdminReferralController], providers: [{ provide: ReferralService, inject: [PrismaService], useFactory: (prisma: PrismaService) => new ReferralService(prisma) }], exports: [ReferralService] })
+@Module({
+  imports: [PrismaModule, AuthModule, CustomersModule],
+  controllers: [ReferralController, AdminReferralController],
+  providers: [
+    PrismaReferralRepository,
+    { provide: REFERRAL_REPOSITORY, useExisting: PrismaReferralRepository },
+    {
+      provide: ReferralService,
+      inject: [REFERRAL_REPOSITORY],
+      useFactory: (repository: ReferralRepository) =>
+        new ReferralService(repository),
+    },
+  ],
+  exports: [ReferralService],
+})
 export class ReferralsModule {}

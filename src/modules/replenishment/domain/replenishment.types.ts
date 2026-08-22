@@ -1,7 +1,11 @@
-export type ReplenishmentPlanStatus = 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'COMPLETED';
+export type ReplenishmentPlanStatus =
+  'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'COMPLETED';
 export type NotificationChannel = 'EMAIL' | 'WHATSAPP';
 
-export interface ReplenishmentOwner { customerId?: string; guestTokenHash?: string }
+export interface ReplenishmentOwner {
+  customerId?: string;
+  guestTokenHash?: string;
+}
 
 export interface CreateReplenishmentPlanInput {
   orderId?: string | null;

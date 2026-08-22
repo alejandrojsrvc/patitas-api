@@ -10,9 +10,11 @@ export class PublicPromotionController {
 
   @Get()
   public async list() {
-    const promotions = (await this.promotions.list(true)).filter((promotion) =>
-      isWithinPeriod(promotion.startsAt, promotion.endsAt) &&
-      (promotion.maxRedemptions === null || promotion.redemptionCount < promotion.maxRedemptions),
+    const promotions = (await this.promotions.list(true)).filter(
+      (promotion) =>
+        isWithinPeriod(promotion.startsAt, promotion.endsAt) &&
+        (promotion.maxRedemptions === null ||
+          promotion.redemptionCount < promotion.maxRedemptions),
     );
     return promotions.map((promotion) => ({
       id: promotion.id,

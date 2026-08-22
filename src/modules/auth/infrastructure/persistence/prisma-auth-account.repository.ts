@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { ProviderIdentity } from '../../../../shared/application/ports/identity-provider.interface';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
-import type { UserRole as PrismaUserRole } from '../../../../infrastructure/database/generated/prisma/client';
 import { User, UserRole } from '../../../users/domain/entities/user.entity';
 import { ExternalIdentityConflictError } from '../../domain/errors/external-identity-conflict.error';
 import type { AuthAccountRepository } from '../../domain/repositories/auth-account.repository';
@@ -27,9 +26,17 @@ export class PrismaAuthAccountRepository implements AuthAccountRepository {
       });
       if (linked) {
         if (linked.user.role === 'CUSTOMER') {
-          const customer = await transaction.customer.findUnique({ where: { userId: linked.user.id } });
+          const customer = await transaction.customer.findUnique({
+            where: { userId: linked.user.id },
+          });
           if (!customer) {
-            await transaction.customer.create({ data: { userId: linked.user.id, fullName: linked.user.email, email: linked.user.email } });
+            await transaction.customer.create({
+              data: {
+                userId: linked.user.id,
+                fullName: linked.user.email,
+                email: linked.user.email,
+              },
+            });
           }
         }
         return toDomainUser(linked.user);
@@ -51,7 +58,7 @@ export class PrismaAuthAccountRepository implements AuthAccountRepository {
           data: {
             id: domainUser.id,
             email: domainUser.email,
-            role: domainUser.role as PrismaUserRole,
+            role: domainUser.role,
             customer: {
               create: {
                 fullName: domainUser.email,
@@ -62,7 +69,9 @@ export class PrismaAuthAccountRepository implements AuthAccountRepository {
           include: { externalIdentities: true, customer: true },
         });
       } else if (user.role === 'CUSTOMER' && !user.customer) {
-        await transaction.customer.create({ data: { userId: user.id, fullName: user.email, email: user.email } });
+        await transaction.customer.create({
+          data: { userId: user.id, fullName: user.email, email: user.email },
+        });
       }
 
       await transaction.externalIdentity.create({
@@ -94,10 +103,15 @@ export class PrismaAuthAccountRepository implements AuthAccountRepository {
 }
 
 const toDomainUser = (user: {
-  id: string; email: string; role: string; createdAt: Date; updatedAt: Date;
-}) => User.reconstitute(user.id, {
-  email: user.email,
-  role: user.role as UserRole,
-  createdAt: user.createdAt,
-  updatedAt: user.updatedAt,
-});
+  id: string;
+  email: string;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+}) =>
+  User.reconstitute(user.id, {
+    email: user.email,
+    role: user.role as UserRole,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  });

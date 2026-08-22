@@ -7,7 +7,9 @@ export interface NotificationInput {
   variables: Record<string, string>;
 }
 
-export interface NotificationResult { providerMessageId?: string; }
+export interface NotificationResult {
+  providerMessageId?: string;
+}
 
 export interface NotificationProvider {
   send(input: NotificationInput): Promise<NotificationResult>;

@@ -9,15 +9,22 @@ export class PricingService {
     private readonly calculator: PricingCalculator,
   ) {}
 
-  public getRules() { return this.repository.getRules(); }
-  public listRuleHistory() { return this.repository.listRuleHistory(); }
+  public getRules() {
+    return this.repository.getRules();
+  }
+  public listRuleHistory() {
+    return this.repository.listRuleHistory();
+  }
   public updateDraft(input: Partial<PricingRuleValues>) {
     validateRuleValues(input);
     return this.repository.updateDraft(input);
   }
   public async activateDraft() {
     const { draft } = await this.repository.getRules();
-    if (!draft) throw new PricingPreconditionError('No existe una configuración borrador.');
+    if (!draft)
+      throw new PricingPreconditionError(
+        'No existe una configuración borrador.',
+      );
     this.calculator.calculate(dummyContext, draft);
     return this.repository.activateDraft();
   }
@@ -27,10 +34,15 @@ export class PricingService {
     overrides: Partial<PricingRuleValues> = {},
   ) {
     const [{ active }, context] = await Promise.all([
-      this.repository.getRules(), this.repository.getContext(variantId, supplierOfferId),
+      this.repository.getRules(),
+      this.repository.getContext(variantId, supplierOfferId),
     ]);
-    if (!active) throw new PricingPreconditionError('No existe una configuración activa.');
-    if (!context) throw new PricingPreconditionError('La variante no tiene una oferta válida para calcular.');
+    if (!active)
+      throw new PricingPreconditionError('No existe una configuración activa.');
+    if (!context)
+      throw new PricingPreconditionError(
+        'La variante no tiene una oferta válida para calcular.',
+      );
     const effectiveRules = { ...active, ...overrides };
     return {
       context,
@@ -39,7 +51,10 @@ export class PricingService {
       calculation: this.calculator.calculate(context, effectiveRules),
     };
   }
-  public async recalculate(variantId: string, overrides: Partial<PricingRuleValues> = {}) {
+  public async recalculate(
+    variantId: string,
+    overrides: Partial<PricingRuleValues> = {},
+  ) {
     const result = await this.calculate(variantId, undefined, overrides);
     return this.repository.saveReview(
       result.context,
@@ -48,9 +63,16 @@ export class PricingService {
       result.calculation,
     );
   }
-  public listReviews(variantId: string) { return this.repository.listReviews(variantId); }
-  public listAllReviews(status?: PricingReview['status']) {
-    return this.repository.listAllReviews(status);
+  public listReviews(variantId: string) {
+    return this.repository.listReviews(variantId);
+  }
+  public listAllReviews(filter: {
+    status?: PricingReview['status'];
+    q?: string;
+    page: number;
+    perPage: number;
+  }) {
+    return this.repository.listAllReviews(filter);
   }
   public async apply(variantId: string, reviewId: string) {
     return this.repository.applyReview(variantId, reviewId);
@@ -58,8 +80,12 @@ export class PricingService {
 }
 
 const dummyContext = {
-  variantId: '', variantRevision: 0, currentSalePrice: null,
-  supplierOfferId: '', supplierRevision: 0, supplierUnitCost: '0.00',
+  variantId: '',
+  variantRevision: 0,
+  currentSalePrice: null,
+  supplierOfferId: '',
+  supplierRevision: 0,
+  supplierUnitCost: '0.00',
 };
 
 const validateRuleValues = (input: Partial<PricingRuleValues>): void => {
@@ -74,7 +100,9 @@ const validateRuleValues = (input: Partial<PricingRuleValues>): void => {
       throw new PricingPreconditionError(`Valor inválido para ${key}.`);
     }
     if (percentFields.has(key) && Number(value) > 100) {
-      throw new PricingPreconditionError(`El porcentaje ${key} no puede superar 100.`);
+      throw new PricingPreconditionError(
+        `El porcentaje ${key} no puede superar 100.`,
+      );
     }
   }
 };

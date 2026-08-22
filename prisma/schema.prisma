@@ -325,6 +325,7 @@ model User {
   externalIdentities ExternalIdentity[]
   customer Customer?
   auditLogs AdminAuditLog[]
+  inventoryMovements InventoryMovement[]
 
   @@map("users")
 }
@@ -487,15 +488,18 @@ model InventoryMovement {
   id        String                @id @default(uuid()) @db.Uuid
   variantId String                @map("variant_id") @db.Uuid
   orderId   String?               @map("order_id") @db.Uuid
+  actorUserId String?             @map("actor_user_id") @db.Uuid
   type      InventoryMovementType
   quantity  Int
   reason    String?
   createdAt DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   variant   ProductVariant       @relation(fields: [variantId], references: [id], onDelete: Restrict)
   order     Order?               @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  actor     User?                @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
 
   @@index([variantId, createdAt], map: "idx_inventory_moves_variant_created")
   @@index([orderId], map: "idx_inventory_moves_order_id")
+  @@index([actorUserId], map: "idx_inventory_moves_actor_user_id")
   @@map("inventory_movements")
 }
 

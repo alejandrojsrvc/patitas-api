@@ -2,26 +2,63 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import type { Prisma } from '../../../../infrastructure/database/generated/prisma/client';
 import {
-  PricingNotFoundError, PricingPreconditionError, StalePricingReviewError,
+  PricingNotFoundError,
+  PricingPreconditionError,
+  StalePricingReviewError,
 } from '../../domain/errors/pricing.error';
 import type { PricingRepository } from '../../domain/repositories/pricing.repository';
 import type {
-  PricingCalculation, PricingContext, PricingReview, PricingRules, PricingRuleValues,
+  PricingCalculation,
+  PricingContext,
+  PricingReview,
+  PricingReviewPage,
+  PricingRules,
+  PricingRuleValues,
 } from '../../domain/pricing.types';
 
-interface DecimalValue { toString(): string }
+interface DecimalValue {
+  toString(): string;
+}
 interface PersistenceRules {
-  id: string; version: number; status: string; currency: string;
-  fulfillmentCost: DecimalValue | null; packagingCost: DecimalValue | null;
-  paymentFixedCost: DecimalValue | null; paymentFeePercent: DecimalValue | null;
-  subsidizedShippingCost: DecimalValue | null; taxPercent: DecimalValue | null;
-  otherCost: DecimalValue | null; targetMarginPercent: DecimalValue | null;
+  id: string;
+  version: number;
+  status: string;
+  currency: string;
+  fulfillmentCost: DecimalValue | null;
+  packagingCost: DecimalValue | null;
+  paymentFixedCost: DecimalValue | null;
+  paymentFeePercent: DecimalValue | null;
+  subsidizedShippingCost: DecimalValue | null;
+  taxPercent: DecimalValue | null;
+  otherCost: DecimalValue | null;
+  targetMarginPercent: DecimalValue | null;
+  createdAt: Date;
+  activatedAt: Date | null;
 }
 interface PersistenceReview {
-  id: string; variantId: string; supplierOfferId: string; pricingRuleSetId: string;
-  status: string; inputSnapshot: unknown; breakdown: unknown; recommendedPrice: DecimalValue;
-  commercialPrice: DecimalValue; createdAt: Date; appliedAt: Date | null;
+  id: string;
+  variantId: string;
+  supplierOfferId: string;
+  pricingRuleSetId: string;
+  status: string;
+  inputSnapshot: unknown;
+  breakdown: unknown;
+  recommendedPrice: DecimalValue;
+  commercialPrice: DecimalValue;
+  createdAt: Date;
+  appliedAt: Date | null;
 }
+interface SupplierOfferCost {
+  active: boolean;
+  unitCost: DecimalValue;
+}
+type PricingReviewWithRelations = Prisma.PricingReviewGetPayload<{
+  include: {
+    variant: { include: { product: true } };
+    supplierOffer: true;
+    pricingRuleSet: true;
+  };
+}>;
 
 @Injectable()
 export class PrismaPricingRepository implements PricingRepository {
@@ -29,10 +66,19 @@ export class PrismaPricingRepository implements PricingRepository {
 
   public async getRules() {
     const [active, draft] = await Promise.all([
-      this.prisma.pricingRuleSet.findFirst({ where: { status: 'ACTIVE' }, orderBy: { version: 'desc' } }),
-      this.prisma.pricingRuleSet.findFirst({ where: { status: 'DRAFT' }, orderBy: { version: 'desc' } }),
+      this.prisma.pricingRuleSet.findFirst({
+        where: { status: 'ACTIVE' },
+        orderBy: { version: 'desc' },
+      }),
+      this.prisma.pricingRuleSet.findFirst({
+        where: { status: 'DRAFT' },
+        orderBy: { version: 'desc' },
+      }),
     ]);
-    return { active: active ? mapRules(active) : null, draft: draft ? mapRules(draft) : null };
+    return {
+      active: active ? mapRules(active) : null,
+      draft: draft ? mapRules(draft) : null,
+    };
   }
 
   public async listRuleHistory(): Promise<PricingRules[]> {
@@ -42,58 +88,93 @@ export class PrismaPricingRepository implements PricingRepository {
     return rules.map(mapRules);
   }
 
-  public async updateDraft(input: Partial<PricingRuleValues>): Promise<PricingRules> {
+  public async updateDraft(
+    input: Partial<PricingRuleValues>,
+  ): Promise<PricingRules> {
     return this.prisma.$transaction(async (transaction) => {
       const draft = await transaction.pricingRuleSet.findFirst({
-        where: { status: 'DRAFT' }, orderBy: { version: 'desc' },
+        where: { status: 'DRAFT' },
+        orderBy: { version: 'desc' },
       });
       if (draft) {
-        return mapRules(await transaction.pricingRuleSet.update({
-          where: { id: draft.id }, data: input,
-        }));
+        return mapRules(
+          await transaction.pricingRuleSet.update({
+            where: { id: draft.id },
+            data: input,
+          }),
+        );
       }
-      const latest = await transaction.pricingRuleSet.findFirst({ orderBy: { version: 'desc' } });
-      const inherited = latest ? {
-        currency: latest.currency,
-        fulfillmentCost: latest.fulfillmentCost,
-        packagingCost: latest.packagingCost,
-        paymentFixedCost: latest.paymentFixedCost,
-        paymentFeePercent: latest.paymentFeePercent,
-        subsidizedShippingCost: latest.subsidizedShippingCost,
-        taxPercent: latest.taxPercent,
-        otherCost: latest.otherCost,
-        targetMarginPercent: latest.targetMarginPercent,
-      } : { currency: 'ARS' };
-      return mapRules(await transaction.pricingRuleSet.create({
-        data: { ...inherited, ...input, version: (latest?.version ?? 0) + 1, status: 'DRAFT' },
-      }));
+      const latest = await transaction.pricingRuleSet.findFirst({
+        orderBy: { version: 'desc' },
+      });
+      const inherited = latest
+        ? {
+            currency: latest.currency,
+            fulfillmentCost: latest.fulfillmentCost,
+            packagingCost: latest.packagingCost,
+            paymentFixedCost: latest.paymentFixedCost,
+            paymentFeePercent: latest.paymentFeePercent,
+            subsidizedShippingCost: latest.subsidizedShippingCost,
+            taxPercent: latest.taxPercent,
+            otherCost: latest.otherCost,
+            targetMarginPercent: latest.targetMarginPercent,
+          }
+        : { currency: 'ARS' };
+      return mapRules(
+        await transaction.pricingRuleSet.create({
+          data: {
+            ...inherited,
+            ...input,
+            version: (latest?.version ?? 0) + 1,
+            status: 'DRAFT',
+          },
+        }),
+      );
     });
   }
 
   public async activateDraft(): Promise<PricingRules> {
     return this.prisma.$transaction(async (transaction) => {
       const draft = await transaction.pricingRuleSet.findFirst({
-        where: { status: 'DRAFT' }, orderBy: { version: 'desc' },
+        where: { status: 'DRAFT' },
+        orderBy: { version: 'desc' },
       });
-      if (!draft) throw new PricingPreconditionError('No existe una configuración borrador.');
+      if (!draft)
+        throw new PricingPreconditionError(
+          'No existe una configuración borrador.',
+        );
       await transaction.pricingRuleSet.updateMany({
-        where: { status: 'ACTIVE' }, data: { status: 'SUPERSEDED' },
+        where: { status: 'ACTIVE' },
+        data: { status: 'SUPERSEDED' },
       });
-      return mapRules(await transaction.pricingRuleSet.update({
-        where: { id: draft.id }, data: { status: 'ACTIVE', activatedAt: new Date() },
-      }));
+      return mapRules(
+        await transaction.pricingRuleSet.update({
+          where: { id: draft.id },
+          data: { status: 'ACTIVE', activatedAt: new Date() },
+        }),
+      );
     });
   }
 
-  public async getContext(variantId: string, supplierOfferId?: string): Promise<PricingContext | null> {
+  public async getContext(
+    variantId: string,
+    supplierOfferId?: string,
+  ): Promise<PricingContext | null> {
     const variant = await this.prisma.productVariant.findUnique({
       where: { id: variantId },
-      select: { id: true, revision: true, salePrice: true, preferredSupplierOfferId: true },
+      select: {
+        id: true,
+        revision: true,
+        salePrice: true,
+        preferredSupplierOfferId: true,
+      },
     });
     if (!variant) return null;
     const offerId = supplierOfferId ?? variant.preferredSupplierOfferId;
     if (!offerId) return null;
-    const offer = await this.prisma.supplierOffer.findUnique({ where: { id: offerId } });
+    const offer = await this.prisma.supplierOffer.findUnique({
+      where: { id: offerId },
+    });
     if (!offer || offer.variantId !== variant.id || !offer.active) return null;
     return {
       variantId: variant.id,
@@ -128,7 +209,7 @@ export class PrismaPricingRepository implements PricingRepository {
             supplierUnitCost: context.supplierUnitCost,
             pricingRuleVersion: rules.version,
             effectiveRules,
-          } as Prisma.InputJsonObject,
+          },
           breakdown: calculation.breakdown as unknown as Prisma.InputJsonObject,
           recommendedPrice: calculation.recommendedPrice,
           commercialPrice: calculation.commercialPrice,
@@ -140,22 +221,79 @@ export class PrismaPricingRepository implements PricingRepository {
 
   public async listReviews(variantId: string): Promise<PricingReview[]> {
     const reviews = await this.prisma.pricingReview.findMany({
-      where: { variantId }, orderBy: { createdAt: 'desc' },
-    });
-    return reviews.map(mapReview);
-  }
-
-  public async listAllReviews(
-    status?: PricingReview['status'],
-  ): Promise<PricingReview[]> {
-    const reviews = await this.prisma.pricingReview.findMany({
-      where: status ? { status } : undefined,
+      where: { variantId },
       orderBy: { createdAt: 'desc' },
     });
     return reviews.map(mapReview);
   }
 
-  public async applyReview(variantId: string, reviewId: string): Promise<PricingReview> {
+  public async listAllReviews(filter: {
+    status?: PricingReview['status'];
+    q?: string;
+    page: number;
+    perPage: number;
+  }): Promise<PricingReviewPage> {
+    const q = filter.q?.trim();
+    const where: Prisma.PricingReviewWhereInput = {
+      ...(filter.status ? { status: filter.status } : {}),
+      ...(q
+        ? {
+            OR: [
+              { variant: { sku: { contains: q, mode: 'insensitive' } } },
+              {
+                variant: { presentation: { contains: q, mode: 'insensitive' } },
+              },
+              {
+                variant: {
+                  product: { name: { contains: q, mode: 'insensitive' } },
+                },
+              },
+            ],
+          }
+        : {}),
+    };
+    const [reviews, total] = await this.prisma.$transaction([
+      this.prisma.pricingReview.findMany({
+        where,
+        include: {
+          variant: { include: { product: true } },
+          supplierOffer: true,
+          pricingRuleSet: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (filter.page - 1) * filter.perPage,
+        take: filter.perPage,
+      }),
+      this.prisma.pricingReview.count({ where }),
+    ]);
+    return {
+      items: reviews.map((review: PricingReviewWithRelations) => ({
+        ...mapReview(review),
+        product: {
+          id: review.variant.product.id,
+          name: review.variant.product.name,
+        },
+        variant: {
+          sku: review.variant.sku,
+          presentation: review.variant.presentation,
+          salePrice: decimal(review.variant.salePrice),
+        },
+        currentMarginPercent: calculateMargin(
+          review.variant.salePrice,
+          review.supplierOffer,
+          review.pricingRuleSet,
+        ),
+      })),
+      page: filter.page,
+      perPage: filter.perPage,
+      total,
+    };
+  }
+
+  public async applyReview(
+    variantId: string,
+    reviewId: string,
+  ): Promise<PricingReview> {
     return this.prisma.$transaction(async (transaction) => {
       const review = await transaction.pricingReview.findUnique({
         where: { id: reviewId },
@@ -164,11 +302,12 @@ export class PrismaPricingRepository implements PricingRepository {
       if (!review || review.variantId !== variantId) {
         throw new PricingNotFoundError('La revisión de precio no existe.');
       }
-      const stale = review.status !== 'PENDING'
-        || review.variant.revision !== review.variantRevision
-        || review.supplierOffer.revision !== review.supplierRevision
-        || review.pricingRuleSet.status !== 'ACTIVE'
-        || review.variant.preferredSupplierOfferId !== review.supplierOfferId;
+      const stale =
+        review.status !== 'PENDING' ||
+        review.variant.revision !== review.variantRevision ||
+        review.supplierOffer.revision !== review.supplierRevision ||
+        review.pricingRuleSet.status !== 'ACTIVE' ||
+        review.variant.preferredSupplierOfferId !== review.supplierOfferId;
       if (stale) {
         throw new StalePricingReviewError(
           'La revisión quedó obsoleta; recalcula antes de aplicar el precio.',
@@ -179,7 +318,8 @@ export class PrismaPricingRepository implements PricingRepository {
         data: { salePrice: review.commercialPrice, revision: { increment: 1 } },
       });
       const applied = await transaction.pricingReview.update({
-        where: { id: review.id }, data: { status: 'APPLIED', appliedAt: new Date() },
+        where: { id: review.id },
+        data: { status: 'APPLIED', appliedAt: new Date() },
       });
       await transaction.pricingReview.updateMany({
         where: { variantId, status: 'PENDING', id: { not: review.id } },
@@ -192,17 +332,67 @@ export class PrismaPricingRepository implements PricingRepository {
 
 const decimal = (value: DecimalValue | null) => value?.toString() ?? null;
 const mapRules = (rules: PersistenceRules): PricingRules => ({
-  id: rules.id, version: rules.version, status: rules.status as PricingRules['status'], currency: 'ARS',
-  fulfillmentCost: decimal(rules.fulfillmentCost), packagingCost: decimal(rules.packagingCost),
-  paymentFixedCost: decimal(rules.paymentFixedCost), paymentFeePercent: decimal(rules.paymentFeePercent),
-  subsidizedShippingCost: decimal(rules.subsidizedShippingCost), taxPercent: decimal(rules.taxPercent),
-  otherCost: decimal(rules.otherCost), targetMarginPercent: decimal(rules.targetMarginPercent),
+  id: rules.id,
+  version: rules.version,
+  status: rules.status as PricingRules['status'],
+  currency: 'ARS',
+  fulfillmentCost: decimal(rules.fulfillmentCost),
+  packagingCost: decimal(rules.packagingCost),
+  paymentFixedCost: decimal(rules.paymentFixedCost),
+  paymentFeePercent: decimal(rules.paymentFeePercent),
+  subsidizedShippingCost: decimal(rules.subsidizedShippingCost),
+  taxPercent: decimal(rules.taxPercent),
+  otherCost: decimal(rules.otherCost),
+  targetMarginPercent: decimal(rules.targetMarginPercent),
+  createdAt: rules.createdAt,
+  activatedAt: rules.activatedAt,
 });
 const mapReview = (review: PersistenceReview): PricingReview => ({
-  id: review.id, variantId: review.variantId, supplierOfferId: review.supplierOfferId,
-  pricingRuleSetId: review.pricingRuleSetId, status: review.status as PricingReview['status'],
+  id: review.id,
+  variantId: review.variantId,
+  supplierOfferId: review.supplierOfferId,
+  pricingRuleSetId: review.pricingRuleSetId,
+  status: review.status as PricingReview['status'],
   inputSnapshot: review.inputSnapshot as Record<string, unknown>,
-  recommendedPrice: review.recommendedPrice.toString(), commercialPrice: review.commercialPrice.toString(),
+  recommendedPrice: review.recommendedPrice.toString(),
+  commercialPrice: review.commercialPrice.toString(),
   breakdown: review.breakdown as PricingReview['breakdown'],
-  createdAt: review.createdAt, appliedAt: review.appliedAt,
+  createdAt: review.createdAt,
+  appliedAt: review.appliedAt,
 });
+
+const calculateMargin = (
+  salePrice: DecimalValue | null,
+  offer: SupplierOfferCost | null,
+  rules: PersistenceRules | null,
+): string | null => {
+  const price = Number(salePrice);
+  if (
+    !salePrice ||
+    price <= 0 ||
+    !offer?.active ||
+    !rules ||
+    [
+      rules.fulfillmentCost,
+      rules.packagingCost,
+      rules.paymentFixedCost,
+      rules.paymentFeePercent,
+      rules.subsidizedShippingCost,
+      rules.taxPercent,
+      rules.otherCost,
+    ].some((value) => value === null)
+  )
+    return null;
+  const fixed =
+    Number(offer.unitCost) +
+    Number(rules.fulfillmentCost) +
+    Number(rules.packagingCost) +
+    Number(rules.paymentFixedCost) +
+    Number(rules.subsidizedShippingCost) +
+    Number(rules.otherCost);
+  const cost =
+    fixed +
+    (price * Number(rules.paymentFeePercent)) / 100 +
+    (price * Number(rules.taxPercent)) / 100;
+  return (((price - cost) / price) * 100).toFixed(2);
+};

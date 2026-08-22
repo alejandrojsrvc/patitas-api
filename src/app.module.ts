@@ -20,8 +20,34 @@ import { ReplenishmentModule } from './modules/replenishment/replenishment.modul
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { MarketingModule } from './modules/marketing/marketing.module';
 import { ReferralsModule } from './modules/referrals/referrals.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
-  imports: [AppConfigModule, IdentityModule, StorageModule, UsersModule, AuthModule, CatalogModule, SuppliersModule, PricingModule, CustomersModule, OrdersModule, AuditModule, PromotionsModule, ShippingModule, CartModule, CheckoutModule, PaymentsModule, ReplenishmentModule, NotificationsModule, MarketingModule, ReferralsModule, AnalyticsModule],
+  imports: [
+    AppConfigModule,
+    IdentityModule,
+    StorageModule,
+    UsersModule,
+    AuthModule,
+    CatalogModule,
+    SuppliersModule,
+    PricingModule,
+    CustomersModule,
+    OrdersModule,
+    AuditModule,
+    PromotionsModule,
+    ShippingModule,
+    CartModule,
+    CheckoutModule,
+    PaymentsModule,
+    ReplenishmentModule,
+    NotificationsModule,
+    MarketingModule,
+    ReferralsModule,
+    InventoryModule,
+    DashboardModule,
+    AnalyticsModule,
+  ],
 })
 export class AppModule {}

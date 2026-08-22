@@ -1,4 +1,15 @@
-import { Controller, Get, Headers, Param, Post, Query, Req, UseFilters, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Headers,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseFilters,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { OptionalAuthGuard } from '../../auth/presentation/guards/optional-auth.guard';
@@ -18,14 +29,31 @@ import { CatalogExceptionFilter } from '../../catalog/presentation/filters/catal
 @Controller()
 export class PublicAnalyticsController {
   public constructor(private readonly analytics: AnalyticsService) {}
-  @Post('products/:slug/view') public view(@Param('slug') slug: string, @Headers('x-visitor-id') visitorId: string | undefined, @Req() request: Request) {
-    const userId = (request as Request & { user?: { userId: string } }).user?.userId;
-    const key = hashAnonymousToken(userId ?? visitorId ?? `${request.ip}:${request.headers['user-agent'] ?? ''}`);
+  @Post('products/:slug/view') public view(
+    @Param('slug') slug: string,
+    @Headers('x-visitor-id') visitorId: string | undefined,
+    @Req() request: Request,
+  ) {
+    const userId = (request as Request & { user?: { userId: string } }).user
+      ?.userId;
+    const key = hashAnonymousToken(
+      userId ??
+        visitorId ??
+        `${request.ip}:${request.headers['user-agent'] ?? ''}`,
+    );
     return this.analytics.recordProductView(slug, key, userId);
   }
-  @Get('recently-viewed') public recentlyViewed(@Headers('x-visitor-id') visitorId: string | undefined, @Req() request: Request) {
-    const userId = (request as Request & { user?: { userId: string } }).user?.userId;
-    const key = hashAnonymousToken(userId ?? visitorId ?? `${request.ip}:${request.headers['user-agent'] ?? ''}`);
+  @Get('recently-viewed') public recentlyViewed(
+    @Headers('x-visitor-id') visitorId: string | undefined,
+    @Req() request: Request,
+  ) {
+    const userId = (request as Request & { user?: { userId: string } }).user
+      ?.userId;
+    const key = hashAnonymousToken(
+      userId ??
+        visitorId ??
+        `${request.ip}:${request.headers['user-agent'] ?? ''}`,
+    );
     return this.analytics.recentlyViewed(key);
   }
 }
@@ -39,5 +67,11 @@ export class PublicAnalyticsController {
 @Controller('admin/products')
 export class AdminAnalyticsController {
   public constructor(private readonly analytics: AnalyticsService) {}
-  @Get(':id/views') public views(@Param('id') id: string, @Query('from') from?: string, @Query('to') to?: string) { return this.analytics.productStats(id, from, to); }
+  @Get(':id/views') public views(
+    @Param('id') id: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.analytics.productStats(id, from, to);
+  }
 }

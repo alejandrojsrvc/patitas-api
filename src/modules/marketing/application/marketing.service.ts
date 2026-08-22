@@ -1,19 +1,27 @@
-import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
-import type { PrismaService } from '../../../infrastructure/database/prisma.service';
-import type { MarketingEventInput, MarketingProvider } from '../../../shared/application/ports/marketing-provider.interface';
+import type { MarketingProvider } from '../../../shared/application/ports/marketing-provider.interface';
+import type {
+  MarketingEventPersistenceInput,
+  MarketingEventRepository,
+} from '../domain/marketing.repository';
 
 export class MarketingService {
-  public constructor(private readonly prisma: PrismaService, private readonly provider: MarketingProvider) {}
-  public async record(input: MarketingEventInput & { source: string; visitorHash?: string; customerId?: string; cartId?: string; checkoutSessionId?: string; orderId?: string; utm?: { source?: string; medium?: string; campaign?: string; content?: string }; initialLanding?: string }) {
-    const db = this.prisma as any;
-    let event: any;
+  public constructor(
+    private readonly repository: MarketingEventRepository,
+    private readonly provider: MarketingProvider,
+  ) {}
+  public async record(input: MarketingEventPersistenceInput) {
+    const event = await this.repository.create(input);
+    if (event.duplicate) return { accepted: true, duplicate: true };
     try {
-      event = await db.marketingEvent.create({ data: { eventName: input.eventName, eventId: input.eventId, source: input.source, visitorHash: input.visitorHash, value: input.value, currency: input.currency, payload: input.payload as Prisma.InputJsonValue | undefined, customerId: input.customerId, cartId: input.cartId, checkoutSessionId: input.checkoutSessionId, orderId: input.orderId, utmSource: input.utm?.source, utmMedium: input.utm?.medium, utmCampaign: input.utm?.campaign, utmContent: input.utm?.content, initialLanding: input.initialLanding } });
+      await this.provider.send(input);
+      await this.repository.markSent(event.id);
+      return { accepted: true, duplicate: false };
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return { accepted: true, duplicate: true };
-      throw error;
+      await this.repository.markFailed(
+        event.id,
+        error instanceof Error ? error.message : 'Proveedor no disponible',
+      );
+      return { accepted: false, duplicate: false };
     }
-    try { await this.provider.send(input); await db.marketingEvent.update({ where: { id: event.id }, data: { status: 'SENT', sentAt: new Date() } }); return { accepted: true, duplicate: false }; }
-    catch (error) { await db.marketingEvent.update({ where: { id: event.id }, data: { status: 'FAILED', error: error instanceof Error ? error.message : 'Proveedor no disponible' } }); return { accepted: false, duplicate: false }; }
   }
 }

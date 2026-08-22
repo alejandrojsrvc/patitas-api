@@ -28,14 +28,20 @@ import { isWithinPeriod } from '../../../promotions/application/promotion.servic
 @UseFilters(CatalogExceptionFilter)
 @Controller()
 export class PublicCatalogController {
-  public constructor(private readonly catalog: CatalogService, private readonly promotions: PromotionService) {}
+  public constructor(
+    private readonly catalog: CatalogService,
+    private readonly promotions: PromotionService,
+  ) {}
 
   @Get('products')
   @ApiOkResponse({ type: PublicProductPageResponseDto })
   public async products(@Query() query: PublicProductsQueryDto) {
     const page = await this.catalog.listPublicProducts(query);
     const promotions = await this.activePromotions();
-    return toHttpPage({ ...page, items: page.items.map((product) => toPublicProduct(product, promotions)) });
+    return toHttpPage({
+      ...page,
+      items: page.items.map((product) => toPublicProduct(product, promotions)),
+    });
   }
   @Get('products/:slug')
   @ApiOkResponse({ type: PublicProductDetailResponseDto })
@@ -80,9 +86,11 @@ export class PublicCatalogController {
   }
 
   private async activePromotions() {
-    return (await this.promotions.list(true)).filter((promotion) =>
-      isWithinPeriod(promotion.startsAt, promotion.endsAt) &&
-      (promotion.maxRedemptions === null || promotion.redemptionCount < promotion.maxRedemptions),
+    return (await this.promotions.list(true)).filter(
+      (promotion) =>
+        isWithinPeriod(promotion.startsAt, promotion.endsAt) &&
+        (promotion.maxRedemptions === null ||
+          promotion.redemptionCount < promotion.maxRedemptions),
     );
   }
 
@@ -199,9 +207,35 @@ const toPublicReference = (reference: {
   ...(reference.logoUrl !== undefined ? { logoUrl: reference.logoUrl } : {}),
 });
 
-const applicablePromotions = (product: { id: string; brandId: string; categoryId: string | null; variants: Array<{ id: string }> }, promotions: Awaited<ReturnType<PromotionService['list']>>) => promotions
-  .filter((promotion) => !promotion.targets.length || promotion.targets.some((target) => target.productId === product.id || target.brandId === product.brandId || target.categoryId === product.categoryId || product.variants.some((variant) => target.variantId === variant.id)))
-  .map((promotion) => ({ id: promotion.id, name: promotion.name, type: promotion.type, value: promotion.value, startsAt: promotion.startsAt, endsAt: promotion.endsAt }));
+const applicablePromotions = (
+  product: {
+    id: string;
+    brandId: string;
+    categoryId: string | null;
+    variants: Array<{ id: string }>;
+  },
+  promotions: Awaited<ReturnType<PromotionService['list']>>,
+) =>
+  promotions
+    .filter(
+      (promotion) =>
+        !promotion.targets.length ||
+        promotion.targets.some(
+          (target) =>
+            target.productId === product.id ||
+            target.brandId === product.brandId ||
+            target.categoryId === product.categoryId ||
+            product.variants.some((variant) => target.variantId === variant.id),
+        ),
+    )
+    .map((promotion) => ({
+      id: promotion.id,
+      name: promotion.name,
+      type: promotion.type,
+      value: promotion.value,
+      startsAt: promotion.startsAt,
+      endsAt: promotion.endsAt,
+    }));
 
 const toFulfillment = (
   variant: Awaited<

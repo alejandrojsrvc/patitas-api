@@ -10,12 +10,16 @@ if (!connectionString) {
 }
 
 const emailIndex = process.argv.indexOf('--email');
-const email = emailIndex >= 0 ? process.argv[emailIndex + 1]?.trim().toLowerCase() : undefined;
+const email =
+  emailIndex >= 0
+    ? process.argv[emailIndex + 1]?.trim().toLowerCase()
+    : undefined;
 if (!email) {
   throw new Error('Uso: pnpm user:grant-admin -- --email persona@example.com');
 }
 const confirmationIndex = process.argv.indexOf('--confirm');
-const confirmation = confirmationIndex >= 0 ? process.argv[confirmationIndex + 1] : undefined;
+const confirmation =
+  confirmationIndex >= 0 ? process.argv[confirmationIndex + 1] : undefined;
 if (process.env['NODE_ENV'] === 'production') {
   if (confirmation !== email) {
     throw new Error('En producción debes repetir el email con --confirm.');
@@ -26,7 +30,7 @@ if (process.env['NODE_ENV'] === 'production') {
 
 const main = async (): Promise<void> => {
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString: connectionString! }),
+    adapter: new PrismaPg({ connectionString }),
   });
   try {
     const user = await prisma.user.findUnique({
@@ -34,9 +38,14 @@ const main = async (): Promise<void> => {
       include: { externalIdentities: true },
     });
     if (!user || user.externalIdentities.length === 0) {
-      throw new Error('El usuario debe registrarse y vincular su identidad primero.');
+      throw new Error(
+        'El usuario debe registrarse y vincular su identidad primero.',
+      );
     }
-    await prisma.user.update({ where: { id: user.id }, data: { role: 'ADMIN' } });
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { role: 'ADMIN' },
+    });
     console.info(`Rol ADMIN concedido a ${email}.`);
   } finally {
     await prisma.$disconnect();

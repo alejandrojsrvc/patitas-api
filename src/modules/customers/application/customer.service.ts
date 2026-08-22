@@ -51,7 +51,10 @@ const validateCustomer = (
   if (input.fullName !== undefined && !input.fullName.trim()) {
     throw new CustomerValidationError('El nombre del cliente es obligatorio.');
   }
-  if (input.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email.trim())) {
+  if (
+    input.email !== undefined &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email.trim())
+  ) {
     throw new CustomerValidationError('El email del cliente no es válido.');
   }
 };
@@ -61,6 +64,8 @@ const normalizeCustomer = <T extends CreateCustomerInput | UpdateCustomerInput>(
 ): T => ({
   ...input,
   ...(input.fullName !== undefined ? { fullName: input.fullName.trim() } : {}),
-  ...(input.email !== undefined ? { email: input.email.trim().toLowerCase() } : {}),
+  ...(input.email !== undefined
+    ? { email: input.email.trim().toLowerCase() }
+    : {}),
   ...(input.phone !== undefined ? { phone: input.phone?.trim() || null } : {}),
 });

@@ -10,7 +10,9 @@ import type { AuthenticatedRequest } from '../authenticated-user';
 
 @Injectable()
 export class OptionalAuthGuard implements CanActivate {
-  public constructor(private readonly resolveToken: ResolveAccessTokenUseCase) {}
+  public constructor(
+    private readonly resolveToken: ResolveAccessTokenUseCase,
+  ) {}
 
   public async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();

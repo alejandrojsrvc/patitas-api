@@ -34,7 +34,11 @@ export class AuthResponseDto {
     return {
       status: result.status,
       user: result.user
-        ? { id: result.user.id, email: result.user.email, role: result.user.role }
+        ? {
+            id: result.user.id,
+            email: result.user.email,
+            role: result.user.role,
+          }
         : null,
       session:
         result.status === 'authenticated'

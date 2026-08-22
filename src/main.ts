@@ -11,7 +11,21 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const apiPrefix = 'api/v1';
   app.setGlobalPrefix(apiPrefix);
-  app.use((request: Request & { requestId?: string }, response: Response, next: () => void) => { const requestId = request.headers['x-request-id']; request.requestId = typeof requestId === 'string' && requestId.trim() ? requestId.trim() : randomUUID(); response.setHeader('x-request-id', request.requestId); next(); });
+  app.use(
+    (
+      request: Request & { requestId?: string },
+      response: Response,
+      next: () => void,
+    ) => {
+      const requestId = request.headers['x-request-id'];
+      request.requestId =
+        typeof requestId === 'string' && requestId.trim()
+          ? requestId.trim()
+          : randomUUID();
+      response.setHeader('x-request-id', request.requestId);
+      next();
+    },
+  );
   app.enableShutdownHooks();
   app.useGlobalFilters(new StructuredExceptionFilter());
   app.useGlobalPipes(

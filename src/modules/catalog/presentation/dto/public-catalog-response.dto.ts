@@ -66,7 +66,12 @@ export class PublicProductResponseDto {
   @ApiProperty({ type: [PublicProductVariantResponseDto] })
   public variants!: PublicProductVariantResponseDto[];
   @ApiProperty({ type: [Object] })
-  public offers!: Array<{ id: string; name: string; type: string; value: string }>;
+  public offers!: Array<{
+    id: string;
+    name: string;
+    type: string;
+    value: string;
+  }>;
 }
 
 export class PublicFeedingGuideEntryResponseDto {

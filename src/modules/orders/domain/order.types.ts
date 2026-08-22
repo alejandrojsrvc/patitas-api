@@ -7,7 +7,8 @@ export type OrderStatus =
   | 'DELIVERED'
   | 'CANCELLED';
 
-export type PaymentStatus = 'UNPAID' | 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+export type PaymentStatus =
+  'UNPAID' | 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
 
 export interface OrderLine {
   id: string;
@@ -49,6 +50,7 @@ export interface Order {
   trackingNumber: string | null;
   createdAt: Date;
   updatedAt: Date;
+  availableTransitions: OrderStatus[];
   lines: OrderLine[];
   payments: OrderPayment[];
 }
@@ -100,4 +102,12 @@ export interface RegisterPaymentInput {
   reference?: string | null;
   proofUrl?: string | null;
   paidAt?: Date | null;
+}
+
+export interface UploadPaymentProofInput {
+  paymentId: string;
+  storagePath: string;
+  originalName: string;
+  contentType: string;
+  data: Uint8Array;
 }

@@ -16,5 +16,14 @@ export interface PaymentLink {
 
 export interface PaymentRepository {
   createLink(orderId: string, owner: PaymentOwner): Promise<PaymentLink>;
-  handleWebhook(input: { headers: Record<string, string | string[] | undefined>; body: unknown }): Promise<{ accepted: boolean; duplicate: boolean; orderId?: string; status?: string; value?: string }>;
+  handleWebhook(input: {
+    headers: Record<string, string | string[] | undefined>;
+    body: unknown;
+  }): Promise<{
+    accepted: boolean;
+    duplicate: boolean;
+    orderId?: string;
+    status?: string;
+    value?: string;
+  }>;
 }

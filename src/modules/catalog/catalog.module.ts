@@ -9,7 +9,8 @@ import { AuthModule } from '../auth/auth.module';
 import { PromotionsModule } from '../promotions/promotions.module';
 import { CatalogService } from './application/catalog.service';
 import {
-  CATALOG_REPOSITORY, type CatalogRepository,
+  CATALOG_REPOSITORY,
+  type CatalogRepository,
 } from './domain/repositories/catalog.repository';
 import { PrismaCatalogRepository } from './infrastructure/persistence/prisma-catalog.repository';
 import { AdminCatalogController } from './presentation/controllers/admin-catalog.controller';
@@ -23,10 +24,8 @@ import { PublicCatalogController } from './presentation/controllers/public-catal
     {
       provide: CatalogService,
       inject: [CATALOG_REPOSITORY, STORAGE_PROVIDER],
-      useFactory: (
-        repository: CatalogRepository,
-        storage: StorageProvider,
-      ) => new CatalogService(repository, storage),
+      useFactory: (repository: CatalogRepository, storage: StorageProvider) =>
+        new CatalogService(repository, storage),
     },
   ],
   exports: [CATALOG_REPOSITORY],

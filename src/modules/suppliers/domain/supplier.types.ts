@@ -1,5 +1,5 @@
 export type SupplierOfferStockStatus =
-  | 'AVAILABLE' | 'OUT_OF_STOCK' | 'ON_REQUEST' | 'UNKNOWN';
+  'AVAILABLE' | 'OUT_OF_STOCK' | 'ON_REQUEST' | 'UNKNOWN';
 
 export interface Supplier {
   id: string;
@@ -36,8 +36,14 @@ export interface SupplierOffer {
   updatedAt: Date;
 }
 
-export interface CreateSupplierInput { name: string; active?: boolean }
-export interface UpdateSupplierInput { name?: string; active?: boolean }
+export interface CreateSupplierInput {
+  name: string;
+  active?: boolean;
+}
+export interface UpdateSupplierInput {
+  name?: string;
+  active?: boolean;
+}
 export interface CreateSupplierOfferInput {
   supplierId: string;
   variantId: string;
@@ -48,4 +54,6 @@ export interface CreateSupplierOfferInput {
   minimumQuantity?: number;
   active?: boolean;
 }
-export type UpdateSupplierOfferInput = Partial<Omit<CreateSupplierOfferInput, 'supplierId' | 'variantId'>>;
+export type UpdateSupplierOfferInput = Partial<
+  Omit<CreateSupplierOfferInput, 'supplierId' | 'variantId'>
+>;

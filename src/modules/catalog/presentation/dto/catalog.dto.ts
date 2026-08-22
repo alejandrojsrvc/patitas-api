@@ -212,7 +212,11 @@ export class ReplaceFeedingGuideDto {
 export class SetInventoryDto {
   @ApiProperty() @IsInt() @Min(0) public onHand!: number;
   @ApiProperty() @IsInt() @Min(0) public reserved!: number;
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(300) public reason?: string | null;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  public reason?: string | null;
 }
 
 export class PublicProductsQueryDto {

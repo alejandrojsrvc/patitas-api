@@ -3,7 +3,10 @@ import { PrismaModule } from '../../infrastructure/database/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { CustomersModule } from '../customers/customers.module';
 import { StorageModule } from '../../infrastructure/storage/storage.module';
-import { STORAGE_PROVIDER, type StorageProvider } from '../../shared/application/ports/storage-provider.interface';
+import {
+  STORAGE_PROVIDER,
+  type StorageProvider,
+} from '../../shared/application/ports/storage-provider.interface';
 import { CartService } from './application/cart.service';
 import { CART_REPOSITORY, type CartRepository } from './domain/cart.repository';
 import { PrismaCartRepository } from './infrastructure/prisma-cart.repository';
@@ -18,7 +21,8 @@ import { CartController } from './presentation/cart.controller';
     {
       provide: CartService,
       inject: [CART_REPOSITORY, STORAGE_PROVIDER],
-      useFactory: (repository: CartRepository, storage: StorageProvider) => new CartService(repository, storage),
+      useFactory: (repository: CartRepository, storage: StorageProvider) =>
+        new CartService(repository, storage),
     },
   ],
   exports: [CartService, CART_REPOSITORY],

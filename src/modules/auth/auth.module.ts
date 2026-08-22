@@ -28,31 +28,44 @@ import { OptionalAuthGuard } from './presentation/guards/optional-auth.guard';
     {
       provide: RegisterUseCase,
       inject: [IDENTITY_PROVIDER, AUTH_ACCOUNT_REPOSITORY],
-      useFactory: (identity: IdentityProvider, accounts: AuthAccountRepository) =>
-        new RegisterUseCase(identity, accounts),
+      useFactory: (
+        identity: IdentityProvider,
+        accounts: AuthAccountRepository,
+      ) => new RegisterUseCase(identity, accounts),
     },
     {
       provide: LoginUseCase,
       inject: [IDENTITY_PROVIDER, AUTH_ACCOUNT_REPOSITORY],
-      useFactory: (identity: IdentityProvider, accounts: AuthAccountRepository) =>
-        new LoginUseCase(identity, accounts),
+      useFactory: (
+        identity: IdentityProvider,
+        accounts: AuthAccountRepository,
+      ) => new LoginUseCase(identity, accounts),
     },
     {
       provide: RefreshSessionUseCase,
       inject: [IDENTITY_PROVIDER, AUTH_ACCOUNT_REPOSITORY],
-      useFactory: (identity: IdentityProvider, accounts: AuthAccountRepository) =>
-        new RefreshSessionUseCase(identity, accounts),
+      useFactory: (
+        identity: IdentityProvider,
+        accounts: AuthAccountRepository,
+      ) => new RefreshSessionUseCase(identity, accounts),
     },
     {
       provide: ResolveAccessTokenUseCase,
       inject: [IDENTITY_PROVIDER, AUTH_ACCOUNT_REPOSITORY],
-      useFactory: (identity: IdentityProvider, accounts: AuthAccountRepository) =>
-        new ResolveAccessTokenUseCase(identity, accounts),
+      useFactory: (
+        identity: IdentityProvider,
+        accounts: AuthAccountRepository,
+      ) => new ResolveAccessTokenUseCase(identity, accounts),
     },
     AuthGuard,
     OptionalAuthGuard,
     RolesGuard,
   ],
-  exports: [AuthGuard, OptionalAuthGuard, RolesGuard, ResolveAccessTokenUseCase],
+  exports: [
+    AuthGuard,
+    OptionalAuthGuard,
+    RolesGuard,
+    ResolveAccessTokenUseCase,
+  ],
 })
 export class AuthModule {}

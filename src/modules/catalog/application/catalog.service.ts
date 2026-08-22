@@ -349,7 +349,10 @@ export class CatalogService {
     const product = await this.ensureProduct(productId);
     const media = product.media.find((item) => item.id === mediaId);
     if (!media) throw new CatalogNotFoundError('La imagen');
-    if (input.variantId && !product.variants.some((variant) => variant.id === input.variantId)) {
+    if (
+      input.variantId &&
+      !product.variants.some((variant) => variant.id === input.variantId)
+    ) {
       throw new CatalogValidationError(
         'La imagen debe pertenecer a una variante del producto.',
       );
@@ -467,7 +470,8 @@ export class CatalogService {
       throw new CatalogValidationError(
         'El nombre de la categoría es obligatorio.',
       );
-    const { logoUrl: _logoUrl, ...categoryInput } = input;
+    const categoryInput = { ...input };
+    delete categoryInput.logoUrl;
     return this.repository.createCategory({
       ...categoryInput,
       name: input.name.trim(),
@@ -480,7 +484,8 @@ export class CatalogService {
         'El nombre de la categoría es obligatorio.',
       );
     }
-    const { logoUrl: _logoUrl, ...categoryInput } = input;
+    const categoryInput = { ...input };
+    delete categoryInput.logoUrl;
     return this.repository.updateCategory(id, {
       ...categoryInput,
       ...(input.name !== undefined ? { name: input.name.trim() } : {}),
@@ -494,23 +499,29 @@ export class CatalogService {
   public async createBrand(input: CreateReferenceInput) {
     if (!input.name.trim())
       throw new CatalogValidationError('El nombre de la marca es obligatorio.');
-    const { parentId: _parentId, ...brandInput } = input;
-    return this.resolveBrand(await this.repository.createBrand({
-      ...brandInput,
-      name: input.name.trim(),
-      slug: slugify(input.slug ?? input.name),
-    }));
+    const brandInput = { ...input };
+    delete brandInput.parentId;
+    return this.resolveBrand(
+      await this.repository.createBrand({
+        ...brandInput,
+        name: input.name.trim(),
+        slug: slugify(input.slug ?? input.name),
+      }),
+    );
   }
   public async updateBrand(id: string, input: UpdateReferenceInput) {
     if (input.name !== undefined && !input.name.trim()) {
       throw new CatalogValidationError('El nombre de la marca es obligatorio.');
     }
-    const { parentId: _parentId, ...brandInput } = input;
-    return this.resolveBrand(await this.repository.updateBrand(id, {
-      ...brandInput,
-      ...(input.name !== undefined ? { name: input.name.trim() } : {}),
-      ...(input.slug ? { slug: slugify(input.slug) } : {}),
-    }));
+    const brandInput = { ...input };
+    delete brandInput.parentId;
+    return this.resolveBrand(
+      await this.repository.updateBrand(id, {
+        ...brandInput,
+        ...(input.name !== undefined ? { name: input.name.trim() } : {}),
+        ...(input.slug ? { slug: slugify(input.slug) } : {}),
+      }),
+    );
   }
 
   public async uploadBrandLogo(
@@ -518,15 +529,23 @@ export class CatalogService {
     input: { originalName: string; contentType: string; data: Uint8Array },
   ) {
     const storage = this.storage;
-    if (!storage) throw new CatalogValidationError('Storage no está configurado.');
+    if (!storage)
+      throw new CatalogValidationError('Storage no está configurado.');
     const brand = await this.repository.findBrandById(brandId);
     if (!brand) throw new CatalogNotFoundError('La marca');
     const contentType = input.contentType.toLowerCase();
     if (!ALLOWED_IMAGE_TYPES.has(contentType)) {
-      throw new CatalogValidationError('El logo debe ser una imagen JPEG, PNG, WebP o GIF.');
+      throw new CatalogValidationError(
+        'El logo debe ser una imagen JPEG, PNG, WebP o GIF.',
+      );
     }
-    if (input.data.byteLength === 0 || input.data.byteLength > MAX_PRODUCT_IMAGE_BYTES) {
-      throw new CatalogValidationError('El logo debe pesar entre 1 byte y 10 MB.');
+    if (
+      input.data.byteLength === 0 ||
+      input.data.byteLength > MAX_PRODUCT_IMAGE_BYTES
+    ) {
+      throw new CatalogValidationError(
+        'El logo debe pesar entre 1 byte y 10 MB.',
+      );
     }
     const storedObject = await storage.upload({
       object: {
@@ -538,9 +557,13 @@ export class CatalogService {
       upsert: false,
     });
     try {
-      const updated = await this.repository.updateBrand(brandId, { logoUrl: storedObject.path });
+      const updated = await this.repository.updateBrand(brandId, {
+        logoUrl: storedObject.path,
+      });
       if (brand.logoUrl && !isHttpUrl(brand.logoUrl)) {
-        await storage.delete({ bucket: PRODUCT_MEDIA_BUCKET, path: brand.logoUrl }).catch(() => undefined);
+        await storage
+          .delete({ bucket: PRODUCT_MEDIA_BUCKET, path: brand.logoUrl })
+          .catch(() => undefined);
       }
       return this.resolveBrand(updated);
     } catch (error) {
@@ -579,7 +602,8 @@ export class CatalogService {
   }
 
   private async resolveBrand(brand: Brand): Promise<Brand> {
-    if (!brand.logoUrl || isHttpUrl(brand.logoUrl) || !this.storage) return brand;
+    if (!brand.logoUrl || isHttpUrl(brand.logoUrl) || !this.storage)
+      return brand;
     return {
       ...brand,
       logoUrl: await this.storage.getSignedUrl(

@@ -11,9 +11,21 @@ export interface PricingRules {
   taxPercent: string | null;
   otherCost: string | null;
   targetMarginPercent: string | null;
+  createdAt: Date;
+  activatedAt: Date | null;
 }
 
-export type PricingRuleValues = Omit<PricingRules, 'id' | 'version' | 'status' | 'currency'>;
+export type PricingRuleValues = Pick<
+  PricingRules,
+  | 'fulfillmentCost'
+  | 'packagingCost'
+  | 'paymentFixedCost'
+  | 'paymentFeePercent'
+  | 'subsidizedShippingCost'
+  | 'taxPercent'
+  | 'otherCost'
+  | 'targetMarginPercent'
+>;
 
 export interface PricingContext {
   variantId: string;
@@ -53,4 +65,18 @@ export interface PricingReview extends PricingCalculation {
   inputSnapshot: Record<string, unknown>;
   createdAt: Date;
   appliedAt: Date | null;
+  product?: { id: string; name: string };
+  variant?: {
+    sku: string | null;
+    presentation: string | null;
+    salePrice: string | null;
+  };
+  currentMarginPercent?: string | null;
+}
+
+export interface PricingReviewPage {
+  items: PricingReview[];
+  page: number;
+  perPage: number;
+  total: number;
 }

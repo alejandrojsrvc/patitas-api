@@ -306,7 +306,11 @@ export class PrismaCatalogRepository implements CatalogRepository {
               { name: { contains: filter.q, mode: 'insensitive' } },
               { slug: { contains: filter.q, mode: 'insensitive' } },
               { brand: { name: { contains: filter.q, mode: 'insensitive' } } },
-              { variants: { some: { sku: { contains: filter.q, mode: 'insensitive' } } } },
+              {
+                variants: {
+                  some: { sku: { contains: filter.q, mode: 'insensitive' } },
+                },
+              },
             ],
           }
         : {}),
@@ -314,13 +318,16 @@ export class PrismaCatalogRepository implements CatalogRepository {
         ? {}
         : filter.hasStock
           ? { variants: { some: { inventory: { is: { onHand: { gt: 0 } } } } } }
-          : { variants: { none: { inventory: { is: { onHand: { gt: 0 } } } } } }),
+          : {
+              variants: { none: { inventory: { is: { onHand: { gt: 0 } } } } },
+            }),
     };
-    const orderBy = filter.sort === 'name_desc'
-      ? { name: 'desc' as const }
-      : filter.sort === 'updated_desc'
-        ? { updatedAt: 'desc' as const }
-        : { name: 'asc' as const };
+    const orderBy =
+      filter.sort === 'name_desc'
+        ? { name: 'desc' as const }
+        : filter.sort === 'updated_desc'
+          ? { updatedAt: 'desc' as const }
+          : { name: 'asc' as const };
     const [records, total] = await this.prisma.$transaction([
       this.prisma.product.findMany({
         where,
@@ -376,7 +383,12 @@ export class PrismaCatalogRepository implements CatalogRepository {
   } | null> {
     const offer = await this.prisma.supplierOffer.findUnique({
       where: { id: offerId },
-      select: { variantId: true, stockStatus: true, leadTimeHours: true, active: true },
+      select: {
+        variantId: true,
+        stockStatus: true,
+        leadTimeHours: true,
+        active: true,
+      },
     });
     if (!offer || offer.variantId !== variantId || !offer.active) return null;
     return {
@@ -536,7 +548,9 @@ export class PrismaCatalogRepository implements CatalogRepository {
   ): Promise<InventoryItem> {
     return this.write(() =>
       this.prisma.$transaction(async (transaction) => {
-        const current = await transaction.inventoryItem.findUnique({ where: { variantId } });
+        const current = await transaction.inventoryItem.findUnique({
+          where: { variantId },
+        });
         const inventory = await transaction.inventoryItem.upsert({
           where: { variantId },
           create: { variantId, onHand: input.onHand, reserved: input.reserved },
@@ -558,7 +572,9 @@ export class PrismaCatalogRepository implements CatalogRepository {
     );
   }
 
-  public async listInventoryMovements(variantId: string): Promise<InventoryMovement[]> {
+  public async listInventoryMovements(
+    variantId: string,
+  ): Promise<InventoryMovement[]> {
     const movements = await this.prisma.inventoryMovement.findMany({
       where: { variantId },
       orderBy: { createdAt: 'desc' },
@@ -756,10 +772,9 @@ const mapVariant = (value: PersistenceVariant): ProductVariant => ({
     0,
     (value.inventory?.onHand ?? 0) - (value.inventory?.reserved ?? 0),
   ),
-  supplierStockStatus:
-    (value.preferredSupplierOffer?.active
-      ? value.preferredSupplierOffer.stockStatus
-      : null) as ProductVariant['supplierStockStatus'],
+  supplierStockStatus: (value.preferredSupplierOffer?.active
+    ? value.preferredSupplierOffer.stockStatus
+    : null) as ProductVariant['supplierStockStatus'],
   supplierLeadTimeHours: value.preferredSupplierOffer?.active
     ? value.preferredSupplierOffer.leadTimeHours
     : null,

@@ -1,3 +1,5 @@
+import type { ProviderIdentity } from '../../domain/identity.types';
+
 export const IDENTITY_PROVIDER = Symbol('IDENTITY_PROVIDER');
 
 export interface IdentityCredentials {
@@ -5,12 +7,7 @@ export interface IdentityCredentials {
   password: string;
 }
 
-export interface ProviderIdentity {
-  provider: string;
-  providerUserId: string;
-  email: string | null;
-  emailVerified: boolean;
-}
+export type { ProviderIdentity } from '../../domain/identity.types';
 
 export interface IdentitySession {
   identity: ProviderIdentity;

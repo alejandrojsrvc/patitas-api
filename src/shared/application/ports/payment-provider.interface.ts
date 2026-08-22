@@ -24,12 +24,16 @@ export interface PaymentWebhookResult {
   eventType: string;
   externalPaymentId?: string;
   externalReference?: string;
-  status: 'APPROVED' | 'PENDING' | 'REJECTED' | 'CANCELLED' | 'EXPIRED' | 'FAILED';
+  status:
+    'APPROVED' | 'PENDING' | 'REJECTED' | 'CANCELLED' | 'EXPIRED' | 'FAILED';
   rawPayload: unknown;
 }
 
 export interface PaymentProvider {
   readonly name: string;
   createPaymentLink(input: CreatePaymentLinkInput): Promise<PaymentLinkResult>;
-  parseWebhook(input: { headers: Record<string, string | string[] | undefined>; body: unknown }): Promise<PaymentWebhookResult>;
+  parseWebhook(input: {
+    headers: Record<string, string | string[] | undefined>;
+    body: unknown;
+  }): Promise<PaymentWebhookResult>;
 }
