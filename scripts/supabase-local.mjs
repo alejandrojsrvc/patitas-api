@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { chmodSync, writeFileSync } from 'node:fs';
 import { config as loadEnv } from 'dotenv';
 
-loadEnv({ path: ['.env.local', '.env'], quiet: true });
+loadEnv({ path: ['.env.local', '.env.dist'], quiet: true });
 
 const action = process.argv[2];
 const executable = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
@@ -72,8 +72,8 @@ const syncEnvironment = () => {
     '',
   ].join('\n');
 
-  writeFileSync('.env.supabase.local', contents, { mode: 0o600 });
-  chmodSync('.env.supabase.local', 0o600);
+  writeFileSync('.env.local', contents, { mode: 0o600 });
+  chmodSync('.env.local', 0o600);
   process.env['DATABASE_URL'] = databaseUrl;
   process.env['SUPABASE_URL'] = supabaseUrl;
   process.env['SUPABASE_PUBLISHABLE_KEY'] = publishableKey;

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "catalog-research.v1",
+  "products": [
+    {
+      "canonicalKey": "old-prince-premium-adulto-perro-pollo-carne",
+      "manufacturerUrl": "https://oldprince.com.ar/producto/old-prince-premium-adultos/",
+      "expected": {
+        "brand": "Old Prince",
+        "species": "DOG",
+        "line": "Premium",
+        "lifeStage": "Adult",
+        "weightsGrams": [3000, 20000]
+      },
+      "retailers": {
+        "puppis": "https://www.puppis.com.ar/alimento-old-prince-premium-de-pollo-y-carne-perro-adulto-raza-mediana--8980-/p",
+        "mispichos": "https://mispichos.com/alimento-balanceado/premium-adulto-pollo-y-carne-old-prince_196?variacion=562",
+        "pluspet": "https://ba.pluspet.com.ar/products/perro-alimento-adulto-old-prince-premium",
+        "natural-life": "https://www.natural-life.com.ar/old-prince-premium-adulto-x-20-kg/p"
+      }
+    }
+  ]
+}

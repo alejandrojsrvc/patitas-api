@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "catalog-research.brand.v1",
+  "brand": "Royal Canin",
+  "productPathContains": ["/products/retail-products/"],
+  "categoryUrls": [
+    "https://www.royalcanin.com/ar/dogs/products",
+    "https://www.royalcanin.com/ar/cats/products"
+  ]
+}

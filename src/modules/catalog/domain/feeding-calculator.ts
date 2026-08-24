@@ -73,27 +73,44 @@ const resolveManufacturerEntry = (
     .filter((entry) =>
       conditionsMatch(entry.conditions, input.attributes ?? {}),
     )
-    .sort((left, right) => left.petWeightKg - right.petWeightKg);
+    .sort((left, right) => left.petWeightKgMin - right.petWeightKgMin);
   if (entries.length === 0) return null;
 
   const exact = entries.find(
-    (entry) => entry.petWeightKg === input.petWeightKg,
+    (entry) =>
+      entry.petWeightKgMin === input.petWeightKg &&
+      (entry.petWeightKgMax === null ||
+        entry.petWeightKgMax >= input.petWeightKg),
   );
   if (exact) return exact;
+  const upper = entries.find(
+    (entry) => entry.petWeightKgMin > input.petWeightKg,
+  );
+  const covering = entries.find(
+    (entry) =>
+      entry.petWeightKgMin < input.petWeightKg &&
+      entry.petWeightKgMax !== null &&
+      entry.petWeightKgMax >= input.petWeightKg,
+  );
+  if (covering) return covering;
   const lower = [...entries]
     .reverse()
-    .find((entry) => entry.petWeightKg < input.petWeightKg);
-  const upper = entries.find((entry) => entry.petWeightKg > input.petWeightKg);
+    .find((entry) => entry.petWeightKgMin < input.petWeightKg);
+  if (!upper && lower?.petWeightKgMax === null) return lower;
   if (!lower || !upper) return null;
 
   const ratio =
-    (input.petWeightKg - lower.petWeightKg) /
-    (upper.petWeightKg - lower.petWeightKg);
+    (input.petWeightKg - lower.petWeightKgMin) /
+    (upper.petWeightKgMin - lower.petWeightKgMin);
   return {
     ...lower,
-    petWeightKg: input.petWeightKg,
+    petWeightKgMin: input.petWeightKg,
+    petWeightKgMax: input.petWeightKg,
     dailyGramsMin: interpolate(lower.dailyGramsMin, upper.dailyGramsMin, ratio),
-    dailyGramsMax: interpolate(lower.dailyGramsMax, upper.dailyGramsMax, ratio),
+    dailyGramsMax:
+      lower.dailyGramsMax !== null && upper.dailyGramsMax !== null
+        ? interpolate(lower.dailyGramsMax, upper.dailyGramsMax, ratio)
+        : null,
   };
 };
 
@@ -102,7 +119,7 @@ const buildResult = (input: {
   sourceLabel: string;
   sourceUrl: string | null;
   min: number;
-  max: number;
+  max: number | null;
   presentationGrams: number;
   assumptions: string[];
 }): FeedingCalculationResult => ({
@@ -110,9 +127,9 @@ const buildResult = (input: {
   sourceLabel: input.sourceLabel,
   sourceUrl: input.sourceUrl,
   isFallback: input.source === 'GENERAL_FALLBACK',
-  dailyGrams: { min: round(input.min), max: round(input.max) },
+  dailyGrams: { min: round(input.min), max: round(input.max ?? input.min) },
   durationDays: {
-    min: round(input.presentationGrams / input.max),
+    min: round(input.presentationGrams / (input.max ?? input.min)),
     max: round(input.presentationGrams / input.min),
   },
   assumptions: input.assumptions,

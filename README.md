@@ -25,7 +25,7 @@ No existe un valor por defecto deliberadamente: el PostgreSQL local debe reprodu
 ## Primer arranque local
 
 ```bash
-cp .env.example .env.local
+cp .env.dist .env.local
 # Completar únicamente SUPABASE_DB_MAJOR_VERSION
 
 make bootstrap
@@ -51,7 +51,7 @@ make infra-status
 docker ps --filter name=patitas-api
 ```
 
-El arranque escribe `.env.supabase.local` con permisos restringidos. El script acepta las keys actuales del CLI y, por compatibilidad local, las keys legacy; la aplicación siempre recibe:
+El arranque sincroniza `.env.local` con permisos restringidos. El script acepta las keys actuales del CLI y, por compatibilidad local, las keys legacy; la aplicación siempre recibe:
 
 ```text
 SUPABASE_PUBLISHABLE_KEY

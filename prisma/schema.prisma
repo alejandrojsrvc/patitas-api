@@ -144,6 +144,21 @@ enum MarketingEventStatus {
   FAILED
 }
 
+enum CatalogSourceStatus {
+  SUCCESS
+  PARTIAL
+  BLOCKED
+  ERROR
+}
+
+enum RetailPriceMatchStatus {
+  MATCHED
+  MISMATCH
+  MISSING
+  AMBIGUOUS
+  BLOCKED
+}
+
 enum ReferralLedgerEntryType {
   CREDIT
   DEBIT
@@ -196,6 +211,8 @@ model Product {
   name                     String
   slug                     String           @unique(map: "products_slug_key")
   description              String?
+  ingredientsText          String?          @map("ingredients_text")
+  analyticalComposition    Json?            @map("analytical_composition")
   brandId                  String           @map("brand_id") @db.Uuid
   categoryId               String?          @map("category_id") @db.Uuid
   line                     String?
@@ -212,6 +229,7 @@ model Product {
   category                 Category?        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   media                    ProductMedia[]
   feedingGuides            FeedingGuide[]
+  sourceSnapshots          ProductSourceSnapshot[]
   promotionTargets         PromotionTarget[]
   viewDaily                ProductViewDaily[]
   viewVisitors             ProductViewVisitorDaily[]
@@ -229,6 +247,7 @@ model ProductVariant {
   id                       String          @id @default(uuid()) @db.Uuid
   productId                String          @map("product_id") @db.Uuid
   sku                      String?         @unique(map: "product_variants_sku_key")
+  barcode                  String?         @unique(map: "product_variants_barcode_key")
   presentation             String?
   weightGrams              Int?            @map("weight_grams")
   salePrice                Decimal?        @map("sale_price") @db.Decimal(14, 2)
@@ -242,6 +261,7 @@ model ProductVariant {
   supplierOffers           SupplierOffer[] @relation("VariantSupplierOffers")
   preferredSupplierOffer   SupplierOffer?  @relation("PreferredSupplierOffer", fields: [preferredSupplierOfferId], references: [id], onDelete: SetNull)
   pricingReviews           PricingReview[]
+  retailPriceObservations  RetailPriceObservation[]
   inventory                InventoryItem?
   media                    ProductMedia[]
   orderLines               OrderLine[]
@@ -294,15 +314,63 @@ model FeedingGuide {
 model FeedingGuideEntry {
   id             String       @id @default(uuid()) @db.Uuid
   feedingGuideId String       @map("feeding_guide_id") @db.Uuid
-  petWeightKg    Decimal      @map("pet_weight_kg") @db.Decimal(7, 2)
+  petWeightKgMin Decimal      @map("pet_weight_kg_min") @db.Decimal(7, 2)
+  petWeightKgMax Decimal?     @map("pet_weight_kg_max") @db.Decimal(7, 2)
   lifeStage      String?      @map("life_stage")
   conditions     Json?
   dailyGramsMin  Decimal      @map("daily_grams_min") @db.Decimal(8, 2)
-  dailyGramsMax  Decimal      @map("daily_grams_max") @db.Decimal(8, 2)
+  dailyGramsMax  Decimal?     @map("daily_grams_max") @db.Decimal(8, 2)
   feedingGuide   FeedingGuide @relation(fields: [feedingGuideId], references: [id], onDelete: Cascade)
 
-  @@index([feedingGuideId, petWeightKg], map: "idx_feeding_entries_guide_weight")
+  @@index([feedingGuideId, petWeightKgMin], map: "idx_feeding_entries_guide_weight")
   @@map("feeding_guide_entries")
+}
+
+model ProductSourceSnapshot {
+  id               String              @id @default(uuid()) @db.Uuid
+  productId        String              @map("product_id") @db.Uuid
+  sourceType       String              @map("source_type")
+  sourceUrl        String              @map("source_url")
+  fetchedAt        DateTime            @map("fetched_at") @db.Timestamptz(6)
+  contentHash      String              @map("content_hash")
+  extractorVersion String              @map("extractor_version")
+  status           CatalogSourceStatus
+  payload          Json?
+  warnings         Json?
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  product          Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, contentHash], map: "product_source_snapshots_product_hash_key")
+  @@index([productId, fetchedAt], map: "idx_product_source_snapshots_product_fetched")
+  @@map("product_source_snapshots")
+}
+
+model RetailPriceObservation {
+  id                String                 @id @default(uuid()) @db.Uuid
+  variantId         String                 @map("variant_id") @db.Uuid
+  retailerCode      String                 @map("retailer_code")
+  sourceUrl         String                 @map("source_url")
+  externalProductId String?                @map("external_product_id")
+  externalVariantId String?                @map("external_variant_id")
+  titleSnapshot     String?                @map("title_snapshot")
+  weightGrams       Int?                   @map("weight_grams")
+  bonusWeightGrams  Int?                   @map("bonus_weight_grams")
+  price             Decimal?               @db.Decimal(14, 2)
+  listPrice         Decimal?               @map("list_price") @db.Decimal(14, 2)
+  currency          String                 @default("ARS") @db.VarChar(3)
+  availability      String                 @default("UNKNOWN")
+  priceCondition    String?                @map("price_condition")
+  matchStatus       RetailPriceMatchStatus @map("match_status")
+  warnings          Json?
+  runId             String                 @map("run_id")
+  observedAt        DateTime               @map("observed_at") @db.Timestamptz(6)
+  createdAt         DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  variant           ProductVariant         @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([variantId, retailerCode, observedAt], map: "idx_retail_price_observations_variant_retailer_date")
+  @@index([retailerCode, observedAt], map: "idx_retail_price_observations_retailer_date")
+  @@index([runId], map: "idx_retail_price_observations_run_id")
+  @@map("retail_price_observations")
 }
 
 model InventoryItem {

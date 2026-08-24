@@ -28,6 +28,7 @@ Patitas API
     ├── /api/v1/admin/products
     ├── /api/v1/admin/products/:id/media
     ├── /api/v1/admin/products/:id/feeding-guide
+    ├── /api/v1/admin/variants/:id/competitive-prices
     ├── /api/v1/admin/variants/:id/inventory
     ├── /api/v1/admin/categories
     ├── /api/v1/admin/brands
@@ -118,6 +119,15 @@ Cada módulo define repositorios orientados a su negocio. Prisma implementa esos
 contratos en `infrastructure/persistence` y convierte siempre mediante mappers.
 No se crea un repositorio CRUD genérico ni se expone una transacción Prisma a
 application.
+
+## Investigación externa de catálogo
+
+La extracción de fabricantes y retails vive en `tools/catalog-research` como
+CLI independiente. Produce snapshots JSON y no importa NestJS, Prisma ni
+Supabase. El importador aprobado vive en `scripts/` y es el único componente
+que persiste en PostgreSQL. Los precios de terceros se guardan como
+`RetailPriceObservation`, separados de `SupplierOffer` y del precio de venta
+propio de Patitas.
 
 ## Sustitución futura
 

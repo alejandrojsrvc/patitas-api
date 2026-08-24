@@ -24,6 +24,8 @@ import type {
 import { randomUUID } from 'node:crypto';
 import type { StorageProvider } from '../../../shared/application/ports/storage-provider.interface';
 import { calculateFoodDuration } from '../domain/feeding-calculator';
+import { calculateCompetitivePriceAverage } from '../domain/competitive-price';
+import { parseSimpleCatalogCsv } from './simple-catalog-csv';
 
 export class CatalogService {
   public constructor(
@@ -145,6 +147,19 @@ export class CatalogService {
     return this.repository.findActiveFeedingGuide(productId);
   }
 
+  public async getCompetitivePriceAverage(variantId: string) {
+    const product = await this.repository.findProductByVariantId(variantId);
+    if (
+      !product ||
+      !product.variants.some((variant) => variant.id === variantId)
+    ) {
+      throw new CatalogNotFoundError('La variante');
+    }
+    return calculateCompetitivePriceAverage(
+      await this.repository.listCompetitivePriceObservations(variantId),
+    );
+  }
+
   public async createProduct(input: CreateProductInput) {
     if (!input.name.trim())
       throw new CatalogValidationError(
@@ -164,6 +179,146 @@ export class CatalogService {
       name: input.name.trim(),
       slug: slugify(input.slug ?? input.name),
     });
+  }
+
+  public async importSimpleCatalogCsv(
+    data: Uint8Array,
+    options: { publish: boolean },
+  ) {
+    const rows = parseSimpleCatalogCsv(data);
+    const category = (await this.listCategories(false)).find(
+      (item) => item.slug === 'alimento-seco' && item.active,
+    );
+    if (!category) {
+      throw new CatalogValidationError(
+        'No existe una categoría activa alimento-seco para importar.',
+      );
+    }
+
+    const brands = new Map(
+      (await this.listBrands(false)).map((brand) => [brand.slug, brand]),
+    );
+    const grouped = new Map<string, typeof rows>();
+    for (const row of rows) {
+      const productRows = grouped.get(row.slug) ?? [];
+      productRows.push(row);
+      grouped.set(row.slug, productRows);
+    }
+
+    const results: Array<{
+      slug: string;
+      productId: string;
+      variants: Array<{ id: string; sku: string | null; weightGrams: number | null }>;
+      status: Product['status'];
+      published: boolean;
+      publishError?: string;
+    }> = [];
+
+    for (const [slug, productRows] of grouped) {
+      const first = productRows[0];
+      let brand = brands.get(slugify(first.brand));
+      if (!brand) {
+        brand = await this.createBrand({ name: first.brand, active: true });
+        brands.set(brand.slug, brand);
+      }
+
+      let product = await this.repository.findProductBySlug(slug);
+      const productInput = {
+        name: first.name,
+        slug,
+        description: first.description,
+        brandId: brand.id,
+        categoryId: category.id,
+        species: first.species,
+        line: first.line,
+        lifeStage: first.lifeStage,
+        breedSize: first.breedSize,
+      };
+      const wasExisting = Boolean(product);
+      if (product) {
+        product = await this.repository.updateProduct(product.id, productInput);
+      } else {
+        product = await this.createProduct(productInput);
+      }
+
+      const knownImages = new Set(product.media.map((media) => media.url));
+      const currentVariants = [...product.variants];
+      const importedVariants: Array<{ id: string; sku: string | null; weightGrams: number | null }> = [];
+      for (const row of productRows) {
+        let variant = currentVariants.find(
+          (item) =>
+            (row.barcode !== null && item.barcode === row.barcode) ||
+            item.sku === row.sku ||
+            item.weightGrams === row.weightGrams,
+        );
+        const variantInput = {
+          sku: row.sku,
+          barcode: row.barcode,
+          presentation: `${row.weightGrams / 1000} kg`,
+          weightGrams: row.weightGrams,
+          active: true,
+        };
+        if (variant) {
+          variant = await this.repository.updateVariant(variant.id, {
+            ...variantInput,
+            ...(row.salePrice !== null ? { salePrice: row.salePrice } : {}),
+          });
+        } else {
+          variant = await this.createVariant(product.id, variantInput);
+          if (row.salePrice !== null) {
+            variant = await this.repository.updateVariant(variant.id, {
+              salePrice: row.salePrice,
+            });
+          }
+        }
+        const existingIndex = currentVariants.findIndex((item) => item.id === variant.id);
+        if (existingIndex >= 0) currentVariants[existingIndex] = variant;
+        else currentVariants.push(variant);
+        importedVariants.push({ id: variant.id, sku: variant.sku, weightGrams: variant.weightGrams });
+        if (row.initialStock !== null) {
+          await this.repository.setInventory(variant.id, {
+            onHand: row.initialStock,
+            reserved: variant.reserved ?? 0,
+            reason: 'Importación inicial CSV',
+          });
+        }
+        if (row.imageUrl && !knownImages.has(row.imageUrl)) {
+          await this.createProductMedia(product.id, {
+            url: row.imageUrl,
+            altText: `Imagen de ${row.name}`,
+            variantId: null,
+            displayOrder: 0,
+          });
+          knownImages.add(row.imageUrl);
+        }
+      }
+
+      let published = false;
+      let publishError: string | undefined;
+      if (options.publish) {
+        try {
+          await this.updateProduct(product.id, { status: 'ACTIVE' });
+          published = true;
+        } catch (error) {
+          publishError = error instanceof Error ? error.message : 'No publicable';
+        }
+      }
+      results.push({
+        slug,
+        productId: product.id,
+        variants: importedVariants,
+        status: published ? 'ACTIVE' : wasExisting ? product.status : 'DRAFT',
+        published,
+        ...(publishError ? { publishError } : {}),
+      });
+    }
+    return {
+      rows: rows.length,
+      products: results.length,
+      published: results.filter((item) => item.published).length,
+      draft: results.filter((item) => !item.published).length,
+      items: results,
+    };
   }
 
   public async updateProduct(id: string, input: UpdateProductInput) {
@@ -286,10 +441,6 @@ export class CatalogService {
       throw new CatalogValidationError('Storage no está configurado.');
     }
 
-    if (!input.altText.trim()) {
-      throw new CatalogValidationError('El texto alternativo es obligatorio.');
-    }
-
     const contentType = input.contentType.toLowerCase();
     if (!ALLOWED_IMAGE_TYPES.has(contentType)) {
       throw new CatalogValidationError(
@@ -315,6 +466,12 @@ export class CatalogService {
         'La variante indicada no pertenece al producto.',
       );
     }
+    const variant = input.variantId
+      ? product.variants.find((item) => item.id === input.variantId)
+      : null;
+    const altText =
+      input.altText?.trim() ||
+      `Imagen de ${product.name}${variant?.presentation ? ` ${variant.presentation}` : ''}`;
 
     const storedObject = await storage.upload({
       object: {
@@ -330,7 +487,7 @@ export class CatalogService {
       const media = await this.repository.createProductMedia(productId, {
         variantId: input.variantId ?? null,
         url: storedObject.path,
-        altText: input.altText.trim(),
+        altText,
         displayOrder: input.displayOrder ?? 0,
       });
 
@@ -406,9 +563,20 @@ export class CatalogService {
       );
     }
     for (const entry of input.entries) {
-      if (entry.dailyGramsMax < entry.dailyGramsMin) {
+      if (
+        entry.dailyGramsMax !== null &&
+        entry.dailyGramsMax < entry.dailyGramsMin
+      ) {
         throw new CatalogValidationError(
           'El máximo diario no puede ser menor al mínimo.',
+        );
+      }
+      if (
+        entry.petWeightKgMax !== null &&
+        entry.petWeightKgMax < entry.petWeightKgMin
+      ) {
+        throw new CatalogValidationError(
+          'El máximo de peso no puede ser menor al mínimo.',
         );
       }
       if (
@@ -692,6 +860,9 @@ const normalizeVariant = <T extends CreateVariantInput | UpdateVariantInput>(
   ...input,
   ...(input.sku !== undefined
     ? { sku: input.sku?.trim().toUpperCase() || null }
+    : {}),
+  ...(input.barcode !== undefined
+    ? { barcode: input.barcode?.replace(/\D/g, '') || null }
     : {}),
 });
 

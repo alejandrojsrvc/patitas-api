@@ -7,7 +7,10 @@ import { validateEnvironment } from './environment.validation';
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
-      envFilePath: ['.env.supabase.local', '.env.local', '.env'],
+      envFilePath:
+        process.env['NODE_ENV'] === 'test'
+          ? ['.env.test', '.env.local', '.env.dist']
+          : ['.env.local', '.env.dist'],
       validate: validateEnvironment,
     }),
   ],

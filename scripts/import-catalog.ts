@@ -1,14 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { config as loadEnv } from 'dotenv';
+import { loadProjectEnv } from './load-project-env';
 import { assertLocalDatabaseUrl } from './database-safety';
 import { PrismaClient } from '../src/infrastructure/database/generated/prisma/client';
 
-loadEnv({
-  path: ['.env.supabase.local', '.env.local', '.env'],
-  quiet: true,
-});
+loadProjectEnv();
 
 const CSV_PATH = process.argv[2];
 const DRY_RUN = process.argv.includes('--dry-run');

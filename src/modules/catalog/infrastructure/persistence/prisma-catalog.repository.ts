@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { Prisma } from '../../../../infrastructure/database/generated/prisma/client';
 import {
@@ -28,6 +29,7 @@ import type {
   UpdateProductInput,
   UpdateReferenceInput,
   UpdateVariantInput,
+  CompetitivePriceObservation,
 } from '../../domain/catalog.types';
 import type { CatalogRepository } from '../../domain/repositories/catalog.repository';
 
@@ -60,6 +62,7 @@ interface PersistenceVariant {
   id: string;
   productId: string;
   sku: string | null;
+  barcode: string | null;
   presentation: string | null;
   weightGrams: number | null;
   salePrice: DecimalValue | null;
@@ -91,6 +94,8 @@ interface PersistenceProduct {
   name: string;
   slug: string;
   description: string | null;
+  ingredientsText: string | null;
+  analyticalComposition: unknown;
   brandId: string;
   categoryId: string | null;
   species: string | null;
@@ -272,7 +277,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
   ): Promise<FeedingGuide | null> {
     const guide = await this.prisma.feedingGuide.findFirst({
       where: { productId, active: true },
-      include: { entries: { orderBy: { petWeightKg: 'asc' } } },
+      include: { entries: { orderBy: { petWeightKgMin: 'asc' } } },
       orderBy: { version: 'desc' },
     });
     if (!guide) return null;
@@ -283,11 +288,14 @@ export class PrismaCatalogRepository implements CatalogRepository {
       sourceUrl: guide.sourceUrl,
       requiredDimensions: asStringArrayRecord(guide.requiredDimensions),
       entries: guide.entries.map((entry) => ({
-        petWeightKg: Number(entry.petWeightKg),
+        petWeightKgMin: Number(entry.petWeightKgMin),
+        petWeightKgMax:
+          entry.petWeightKgMax === null ? null : Number(entry.petWeightKgMax),
         lifeStage: entry.lifeStage,
         conditions: asStringRecord(entry.conditions),
         dailyGramsMin: Number(entry.dailyGramsMin),
-        dailyGramsMax: Number(entry.dailyGramsMax),
+        dailyGramsMax:
+          entry.dailyGramsMax === null ? null : Number(entry.dailyGramsMax),
       })),
     };
   }
@@ -356,6 +364,14 @@ export class PrismaCatalogRepository implements CatalogRepository {
     return product ? mapProduct(product) : null;
   }
 
+  public async findProductBySlug(slug: string): Promise<Product | null> {
+    const product = await this.prisma.product.findUnique({
+      where: { slug },
+      include: productInclude,
+    });
+    return product ? mapProduct(product) : null;
+  }
+
   public async findProductByVariantId(id: string): Promise<Product | null> {
     const product = await this.prisma.product.findFirst({
       where: { variants: { some: { id } } },
@@ -403,7 +419,15 @@ export class PrismaCatalogRepository implements CatalogRepository {
     return this.write(async () =>
       mapProduct(
         await this.prisma.product.create({
-          data: { ...input, status: 'DRAFT' },
+          data: {
+            id: randomUUID(),
+            ...input,
+            analyticalComposition:
+              input.analyticalComposition === null
+                ? Prisma.JsonNull
+                : input.analyticalComposition,
+            status: 'DRAFT',
+          } as never,
           include: productInclude,
         }),
       ),
@@ -418,7 +442,13 @@ export class PrismaCatalogRepository implements CatalogRepository {
       mapProduct(
         await this.prisma.product.update({
           where: { id },
-          data: input,
+          data: {
+            ...input,
+            analyticalComposition:
+              input.analyticalComposition === null
+                ? Prisma.JsonNull
+                : input.analyticalComposition,
+          } as never,
           include: productInclude,
         }),
       ),
@@ -432,7 +462,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     return this.write(async () =>
       mapVariant(
         await this.prisma.productVariant.create({
-          data: { ...input, productId },
+          data: { id: randomUUID(), ...input, productId },
           include: { inventory: true, preferredSupplierOffer: true },
         }),
       ),
@@ -472,6 +502,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     return this.write(async () => {
       const media = await this.prisma.productMedia.create({
         data: {
+          id: randomUUID(),
           productId,
           variantId: input.variantId ?? null,
           url: input.url,
@@ -527,7 +558,8 @@ export class PrismaCatalogRepository implements CatalogRepository {
             requiredDimensions: input.requiredDimensions ?? {},
             entries: {
               create: input.entries.map((entry) => ({
-                petWeightKg: entry.petWeightKg,
+                petWeightKgMin: entry.petWeightKgMin,
+                petWeightKgMax: entry.petWeightKgMax,
                 lifeStage: entry.lifeStage ?? null,
                 conditions: entry.conditions,
                 dailyGramsMin: entry.dailyGramsMin,
@@ -535,7 +567,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
               })),
             },
           },
-          include: { entries: { orderBy: { petWeightKg: 'asc' } } },
+          include: { entries: { orderBy: { petWeightKgMin: 'asc' } } },
         });
         return mapFeedingGuide(guide);
       }),
@@ -587,6 +619,24 @@ export class PrismaCatalogRepository implements CatalogRepository {
       quantity: movement.quantity,
       reason: movement.reason,
       createdAt: movement.createdAt,
+    }));
+  }
+
+  public async listCompetitivePriceObservations(
+    variantId: string,
+  ): Promise<CompetitivePriceObservation[]> {
+    const observations = await this.prisma.retailPriceObservation.findMany({
+      where: { variantId },
+      orderBy: { observedAt: 'desc' },
+    });
+    return observations.map((observation) => ({
+      retailerCode: observation.retailerCode,
+      price: observation.price?.toString() ?? null,
+      currency: observation.currency,
+      availability: observation.availability,
+      matchStatus: observation.matchStatus,
+      observedAt: observation.observedAt,
+      sourceUrl: observation.sourceUrl,
     }));
   }
 
@@ -761,6 +811,7 @@ const mapVariant = (value: PersistenceVariant): ProductVariant => ({
   id: value.id,
   productId: value.productId,
   sku: value.sku,
+  barcode: value.barcode,
   presentation: value.presentation,
   weightGrams: value.weightGrams,
   active: value.active,
@@ -786,6 +837,8 @@ const mapProduct = (value: PersistenceProduct): Product => ({
   name: value.name,
   slug: value.slug,
   description: value.description,
+  ingredientsText: value.ingredientsText,
+  analyticalComposition: asObjectRecord(value.analyticalComposition),
   brandId: value.brandId,
   categoryId: value.categoryId,
   species: value.species,
@@ -868,6 +921,11 @@ const asStringArrayRecord = (value: unknown): Record<string, string[]> => {
   );
 };
 
+const asObjectRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+
 const mapMedia = (media: {
   id: string;
   url: string;
@@ -889,7 +947,8 @@ const mapFeedingGuide = (guide: {
   sourceUrl: string | null;
   requiredDimensions: unknown;
   entries: Array<{
-    petWeightKg: unknown;
+    petWeightKgMin: unknown;
+    petWeightKgMax: unknown;
     lifeStage: string | null;
     conditions: unknown;
     dailyGramsMin: unknown;
@@ -902,11 +961,14 @@ const mapFeedingGuide = (guide: {
   sourceUrl: guide.sourceUrl,
   requiredDimensions: asStringArrayRecord(guide.requiredDimensions),
   entries: guide.entries.map((entry) => ({
-    petWeightKg: Number(entry.petWeightKg),
+    petWeightKgMin: Number(entry.petWeightKgMin),
+    petWeightKgMax:
+      entry.petWeightKgMax === null ? null : Number(entry.petWeightKgMax),
     lifeStage: entry.lifeStage,
     conditions: asStringRecord(entry.conditions),
     dailyGramsMin: Number(entry.dailyGramsMin),
-    dailyGramsMax: Number(entry.dailyGramsMax),
+    dailyGramsMax:
+      entry.dailyGramsMax === null ? null : Number(entry.dailyGramsMax),
   })),
 });
 

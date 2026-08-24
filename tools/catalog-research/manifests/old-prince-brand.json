@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "catalog-research.brand.v1",
+  "brand": "Old Prince",
+  "productPathContains": ["/producto/"],
+  "categoryUrls": [
+    "https://oldprince.com.ar/categoria-producto/proteinas-noveles/",
+    "https://oldprince.com.ar/categoria-producto/premium/",
+    "https://oldprince.com.ar/categoria-producto/equilibrium/"
+  ]
+}

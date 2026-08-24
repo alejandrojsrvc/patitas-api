@@ -5,6 +5,7 @@ import type {
   CreateProductInput,
   CreateReferenceInput,
   CreateVariantInput,
+  CompetitivePriceObservation,
   CreateProductMediaInput,
   FeedingGuide,
   InventoryItem,
@@ -36,6 +37,7 @@ export interface CatalogRepository {
   findActiveFeedingGuide(productId: string): Promise<FeedingGuide | null>;
   listAdminProducts(filter: AdminProductFilter): Promise<Page<Product>>;
   findProductById(id: string): Promise<Product | null>;
+  findProductBySlug(slug: string): Promise<Product | null>;
   findProductByVariantId(id: string): Promise<Product | null>;
   findCategoryById(id: string): Promise<Category | null>;
   findBrandById(id: string): Promise<Brand | null>;
@@ -71,6 +73,9 @@ export interface CatalogRepository {
     input: SetInventoryInput,
   ): Promise<InventoryItem>;
   listInventoryMovements(variantId: string): Promise<InventoryMovement[]>;
+  listCompetitivePriceObservations(
+    variantId: string,
+  ): Promise<CompetitivePriceObservation[]>;
   listCategories(publicOnly: boolean): Promise<Category[]>;
   createCategory(
     input: CreateReferenceInput & { slug: string },

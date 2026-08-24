@@ -71,6 +71,30 @@ export class AdminCatalogController {
   @Post('products') public createProduct(@Body() input: CreateProductDto) {
     return this.catalog.createProduct(input);
   }
+  @Post('products/import-csv')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        publish: { type: 'boolean', default: false },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024 } }),
+  )
+  public importCsv(
+    @UploadedFile() file: UploadedProductImage | undefined,
+    @Body('publish') publish?: string | boolean,
+  ) {
+    if (!file) throw new BadRequestException('Se requiere un archivo CSV.');
+    return this.catalog.importSimpleCatalogCsv(file.buffer, {
+      publish: publish === true || publish === 'true',
+    });
+  }
   @Patch('products/:id') public updateProduct(
     @Param('id') id: string,
     @Body() input: UpdateProductDto,
@@ -100,7 +124,7 @@ export class AdminCatalogController {
   @ApiBody({
     schema: {
       type: 'object',
-      required: ['file', 'altText'],
+      required: ['file'],
       properties: {
         file: { type: 'string', format: 'binary' },
         altText: { type: 'string', maxLength: 300 },
@@ -123,7 +147,7 @@ export class AdminCatalogController {
 
     return this.catalog.uploadProductMedia(id, {
       variantId: input.variantId ?? null,
-      altText: input.altText,
+      altText: input.altText ?? null,
       displayOrder: input.displayOrder ?? 0,
       originalName: file.originalname,
       contentType: file.mimetype,
@@ -153,6 +177,8 @@ export class AdminCatalogController {
       ...input,
       entries: input.entries.map((entry: FeedingGuideEntryDto) => ({
         ...entry,
+        petWeightKgMax: entry.petWeightKgMax ?? null,
+        dailyGramsMax: entry.dailyGramsMax ?? null,
         lifeStage: entry.lifeStage ?? null,
         conditions: entry.conditions ?? {},
       })),
@@ -161,6 +187,10 @@ export class AdminCatalogController {
   @Get('products/:id/feeding-guide')
   public feedingGuide(@Param('id') id: string) {
     return this.catalog.getAdminFeedingGuide(id);
+  }
+  @Get('variants/:id/competitive-prices')
+  public competitivePrices(@Param('id') id: string) {
+    return this.catalog.getCompetitivePriceAverage(id);
   }
   @Put('variants/:id/inventory') public setInventory(
     @Param('id') id: string,

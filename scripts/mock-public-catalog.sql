@@ -146,36 +146,38 @@ ON CONFLICT (product_id, version) DO UPDATE SET
   active = true;
 
 INSERT INTO feeding_guide_entries (
-  id, feeding_guide_id, pet_weight_kg, life_stage, conditions,
+  id, feeding_guide_id, pet_weight_kg_min, pet_weight_kg_max, life_stage, conditions,
   daily_grams_min, daily_grams_max
 )
 SELECT
   data.id::uuid,
   feeding_guides.id,
-  data.pet_weight_kg::numeric,
+  data.pet_weight_kg_min::numeric,
+  data.pet_weight_kg_max::numeric,
   products.life_stage,
   '{}'::jsonb,
   data.daily_min::numeric,
   data.daily_max::numeric
 FROM (
   VALUES
-    ('94000000-0000-4000-8000-000000000001', 'mock-excellent-balance-adulto-pollo', 2, 45, 55),
-    ('94000000-0000-4000-8000-000000000002', 'mock-excellent-balance-adulto-pollo', 10, 170, 190),
-    ('94000000-0000-4000-8000-000000000003', 'mock-excellent-balance-adulto-pollo', 25, 360, 390),
-    ('94000000-0000-4000-8000-000000000004', 'mock-excellent-balance-puppy', 2, 70, 80),
-    ('94000000-0000-4000-8000-000000000005', 'mock-excellent-balance-puppy', 10, 230, 260),
-    ('94000000-0000-4000-8000-000000000006', 'mock-excellent-balance-gato-adulto', 3, 45, 55),
-    ('94000000-0000-4000-8000-000000000007', 'mock-excellent-balance-gato-adulto', 6, 75, 90),
-    ('94000000-0000-4000-8000-000000000008', 'mock-excellent-balance-senior', 10, 150, 170),
-    ('94000000-0000-4000-8000-000000000009', 'mock-excellent-balance-senior', 25, 320, 350),
-    ('94000000-0000-4000-8000-000000000010', 'mock-excellent-balance-razas-pequenas', 2, 45, 55),
-    ('94000000-0000-4000-8000-000000000011', 'mock-excellent-balance-razas-pequenas', 8, 135, 155),
-    ('94000000-0000-4000-8000-000000000012', 'mock-excellent-balance-indoor-cat', 3, 45, 55),
-    ('94000000-0000-4000-8000-000000000013', 'mock-excellent-balance-indoor-cat', 6, 75, 90)
-) AS data(id, product_slug, pet_weight_kg, daily_min, daily_max)
+    ('94000000-0000-4000-8000-000000000001', 'mock-excellent-balance-adulto-pollo', 2, NULL, 45, 55),
+    ('94000000-0000-4000-8000-000000000002', 'mock-excellent-balance-adulto-pollo', 10, NULL, 170, 190),
+    ('94000000-0000-4000-8000-000000000003', 'mock-excellent-balance-adulto-pollo', 25, NULL, 360, 390),
+    ('94000000-0000-4000-8000-000000000004', 'mock-excellent-balance-puppy', 2, NULL, 70, 80),
+    ('94000000-0000-4000-8000-000000000005', 'mock-excellent-balance-puppy', 10, NULL, 230, 260),
+    ('94000000-0000-4000-8000-000000000006', 'mock-excellent-balance-gato-adulto', 3, NULL, 45, 55),
+    ('94000000-0000-4000-8000-000000000007', 'mock-excellent-balance-gato-adulto', 6, NULL, 75, 90),
+    ('94000000-0000-4000-8000-000000000008', 'mock-excellent-balance-senior', 10, NULL, 150, 170),
+    ('94000000-0000-4000-8000-000000000009', 'mock-excellent-balance-senior', 25, NULL, 320, 350),
+    ('94000000-0000-4000-8000-000000000010', 'mock-excellent-balance-razas-pequenas', 2, NULL, 45, 55),
+    ('94000000-0000-4000-8000-000000000011', 'mock-excellent-balance-razas-pequenas', 8, NULL, 135, 155),
+    ('94000000-0000-4000-8000-000000000012', 'mock-excellent-balance-indoor-cat', 3, NULL, 45, 55),
+    ('94000000-0000-4000-8000-000000000013', 'mock-excellent-balance-indoor-cat', 6, NULL, 75, 90)
+) AS data(id, product_slug, pet_weight_kg_min, pet_weight_kg_max, daily_min, daily_max)
 JOIN products ON products.slug = data.product_slug
 JOIN feeding_guides ON feeding_guides.product_id = products.id AND feeding_guides.version = 1
 ON CONFLICT (id) DO UPDATE SET
-  pet_weight_kg = EXCLUDED.pet_weight_kg,
+  pet_weight_kg_min = EXCLUDED.pet_weight_kg_min,
+  pet_weight_kg_max = EXCLUDED.pet_weight_kg_max,
   daily_grams_min = EXCLUDED.daily_grams_min,
   daily_grams_max = EXCLUDED.daily_grams_max;

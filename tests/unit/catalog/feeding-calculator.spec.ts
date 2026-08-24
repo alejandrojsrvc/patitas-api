@@ -9,14 +9,16 @@ const guide: FeedingGuide = {
   requiredDimensions: {},
   entries: [
     {
-      petWeightKg: 10,
+      petWeightKgMin: 10,
+      petWeightKgMax: 10,
       lifeStage: 'adult',
       conditions: {},
       dailyGramsMin: 300,
       dailyGramsMax: 300,
     },
     {
-      petWeightKg: 15,
+      petWeightKgMin: 15,
+      petWeightKgMax: 15,
       lifeStage: 'adult',
       conditions: {},
       dailyGramsMin: 450,
@@ -71,5 +73,32 @@ describe('calculateFoodDuration', () => {
 
     expect(result.source).toBe('GENERAL_FALLBACK');
     expect(result.assumptions[0]).toContain('no cubre');
+  });
+
+  it('uses an open-ended manufacturer range without extrapolating', () => {
+    const result = calculateFoodDuration(
+      {
+        petWeightKg: 60,
+        presentationGrams: 20_000,
+        lifeStage: 'adult',
+        fallbackGramsPerKg: 18,
+      },
+      {
+        ...guide,
+        entries: [
+          {
+            petWeightKgMin: 51,
+            petWeightKgMax: null,
+            lifeStage: 'adult',
+            conditions: {},
+            dailyGramsMin: 560,
+            dailyGramsMax: null,
+          },
+        ],
+      },
+    );
+
+    expect(result.source).toBe('MANUFACTURER');
+    expect(result.dailyGrams).toEqual({ min: 560, max: 560 });
   });
 });

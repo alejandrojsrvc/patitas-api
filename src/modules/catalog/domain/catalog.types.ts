@@ -56,6 +56,7 @@ export interface ProductVariant {
   id: string;
   productId: string;
   sku: string | null;
+  barcode: string | null;
   presentation: string | null;
   weightGrams: number | null;
   salePrice: string | null;
@@ -75,6 +76,8 @@ export interface Product {
   name: string;
   slug: string;
   description: string | null;
+  ingredientsText: string | null;
+  analyticalComposition: Record<string, unknown> | null;
   brandId: string;
   categoryId: string | null;
   species: string | null;
@@ -91,11 +94,12 @@ export interface Product {
 }
 
 export interface FeedingGuideEntry {
-  petWeightKg: number;
+  petWeightKgMin: number;
+  petWeightKgMax: number | null;
   lifeStage: string | null;
   conditions: Record<string, string>;
   dailyGramsMin: number;
-  dailyGramsMax: number;
+  dailyGramsMax: number | null;
 }
 
 export interface FeedingGuide {
@@ -111,6 +115,29 @@ export interface PublicProductDetail {
   product: Product;
   feedingGuide: FeedingGuide | null;
   relatedProducts: Product[];
+}
+
+export interface CompetitivePriceObservation {
+  retailerCode: string;
+  price: string | null;
+  currency: string;
+  availability: string;
+  matchStatus: 'MATCHED' | 'MISMATCH' | 'MISSING' | 'AMBIGUOUS' | 'BLOCKED';
+  observedAt: Date;
+  sourceUrl: string;
+}
+
+export interface CompetitivePriceAverage {
+  currency: string;
+  averagePrice: string | null;
+  sampleCount: number;
+  expectedRetailerCount: number;
+  retailers: Array<{
+    retailerCode: string;
+    price: string | null;
+    observedAt: Date | null;
+    sourceUrl: string | null;
+  }>;
 }
 
 export interface ReplaceFeedingGuideInput {
@@ -129,7 +156,7 @@ export interface CreateProductMediaInput {
 
 export interface UploadProductMediaInput {
   variantId?: string | null;
-  altText: string;
+  altText?: string | null;
   displayOrder?: number;
   originalName: string;
   contentType: string;
@@ -204,6 +231,8 @@ export interface CreateProductInput {
   name: string;
   slug?: string;
   description?: string | null;
+  ingredientsText?: string | null;
+  analyticalComposition?: Record<string, unknown> | null;
   brandId: string;
   categoryId: string;
   species?: string | null;
@@ -220,6 +249,7 @@ export interface UpdateProductInput extends Partial<CreateProductInput> {
 
 export interface CreateVariantInput {
   sku?: string | null;
+  barcode?: string | null;
   presentation?: string | null;
   weightGrams?: number | null;
   active?: boolean;

@@ -1,0 +1,2667 @@
+{
+  "schemaVersion": "catalog-research.v1",
+  "runId": "932d1041-7edd-4edf-8a6b-0104c5cbb790",
+  "extractorVersion": "1.0.0",
+  "startedAt": "2026-08-23T03:54:55.284Z",
+  "completedAt": "2026-08-23T03:55:09.194Z",
+  "products": [
+    {
+      "canonicalKey": "excellent-cachorro-raza-pequena",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "Cachorro",
+        "weightsGrams": [
+          1000,
+          3000,
+          7500,
+          15000,
+          90
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/perros/cachorro-pollo-arroz-razas-pequenas",
+        "fetchedAt": "2026-08-23T03:54:56.578Z",
+        "contentHash": "5463fada313dec69f9036dc5d458b7781e9d8ec6b7f68f038e105ba8e5f34778",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Excellent Cachorro Raza Pequeña",
+        "description": "Croquetas Excellent puppy razas pequeñas es una fórmula completa y balanceada para favorecer el desarrollo y crecimiento de los cachorros. Ingresá acá.",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12.0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 29,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "29.0%"
+          },
+          {
+            "name": "Extracto Etéreo / Grasa cruda",
+            "minimum": 14,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "14.0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 3.5,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "3.5%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 9,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "9.0%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1,
+            "maximum": 1.6,
+            "unit": "%",
+            "rawValue": "1.0% | 1.6%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.9,
+            "maximum": 1.3,
+            "unit": "%",
+            "rawValue": "0.9% | 1.3%"
+          }
+        ],
+        "presentations": [
+          1000,
+          3000,
+          7500,
+          15000,
+          90
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Excellent Cachorro Raza Pequeña",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "Cachorro",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/cachorro-pollo-arroz-razas-pequenas",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/cachorro-pollo-arroz-razas-pequenas",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/cachorro-pollo-arroz-razas-pequenas",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/cachorro-pollo-arroz-razas-pequenas",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/cachorro-pollo-arroz-razas-pequenas",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "purina-excellent-puppy-razas-medianas-y-grandes",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "Puppy",
+        "weightsGrams": [
+          3000,
+          15000,
+          20000,
+          90
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/perros/cachorro-pollo-arroz-medianas-grandes",
+        "fetchedAt": "2026-08-23T03:54:57.295Z",
+        "contentHash": "1af7ebcfb7d26838b62cc2449e3cc3bfdcf415b3ff44884aab55b037036a4c18",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Purina Excellent Puppy razas medianas y grandes",
+        "description": "Descubrí Purina Excellent Puppy para cachorros de razas medianas y grandes, que ofrece una fórmula balanceada que favorece su desarrollo y crecimiento.",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12,0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 28,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "28,0%"
+          },
+          {
+            "name": "Extracto Etéreo/ Grasa cruda",
+            "minimum": 13,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "13,0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 3.5,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "3,5%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 8.5,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "8,5%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1,
+            "maximum": 1.6,
+            "unit": "%",
+            "rawValue": "1,0% | 1,6%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.9,
+            "maximum": 1.3,
+            "unit": "%",
+            "rawValue": "0,9% | 1,3%"
+          }
+        ],
+        "presentations": [
+          3000,
+          15000,
+          20000,
+          90
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Purina Excellent Puppy razas medianas y grandes",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "Puppy",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/cachorro-pollo-arroz-medianas-grandes",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/cachorro-pollo-arroz-medianas-grandes",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/cachorro-pollo-arroz-medianas-grandes",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/cachorro-pollo-arroz-medianas-grandes",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/cachorro-pollo-arroz-medianas-grandes",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "excellent-perros-adultos-hasta-7-anos-razas-pequenas",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "Adult",
+        "weightsGrams": [
+          1000,
+          3000,
+          7500,
+          15000,
+          5000,
+          35,
+          110,
+          10000,
+          175,
+          90
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/perros/adulto-pollo-arroz-minis-pequenas",
+        "fetchedAt": "2026-08-23T03:54:58.151Z",
+        "contentHash": "a214947c31f8b70ed5065a89f852991f939089a3c93733fc15546abde1048dfd",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Excellent Perros Adultos hasta 7 Años Razas Pequeñas",
+        "description": "Alimento seco Excellent Adulto razas pequeñas es un alimento formulado para los perros de tamaño pequeño que cuentan con altos requerimientos proteicos.",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12,0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 25,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "25,0%"
+          },
+          {
+            "name": "Extracto Etéreo / Grasa cruda",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12,0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 4,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "4,0%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 9,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "9,0%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1.1,
+            "maximum": 1.8,
+            "unit": "%",
+            "rawValue": "1,1% | 1,8%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.8,
+            "maximum": 1.3,
+            "unit": "%",
+            "rawValue": "0,8% | 1,3%"
+          }
+        ],
+        "presentations": [
+          1000,
+          3000,
+          7500,
+          15000,
+          5000,
+          35,
+          110,
+          10000,
+          175,
+          90
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Excellent Perros Adultos hasta 7 Años Razas Pequeñas",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "Adult",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-pollo-arroz-minis-pequenas",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-pollo-arroz-minis-pequenas",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-pollo-arroz-minis-pequenas",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-pollo-arroz-minis-pequenas",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-pollo-arroz-minis-pequenas",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "excellent-perros-adulto-razas-medianas-y-grandes",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "Adult",
+        "weightsGrams": [
+          3000,
+          15000,
+          20000,
+          10000,
+          25000,
+          180,
+          330,
+          45000,
+          490,
+          70000,
+          660,
+          90
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/perros/adulto-pollo",
+        "fetchedAt": "2026-08-23T03:54:59.027Z",
+        "contentHash": "4c3e33dee59c760b9e3e74ee52f94a78a5cf91801f1f91c8720d53c5e54c4a75",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Excellent Perros Adulto Razas Medianas y Grandes",
+        "description": "Excellent Adulto con Omega 3 (efecto antiinflamatorio) y glucosamina (retarda el deterioro del cartílago) ayuda a proteger la salud articular de tu perro.",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12,0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 24,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "24,0%"
+          },
+          {
+            "name": "Extracto Etéreo / Grasa cruda",
+            "minimum": 11,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "11,0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 4,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "4,0%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 9,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "9,0%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1.1,
+            "maximum": 1.8,
+            "unit": "%",
+            "rawValue": "1,1% | 1,8%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.8,
+            "maximum": 1.3,
+            "unit": "%",
+            "rawValue": "0,8% | 1,3%"
+          }
+        ],
+        "presentations": [
+          3000,
+          15000,
+          20000,
+          10000,
+          25000,
+          180,
+          330,
+          45000,
+          490,
+          70000,
+          660,
+          90
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Excellent Perros Adulto Razas Medianas y Grandes",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "Adult",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-pollo",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-pollo",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-pollo",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-pollo",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-pollo",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "excellent-skin-care-adultos-con-cordero",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "Adult",
+        "weightsGrams": [
+          3000,
+          15000,
+          1000,
+          5000,
+          40,
+          115,
+          10000,
+          180,
+          25000,
+          330,
+          45000,
+          490,
+          70000,
+          655,
+          90
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/perros/adultos-skin-care-cordero",
+        "fetchedAt": "2026-08-23T03:54:59.945Z",
+        "contentHash": "b77c6f022e7c2f96dc11d5c14482f06ef22a6ad2a85364741af8a569b90a6703",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Excellent Skin Care Adultos con Cordero",
+        "description": "Alimento seco para perro, Excellent Skin Care cordero. Con Omega 6 y 3, vitaminas A y E, zinc y selenio, contribuye a una piel sana en tu mascota.",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12.0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 24,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "24.0%"
+          },
+          {
+            "name": "Extracto Etéreo / Grasa cruda",
+            "minimum": 11,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "11.0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 4,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "4.0%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 9,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "9.0%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1.1,
+            "maximum": 1.8,
+            "unit": "%",
+            "rawValue": "1.1% | 1.8%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.8,
+            "maximum": 1.3,
+            "unit": "%",
+            "rawValue": "0.8% | 1.3%"
+          }
+        ],
+        "presentations": [
+          3000,
+          15000,
+          1000,
+          5000,
+          40,
+          115,
+          10000,
+          180,
+          25000,
+          330,
+          45000,
+          490,
+          70000,
+          655,
+          90
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Excellent Skin Care Adultos con Cordero",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "Adult",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adultos-skin-care-cordero",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adultos-skin-care-cordero",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adultos-skin-care-cordero",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adultos-skin-care-cordero",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adultos-skin-care-cordero",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "excellent-perros-adultos-con-sobrepeso-todos-los-tamanos",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "Adult",
+        "weightsGrams": [
+          22500,
+          1000,
+          5000,
+          40,
+          110,
+          30,
+          90,
+          10000,
+          175,
+          140,
+          25000,
+          330,
+          260,
+          45000,
+          485,
+          390,
+          70000,
+          650,
+          520
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/perros/adulto-sobrepeso-pollo-arroz",
+        "fetchedAt": "2026-08-23T03:55:00.808Z",
+        "contentHash": "8a459c06727133bee2cb505dd78e63ea3305657febe5ca09897e7e96a4b24d99",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Excellent Perros Adultos con Sobrepeso todos los tamaños",
+        "description": "Descubrí Excellent Reduced Calorie, comida para perros con sobrepeso que ayuda a la pérdida de peso y a mantener una condición corporal ideal.",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12.0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 26,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "26.0%"
+          },
+          {
+            "name": "Extracto Etéreo / Grasa cruda",
+            "minimum": 5,
+            "maximum": 9,
+            "unit": "%",
+            "rawValue": "5.0% | 9.0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 7,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "7.0%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 9,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "9.0%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1.1,
+            "maximum": 1.8,
+            "unit": "%",
+            "rawValue": "1.1% | 1.8%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.8,
+            "maximum": 1.3,
+            "unit": "%",
+            "rawValue": "0.8% | 1.3%"
+          }
+        ],
+        "presentations": [
+          22500,
+          1000,
+          5000,
+          40,
+          110,
+          30,
+          90,
+          10000,
+          175,
+          140,
+          25000,
+          330,
+          260,
+          45000,
+          485,
+          390,
+          70000,
+          650,
+          520
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Excellent Perros Adultos con Sobrepeso todos los tamaños",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "Adult",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-sobrepeso-pollo-arroz",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-sobrepeso-pollo-arroz",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-sobrepeso-pollo-arroz",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-sobrepeso-pollo-arroz",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-sobrepeso-pollo-arroz",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "excellent-adultos-7-anos-o-mas-todos-los-tamanos",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "Adult",
+        "weightsGrams": [
+          3000,
+          15000,
+          1000,
+          5000,
+          35,
+          105,
+          10000,
+          155,
+          25000,
+          310,
+          45000,
+          465,
+          70000,
+          620,
+          90
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/perros/adulto-mayor-pollo-arroz-todo-tamanos",
+        "fetchedAt": "2026-08-23T03:55:01.727Z",
+        "contentHash": "2d0ef8822405751dd2202fd5d3d59ac040a6440a00cfce69a6002288e9161bf9",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Excellent Adultos 7 años o mas todos los tamaños",
+        "description": "Excellent Adulto pollo y arroz para razas medianas y grandes es una fórmula completa de óptimo balance nutricional para una adecuada alimentación de tu perro.",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12,0%"
+          },
+          {
+            "name": "Proteína Cruda",
+            "minimum": 26,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "26,0%"
+          },
+          {
+            "name": "Extracto Etéreo / Grasa Cruda",
+            "minimum": 9,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "9,0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 7,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "7,0%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 9,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "9,0%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1.1,
+            "maximum": 1.8,
+            "unit": "%",
+            "rawValue": "1,1% | 1,8%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.8,
+            "maximum": 1.3,
+            "unit": "%",
+            "rawValue": "0,8% | 1,3%"
+          }
+        ],
+        "presentations": [
+          3000,
+          15000,
+          1000,
+          5000,
+          35,
+          105,
+          10000,
+          155,
+          25000,
+          310,
+          45000,
+          465,
+          70000,
+          620,
+          90
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Excellent Adultos 7 años o mas todos los tamaños",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "Adult",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-mayor-pollo-arroz-todo-tamanos",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-mayor-pollo-arroz-todo-tamanos",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-mayor-pollo-arroz-todo-tamanos",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-mayor-pollo-arroz-todo-tamanos",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/adulto-mayor-pollo-arroz-todo-tamanos",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "excellent-perros-adultos-todos-los-tamanos-mantenimiento",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "Adult",
+        "weightsGrams": [
+          20000,
+          1000,
+          5000,
+          40,
+          115,
+          10000,
+          180,
+          25000,
+          330,
+          45000,
+          490,
+          70000,
+          655,
+          90
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/perros/mantenimiento-adulto",
+        "fetchedAt": "2026-08-23T03:55:02.604Z",
+        "contentHash": "af0b31d7763bc25d5fe85ece141bcd45a33ec9344af280f0ad18c9a1aaafffa3",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Excellent Perros Adultos todos los tamaños - Mantenimiento",
+        "description": "Excellent Adulto todos los tamaños. Nutrición canina con proteínas de alta calidad, que ayudan a que tenga músculos fuertes y una masa corporal ideal.",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12,0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 23,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "23,0%"
+          },
+          {
+            "name": "Extracto Etéreo / Grasa cruda",
+            "minimum": 10,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "10,0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 4,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "4,0%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 9,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "9,0%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1.1,
+            "maximum": 1.8,
+            "unit": "%",
+            "rawValue": "1,1% | 1,8%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.8,
+            "maximum": 1.3,
+            "unit": "%",
+            "rawValue": "0,8% | 1,3%"
+          }
+        ],
+        "presentations": [
+          20000,
+          1000,
+          5000,
+          40,
+          115,
+          10000,
+          180,
+          25000,
+          330,
+          45000,
+          490,
+          70000,
+          655,
+          90
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Excellent Perros Adultos todos los tamaños - Mantenimiento",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "Adult",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/mantenimiento-adulto",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/mantenimiento-adulto",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/mantenimiento-adulto",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/mantenimiento-adulto",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/perros/mantenimiento-adulto",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "purina-excellent-puppy-crecimiento",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "PUPPY",
+        "weightsGrams": [
+          20000,
+          90
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/puppy-crecimiento",
+        "fetchedAt": "2026-08-23T03:55:03.484Z",
+        "contentHash": "030c61a6d91c22d48f8ef713f7f6aa0912b79cf2ae7bf7374bcfd3e66c026c5d",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "PURINA® EXCELLENT™ PUPPY CRECIMIENTO",
+        "description": "Purina Excellent Puppy Crecimiento brinda nutrición balanceada para un cuerpo saludable. Para unos músculos de tu cachorro. ¡Ingresá en Excellent!",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12,0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 25,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "25,0%"
+          },
+          {
+            "name": "Extracto Etéreo / Grasa cruda",
+            "minimum": 11,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "11,0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 4,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "4,0%"
+          },
+          {
+            "name": "Cenizas / Minerales",
+            "minimum": 9,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "9,0%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1,
+            "maximum": 1.6,
+            "unit": "%",
+            "rawValue": "1,0% | 1,6%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.9,
+            "maximum": 1.3,
+            "unit": "%",
+            "rawValue": "0,9% | 1,3%"
+          }
+        ],
+        "presentations": [
+          20000,
+          90
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "PURINA® EXCELLENT™ PUPPY CRECIMIENTO",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "PUPPY",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/puppy-crecimiento",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/puppy-crecimiento",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/puppy-crecimiento",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/puppy-crecimiento",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/puppy-crecimiento",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "excellent-gatitos-hasta-12-meses-con-pollo-carne-y-arroz",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "weightsGrams": [
+          1000,
+          7500,
+          90
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/gatos/gatitos-pollo-arroz",
+        "fetchedAt": "2026-08-23T03:55:04.275Z",
+        "contentHash": "027c08d3db48920cc375cbe3e4f0ee7ea8a5efe8f59049e7fa6afa260e559d24",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Excellent Gatitos hasta 12 meses con Pollo, Carne y Arroz",
+        "description": "Excellent Kitten Indicado para gatitos menores de 1 año de edad. Sin colorantes, a base de proteínas de alta calidad provenientes del pollo y arroz.",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12.0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 37,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "37.0%"
+          },
+          {
+            "name": "Extracto Etéreo / Grasa cruda",
+            "minimum": 14,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "14.0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 3,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "3.0%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 9.5,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "9.5%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1.1,
+            "maximum": 1.8,
+            "unit": "%",
+            "rawValue": "1.1% | 1.8%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.9,
+            "maximum": 1.4,
+            "unit": "%",
+            "rawValue": "0.9% | 1.4%"
+          }
+        ],
+        "presentations": [
+          1000,
+          7500,
+          90
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Excellent Gatitos hasta 12 meses con Pollo, Carne y Arroz",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": null,
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/gatitos-pollo-arroz",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/gatitos-pollo-arroz",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/gatitos-pollo-arroz",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/gatitos-pollo-arroz",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/gatitos-pollo-arroz",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "purina-excellent-gatos-adultos-con-pollo-carne-y-arroz",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "Adult",
+        "weightsGrams": [
+          1000,
+          3000,
+          7500,
+          15000,
+          2000,
+          3500,
+          30,
+          50,
+          6500,
+          95,
+          11000,
+          155,
+          90
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/gatos/adulto-pollo-arroz",
+        "fetchedAt": "2026-08-23T03:55:05.187Z",
+        "contentHash": "513fa13ee805345d5bfef1fcc39a60403ba38b9ef21fdd3029eccfdc07981d8c",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Purina Excellent Gatos Adultos con Pollo, Carne y Arroz",
+        "description": "Purina Excellent Gatos Adultos ofrece proteínas digestibles, omega 3 y 6, y un balance ideal de ingredientes para salud urinaria, piel y pelaje. ¡Elegí calidad!",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12.0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 33,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "33.0%"
+          },
+          {
+            "name": "Extracto Etéreo/Grasa cruda",
+            "minimum": 13,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "13.0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 3,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "3.0%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 9.5,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "9.5%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1,
+            "maximum": 1.6,
+            "unit": "%",
+            "rawValue": "1.0% | 1.6%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.9,
+            "maximum": 1.5,
+            "unit": "%",
+            "rawValue": "0.9% | 1.5%"
+          }
+        ],
+        "presentations": [
+          1000,
+          3000,
+          7500,
+          15000,
+          2000,
+          3500,
+          30,
+          50,
+          6500,
+          95,
+          11000,
+          155,
+          90
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Purina Excellent Gatos Adultos con Pollo, Carne y Arroz",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "Adult",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-pollo-arroz",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-pollo-arroz",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-pollo-arroz",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-pollo-arroz",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-pollo-arroz",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "excellent-urinary-gatos-adultos-con-pollo-y-arroz",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "Adult",
+        "weightsGrams": [
+          1000,
+          7500,
+          15000,
+          2000,
+          3500,
+          30,
+          50,
+          6500,
+          95,
+          11000,
+          155,
+          90
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/gatos/adulto-urinario-pollo-arroz",
+        "fetchedAt": "2026-08-23T03:55:05.942Z",
+        "contentHash": "48615a77907e352f92e566d758afc2b28ef8cf14e32fb5e2507bb5d123a43337",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Excellent Urinary Gatos Adultos con Pollo y Arroz",
+        "description": "Cuidá el tracto urinario de tu gato con Excellent Urinary. Alimentos para gatos con problemas urinarios que son nutritivos y sabrosos. ¡Ingresa ahora!",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12,0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 33,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "33,0%"
+          },
+          {
+            "name": "Extracto Etéreo/Grasa cruda",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12,0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 3,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "3,0%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 8.5,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "8,5%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1,
+            "maximum": 1.6,
+            "unit": "%",
+            "rawValue": "1,0% | 1,6%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.9,
+            "maximum": 1.5,
+            "unit": "%",
+            "rawValue": "0,9% | 1,5%"
+          }
+        ],
+        "presentations": [
+          1000,
+          7500,
+          15000,
+          2000,
+          3500,
+          30,
+          50,
+          6500,
+          95,
+          11000,
+          155,
+          90
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Excellent Urinary Gatos Adultos con Pollo y Arroz",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "Adult",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-urinario-pollo-arroz",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-urinario-pollo-arroz",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-urinario-pollo-arroz",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-urinario-pollo-arroz",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-urinario-pollo-arroz",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "excellent-gatos-adultos-con-piel-sensible",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "Adult",
+        "weightsGrams": [
+          1000,
+          7500,
+          2000,
+          3500,
+          30,
+          50,
+          6500,
+          100,
+          11000,
+          160,
+          90
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/gatos/adulto-piel-sensible-salmon",
+        "fetchedAt": "2026-08-23T03:55:06.691Z",
+        "contentHash": "2e5c0b3b1c40b1c54e59527538e008437b8e669b864ef72e3b174ac12b8b094e",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Excellent Gatos Adultos con Piel Sensible",
+        "description": "Alimento seco Excellent Skin Care para gato adulto que contribuye a una piel sana. Ácidos grasos Omega 6 y 3, vitaminas A y E, zinc y selenio.",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "12,0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 32,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "32,0%"
+          },
+          {
+            "name": "Extracto Etéreo / Grasa cruda",
+            "minimum": 11,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "11,0%"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 3.5,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "3,5%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 9.5,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "9,5%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1,
+            "maximum": 1.6,
+            "unit": "%",
+            "rawValue": "1,0% | 1,6%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.9,
+            "maximum": 1.5,
+            "unit": "%",
+            "rawValue": "0,9% | 1,5%"
+          }
+        ],
+        "presentations": [
+          1000,
+          7500,
+          2000,
+          3500,
+          30,
+          50,
+          6500,
+          100,
+          11000,
+          160,
+          90
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Excellent Gatos Adultos con Piel Sensible",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "Adult",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-piel-sensible-salmon",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-piel-sensible-salmon",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-piel-sensible-salmon",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-piel-sensible-salmon",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-piel-sensible-salmon",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "excellent-sterilized-alimento-para-gatos-esterilizados",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "weightsGrams": [
+          1000,
+          7500,
+          90,
+          85,
+          2000,
+          3500,
+          30,
+          50,
+          6500,
+          11000,
+          150
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/gatos/adulto-castrados-pollo-arroz",
+        "fetchedAt": "2026-08-23T03:55:07.493Z",
+        "contentHash": "8757185091f2b0243af7ca44f1300a49dae3b861445d1edbf4a9642ef86f621a",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Excellent Sterilized: Alimento para gatos esterilizados",
+        "description": "Proporcioná a tu gato el alimento para gatos esterilizados que necesita. ¡Opta por Excellent Sterilized Comida para gatos esterilizados para su bienesta!",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "PROTEÍNA BRUTA",
+            "minimum": 36,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "36,0% | -"
+          },
+          {
+            "name": "EXTRACTO ETÉREO",
+            "minimum": 9,
+            "maximum": 12,
+            "unit": "%",
+            "rawValue": "9,0% | 12,0%"
+          },
+          {
+            "name": "FIBRA CRUDA",
+            "minimum": 6,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "- | 6,0%"
+          },
+          {
+            "name": "HUMEDAD",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "- | 12,0%"
+          },
+          {
+            "name": "MINERALES",
+            "minimum": 9.5,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "- | 9,5%"
+          },
+          {
+            "name": "CALCIO",
+            "minimum": 1,
+            "maximum": 1.5,
+            "unit": "%",
+            "rawValue": "1,0% | 1,5%"
+          },
+          {
+            "name": "FÓSFORO",
+            "minimum": 1,
+            "maximum": 1.4,
+            "unit": "%",
+            "rawValue": "1,0% | 1,4%"
+          }
+        ],
+        "presentations": [
+          1000,
+          7500,
+          90,
+          85,
+          2000,
+          3500,
+          30,
+          50,
+          6500,
+          11000,
+          150
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Excellent Sterilized: Alimento para gatos esterilizados",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": null,
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-castrados-pollo-arroz",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-castrados-pollo-arroz",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-castrados-pollo-arroz",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-castrados-pollo-arroz",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/gatos/adulto-castrados-pollo-arroz",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "purina-excellent-adult-mantenimiento",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "lifeStage": "Adult",
+        "weightsGrams": [
+          15000
+        ]
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/adult-mantenimiento",
+        "fetchedAt": "2026-08-23T03:55:08.468Z",
+        "contentHash": "f0f4060760bd72641937ff31c373655bb2dde3a2421ae292837686cd362c3cd1",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Purina ® Excellent ™ Adult Mantenimiento",
+        "description": "¡Dale lo mejor a tu gato adulto de cualquier raza! Purina Excellent Adult Mantenimiento : alimento seco que cuida su salud urinaria. Ingresá en Excellent.",
+        "ingredientsText": null,
+        "analyticalComposition": [
+          {
+            "name": "Humedad",
+            "minimum": 12,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "- | 12,0%"
+          },
+          {
+            "name": "Proteína cruda",
+            "minimum": 32,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "32,0% | -"
+          },
+          {
+            "name": "Extracto Etéreo / Grasa cruda",
+            "minimum": 11,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "11,0% | -"
+          },
+          {
+            "name": "Fibra cruda",
+            "minimum": 3,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "- | 3,0%"
+          },
+          {
+            "name": "Cenizas/Minerales",
+            "minimum": 9.5,
+            "maximum": null,
+            "unit": "%",
+            "rawValue": "- | 9,5%"
+          },
+          {
+            "name": "Calcio",
+            "minimum": 1,
+            "maximum": 1.6,
+            "unit": "%",
+            "rawValue": "1,0% | 1,6%"
+          },
+          {
+            "name": "Fósforo",
+            "minimum": 0.9,
+            "maximum": 1.5,
+            "unit": "%",
+            "rawValue": "0,9% | 1,5%"
+          }
+        ],
+        "presentations": [
+          15000
+        ],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Purina ® Excellent ™ Adult Mantenimiento",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": "Adult",
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/adult-mantenimiento",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/adult-mantenimiento",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/adult-mantenimiento",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/adult-mantenimiento",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/adult-mantenimiento",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "juntos-cuidemos-el-planeta",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "weightsGrams": []
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/excellent-juntos-cuidemos-el-planeta",
+        "fetchedAt": "2026-08-23T03:55:08.605Z",
+        "contentHash": "cb1364e7a22af17227d71a3b8827c010b6eb882f76813a880f4bc62d07b8941c",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró composición centesimal.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Juntos cuidemos el planeta",
+        "description": "Crear conciencia acerca del cuidado y el bienestar de nuestro planeta y del medio ambiente es una tarea importante para Purina® Excellent® Argentina.",
+        "ingredientsText": null,
+        "analyticalComposition": [],
+        "presentations": [],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Juntos cuidemos el planeta",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": null,
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-juntos-cuidemos-el-planeta",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-juntos-cuidemos-el-planeta",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-juntos-cuidemos-el-planeta",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-juntos-cuidemos-el-planeta",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-juntos-cuidemos-el-planeta",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "comprometidos-con-la-salud-de-tu-mascota-y-el-cuidado-del-planeta",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "weightsGrams": []
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/excellent-por-el-planeta",
+        "fetchedAt": "2026-08-23T03:55:08.814Z",
+        "contentHash": "4d4d8cc0b4ce3123b164cf562178490a1a5f6bc7378ade876a5a8a38c6be02c6",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró composición centesimal.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Comprometidos con la salud de tu mascota y el cuidado del planeta",
+        "description": "Comprometidos con el planeta y con la salud de tu mascota. Con más de 90 años enriqueciendo la vida de los perros y los gatos. Excellent Argentina",
+        "ingredientsText": null,
+        "analyticalComposition": [],
+        "presentations": [],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Comprometidos con la salud de tu mascota y el cuidado del planeta",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": null,
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-por-el-planeta",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-por-el-planeta",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-por-el-planeta",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-por-el-planeta",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-por-el-planeta",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "juntos-podemos-cambiar-el-futuro-hoy",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "weightsGrams": []
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/excellent-recicla",
+        "fetchedAt": "2026-08-23T03:55:08.830Z",
+        "contentHash": "26ba9cce53dd6241fa0bec43261bc964446e6625dfa25b500f225fe3f1192ff3",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró composición centesimal.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Juntos podemos cambiar el futuro, hoy.",
+        "description": "Nuestro compromiso es enriquecer la vida de las mascotas y las personas que las aman de la forma más responsable, segura y sustentable. Excellent Argentina",
+        "ingredientsText": null,
+        "analyticalComposition": [],
+        "presentations": [],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Juntos podemos cambiar el futuro, hoy.",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": null,
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-recicla",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-recicla",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-recicla",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-recicla",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/excellent-recicla",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "calidad-y-garantia-en-cada-producto",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "weightsGrams": []
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/calidad-en-tus-manos-mixto",
+        "fetchedAt": "2026-08-23T03:55:08.846Z",
+        "contentHash": "8658eeeaa981669840bfa04f4419a5dd176465a457df988b59058de4ca38fe7f",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró composición centesimal.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "Calidad y garantía en cada producto",
+        "description": "Descubrí la calidad en tus manos de Excellent. Desde la formulación, elaboración, envasado y traslado de nuestros productos hasta el consumo. Ingresá acá.",
+        "ingredientsText": null,
+        "analyticalComposition": [],
+        "presentations": [],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "Calidad y garantía en cada producto",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": null,
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/calidad-en-tus-manos-mixto",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/calidad-en-tus-manos-mixto",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/calidad-en-tus-manos-mixto",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/calidad-en-tus-manos-mixto",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/calidad-en-tus-manos-mixto",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "terminos-y-condiciones-de-uso-nestle-argentina-s-a",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "weightsGrams": []
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/terminos-y-condiciones",
+        "fetchedAt": "2026-08-23T03:55:09.136Z",
+        "contentHash": "179f81ff4dbed3c7ca5b68d408cc59c183940f176403bdceaa7c4db9e22cb24f",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró composición centesimal.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "TÉRMINOS Y CONDICIONES DE USO NESTLÉ ARGENTINA S.A",
+        "description": "A continuación, se presentan las &quot;Condiciones Generales&quot; que regulan el acceso, uso y registro de usuarios en este sitio web. Excellent",
+        "ingredientsText": null,
+        "analyticalComposition": [],
+        "presentations": [],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "TÉRMINOS Y CONDICIONES DE USO NESTLÉ ARGENTINA S.A",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": null,
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/terminos-y-condiciones",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/terminos-y-condiciones",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/terminos-y-condiciones",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/terminos-y-condiciones",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/terminos-y-condiciones",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "aviso-de-privacidad-nestle-argentina-s-a",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "weightsGrams": []
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/aviso-de-privacidad",
+        "fetchedAt": "2026-08-23T03:55:09.168Z",
+        "contentHash": "c4ba5d243dad8718d347e56e5354c90f5e53ec0a691d2732aa61c394e1e990e9",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró composición centesimal.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "AVISO DE PRIVACIDAD NESTLÉ ARGENTINA S.A",
+        "description": "En Excellent nos tomamos en serio tu privacidad. Conocé cómo protegemos tus datos personales y cuáles son tus derechos como usuario. ¡Ingresá ahora!",
+        "ingredientsText": null,
+        "analyticalComposition": [],
+        "presentations": [],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "AVISO DE PRIVACIDAD NESTLÉ ARGENTINA S.A",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": null,
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/aviso-de-privacidad",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/aviso-de-privacidad",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/aviso-de-privacidad",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/aviso-de-privacidad",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/aviso-de-privacidad",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    },
+    {
+      "canonicalKey": "aviso-de-cookies-nestle-argentina-s-a",
+      "expected": {
+        "brand": "Excellent",
+        "species": "CAT",
+        "weightsGrams": []
+      },
+      "status": "PARTIAL",
+      "source": {
+        "url": "https://www.purina.com.ar/excellent/aviso-de-cookies",
+        "fetchedAt": "2026-08-23T03:55:09.191Z",
+        "contentHash": "093ce1660e920da05c9736ee9e69db0a2f20535179734e32cb049db84a4b6399",
+        "status": "PARTIAL",
+        "warnings": [
+          "No se encontró una sección de ingredientes.",
+          "No se encontró composición centesimal.",
+          "No se encontró tabla diaria."
+        ]
+      },
+      "product": {
+        "name": "AVISO DE COOKIES NESTLÉ ARGENTINA S.A",
+        "description": "Descubrí cómo usamos las cookies en Excellent para mejorar tu experiencia. Conocé tus opciones y cómo gestionarlas fácilmente. ¡Ingresá ahora!",
+        "ingredientsText": null,
+        "analyticalComposition": [],
+        "presentations": [],
+        "feedingGuide": [],
+        "images": [
+          {
+            "sourceUrl": "https://www.purina.com.ar/themes/custom/purina/excellent/Content/img/logo/logo.png",
+            "altText": "AVISO DE COOKIES NESTLÉ ARGENTINA S.A",
+            "isPrimary": true
+          }
+        ],
+        "attributes": {
+          "brand": null,
+          "species": "CAT",
+          "line": null,
+          "lifeStage": null,
+          "breedSize": null,
+          "recipe": null
+        }
+      },
+      "provenance": {
+        "name": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/aviso-de-cookies",
+          "method": "HTML",
+          "confidence": "HIGH"
+        },
+        "ingredientsText": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/aviso-de-cookies",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "analyticalComposition": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/aviso-de-cookies",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "feedingGuide": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/aviso-de-cookies",
+          "method": "HTML",
+          "confidence": "LOW"
+        },
+        "images": {
+          "sourceUrl": "https://www.purina.com.ar/excellent/aviso-de-cookies",
+          "method": "HTML",
+          "confidence": "MEDIUM"
+        }
+      },
+      "retailObservations": [],
+      "errors": []
+    }
+  ],
+  "warnings": [],
+  "errors": []
+}

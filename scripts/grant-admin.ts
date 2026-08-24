@@ -1,9 +1,9 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { config as loadEnv } from 'dotenv';
+import { loadProjectEnv } from './load-project-env';
 import { assertLocalDatabaseUrl } from './database-safety';
 import { PrismaClient } from '../src/infrastructure/database/generated/prisma/client';
 
-loadEnv({ path: ['.env.supabase.local', '.env.local', '.env'], quiet: true });
+loadProjectEnv();
 const connectionString = process.env['DATABASE_URL'];
 if (!connectionString) {
   throw new Error('DATABASE_URL es obligatoria.');

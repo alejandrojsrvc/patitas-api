@@ -1,0 +1,3254 @@
+{
+  "schemaVersion": "catalog-research.brand-result.v1",
+  "runId": "9aa096be-ce15-4f6b-a1dc-70fc04b1fbc8",
+  "brand": "Old Prince",
+  "products": [
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/2-old-prince-proteinas-noveles-adultos-medianos-y-grandes-cordero-y-arroz-integral/",
+      "name": "Old Prince Proteínas Noveles Adultos Medianos y Grandes Cordero y Arroz Integral",
+      "presentations": [
+        3000,
+        7500,
+        15000
+      ],
+      "ingredients": "Harina de cordero, arroz integral, arveja, gluten de maíz, germen de maíz desgrasado, grasa animal (pollo), aceite de salmón (fuente de omega 3 y 6), hidrolizado proteico de menudencias vacunas, porcinas y aviares, pulpa de remolacha(fuente de fructo-oligosacáridos – FOS), levadura de cerveza, zeolita, sal, extracto de yucca schidigera, manano-oligosacáridos – MOS, nucleótidos de levadura, carbonato de calcio, dipropionato de amonio, ácido propiónico, acetato de zinc, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, colágeno hidrolizado, ascorbato de manganeso, metionina, antioxidantes naturales: extracto de romero, vitamina C, betacaroteno, ácido cítrico, tocoferoles, licopeno, luteína, polifenoles, taurina,vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, ácido pantoténico, biotina, colina, minerales: zinc, hierro, cobre, yodo, selenio.",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 30,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "30 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3.5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3,5 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 8,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "8 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1.5,
+          "unit": "%",
+          "rawValue": "1,0 % | 1,5 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1.2,
+          "unit": "%",
+          "rawValue": "0,6 % | 1,2 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3300,
+          "maximum": 3750,
+          "unit": null,
+          "rawValue": "TS: 3300 | BS: 3750"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 5,
+          "dailyGramsMin": 40,
+          "dailyGramsMax": 110
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 125,
+          "dailyGramsMax": 180
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 11,
+          "petWeightKgMax": 20,
+          "dailyGramsMin": 190,
+          "dailyGramsMax": 280
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 21,
+          "petWeightKgMax": 30,
+          "dailyGramsMin": 290,
+          "dailyGramsMax": 375
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 31,
+          "petWeightKgMax": 40,
+          "dailyGramsMin": 385,
+          "dailyGramsMax": 455
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 41,
+          "petWeightKgMax": 50,
+          "dailyGramsMin": 465,
+          "dailyGramsMax": 530
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 51,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 540,
+          "dailyGramsMax": null
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/cordero-1.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-proteinas-noveles-adultos-razas-pequenas-cordero-y-arroz-integra/",
+      "name": "Old Prince Proteínas Noveles Adultos Razas Pequeñas Cordero y Arroz Integral",
+      "presentations": [
+        3000,
+        7500,
+        15000
+      ],
+      "ingredients": "Harina de cordero, arroz integral, arveja, gluten de maíz, germen de maíz desgrasado, grasa animal (pollo), aceite de salmón (fuente de omega 3 y 6), hidrolizado proteico de menudencias vacunas, porcinas y aviares, pulpa de remolacha (fuente de fructooligosacáridos – FOS), levadura de cerveza, zeolita, sal, extracto de yucca schidigera, manano-oligosacáridos – MOS, nucleótidos de levadura, carbonato de calcio, dipropionato de amonio, ácido propiónico, acetato de zinc, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, colágeno hidrolizado, ascorbato de manganeso, metionina, antioxidantes naturales: extracto de romero, vitamina C, betacaroteno, ácido cítrico, tocoferoles, licopeno, luteína, polifenoles, taurina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, ácido pantoténico, biotina, colina, minerales: zinc, hierro, cobre, yodo, selenio.",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 32,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "32 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 14,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "14 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3.5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3,5 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 8,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "8 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1.5,
+          "unit": "%",
+          "rawValue": "1,0 % | 1,5 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1.2,
+          "unit": "%",
+          "rawValue": "0,6 % | 1,2 %"
+        },
+        {
+          "name": "EnergÍa metabolizable",
+          "minimum": 3350,
+          "maximum": 3807,
+          "unit": null,
+          "rawValue": "EM TC: 3350 | BS: 3807"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 0.5,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 25,
+          "dailyGramsMax": 60
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": 100
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 4,
+          "petWeightKgMax": 6,
+          "dailyGramsMin": 100,
+          "dailyGramsMax": 130
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 130,
+          "dailyGramsMax": 160
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 8,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 160,
+          "dailyGramsMax": 180
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/pequenos-1.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-proteinas-noveles-adultos-todas-las-razas-cerdo-y-legrumbres-naturales-2/",
+      "name": "Old Prince Proteínas Noveles Adultos Todas las Razas Cerdo y Legumbres Naturales",
+      "presentations": [
+        3000,
+        15000
+      ],
+      "ingredients": "Carne de cerdo en polvo, garbanzo, lenteja, arveja, arroz integral, gluten de maíz, germen de maíz desgrasado, aceite de pescado (fuente de omega 3 y 6), hidrolizado de hígado porcino deshidratado, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS), levadura de cerveza, zeolita, sal, extracto de yucca schidigera, manano-oligosacáridos – MOS, nucleótidos de levadura, carbonato de calcio, dipropionato de amonio, ácido propiónico, acetato de zinc, pirofosfato ácido dé sodio, glucosamina, condroitin sulfato, colágeno hidrolizado, ascorbato de manganeso, metionina, antioxidantes naturales: extracto de romero, vitamina C, betacaroteno, ácido cítrico, tocoferoles, licopeno, luteína, polifenoles, taurina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, ácido pantoténico, biotina, colina, minerales: zinc, hierro, cobre, yodo, selenio",
+      "analyticalComposition": [
+        {
+          "name": "Energía metabolizable",
+          "minimum": 8533003750,
+          "maximum": null,
+          "unit": null,
+          "rawValue": "EM 85 TC: 3300 BS: 3750"
+        },
+        {
+          "name": "Proteína",
+          "minimum": 28,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "28 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3.5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3,5 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 8,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "8 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1.5,
+          "unit": "%",
+          "rawValue": "1,0 % | 1,5 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1.2,
+          "unit": "%",
+          "rawValue": "0,6 % | 1,2 %"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 5,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": 115
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 130,
+          "dailyGramsMax": 185
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 11,
+          "petWeightKgMax": 20,
+          "dailyGramsMin": 200,
+          "dailyGramsMax": 295
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 21,
+          "petWeightKgMax": 30,
+          "dailyGramsMin": 300,
+          "dailyGramsMax": 385
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 31,
+          "petWeightKgMax": 40,
+          "dailyGramsMin": 395,
+          "dailyGramsMax": 470
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 41,
+          "petWeightKgMax": 50,
+          "dailyGramsMin": 475,
+          "dailyGramsMax": 540
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 51,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 550,
+          "dailyGramsMax": null
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/cerdo-1.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-proteinas-noveles-adultos-todas-las-razas-light-cordero-y-arroz-integral/",
+      "name": "Old Prince Proteínas Noveles Adultos Todas las Razas Light Cordero y Arroz Integral",
+      "presentations": [
+        3000,
+        15000
+      ],
+      "ingredients": "Harina de cordero, arroz integral, arveja, gluten de maíz, germen de maíz desgrasado, grasa animal (pollo), aceite de salmón (fuente de omega 3 y 6), hidrolizado proteico de menudencias vacunas, porcinas y aviares, pulpa de remolacha (fuente de fructooligosacáridos – FOS), levadura de cerveza, zeolita, sal, extracto de yucca schidigera, manano-oligosacáridos – MOS, nucleótidos de levadura, carbonato de calcio, metionina, propionato de calcio, ácido propiónico, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, colágeno hidrolizado, L-carnitina, antioxidantes naturales: extracto de romero, vitamina C, betacaroteno, ácido cítrico, tocoferoles,licopeno, luteína, polifenoles, taurina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, ácido pantoténico, biotina, colina, minerales: zinc, hierro, cobre, yodo, manganeso y selenio",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 32,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "32 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 6,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 7,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "7 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 7,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "7 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1.5,
+          "unit": "%",
+          "rawValue": "1,0 % | 1,5 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1.2,
+          "unit": "%",
+          "rawValue": "0,6 % | 1,2 %"
+        },
+        {
+          "name": "EnergÍa metabolizable",
+          "minimum": 2890,
+          "maximum": 3285,
+          "unit": null,
+          "rawValue": "EM TC: 2890 | BS: 3285"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 5,
+          "dailyGramsMin": 55,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 125,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 11,
+          "petWeightKgMax": 20,
+          "dailyGramsMin": 200,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 21,
+          "petWeightKgMax": 30,
+          "dailyGramsMin": 320,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 31,
+          "petWeightKgMax": 40,
+          "dailyGramsMin": 430,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 41,
+          "petWeightKgMax": 50,
+          "dailyGramsMin": 530,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 51,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 630,
+          "dailyGramsMax": null
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Adult-MockUP-WC-3-2-e1690385216732.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-proteinas-noveles-adultos-todas-las-razas-senior-cordero-y-arroz-integral/",
+      "name": "Old Prince Proteínas Noveles Adultos Todas las Razas Senior Cordero y Arroz Integral",
+      "presentations": [
+        3000,
+        15000
+      ],
+      "ingredients": "Harina de cordero, arroz integral, arveja, gluten de maíz, germen de maíz desgrasado, grasa animal (pollo), aceite de salmón (fuente de omega 3 y 6), hidrolizado proteico de menudencias vacunas, porcinas y aviares, pulpa de remolacha (fuente de fructooligosacáridos – FOS), levadura de cerveza, zeolita, sal, fuente de fibra insoluble (celulosa), extracto de yucca schidigera, manano-oligosacáridos – MOS, nucleótidos de levadura, carbonato de calcio, metionina, propionato de calcio, ácido propiónico, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, colágeno hidrolizado, L-carnitina, antioxidantes naturales: extracto de romero, vitamina C, betacaroteno, ácido cítrico, tocoferoles, licopeno,luteína, polifenoles, taurina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, ácido pantoténico, biotina, colina, minerales: zinc, hierro, cobre, yodo, manganeso y selenio.",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 31,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "31 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 6,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 4,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "4 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 7,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "7 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 0.9,
+          "maximum": 1.4,
+          "unit": "%",
+          "rawValue": "0,9 % | 1,4 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.5,
+          "maximum": 0.8,
+          "unit": "%",
+          "rawValue": "0,5 % | 0,8 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 2992,
+          "maximum": 3400,
+          "unit": null,
+          "rawValue": "EM TC: 2992 | BS: 3400"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 51,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 550,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 5,
+          "dailyGramsMin": 30,
+          "dailyGramsMax": 95
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 110,
+          "dailyGramsMax": 160
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 11,
+          "petWeightKgMax": 20,
+          "dailyGramsMin": 170,
+          "dailyGramsMax": 270
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 21,
+          "petWeightKgMax": 30,
+          "dailyGramsMin": 280,
+          "dailyGramsMax": 360
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 31,
+          "petWeightKgMax": 40,
+          "dailyGramsMin": 370,
+          "dailyGramsMax": 450
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 41,
+          "petWeightKgMax": 50,
+          "dailyGramsMin": 460,
+          "dailyGramsMax": 530
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Mock-Up-edad-Avanzada.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-proteinas-noveles-cachorros-todas-las-razas-cordero-y-arroz-integral/",
+      "name": "Old Prince Proteínas Noveles Cachorros Todas las Razas Cordero y Arroz Integral",
+      "presentations": [
+        3000,
+        7500,
+        15000
+      ],
+      "ingredients": "Harina de cordero, arroz integral, arveja, gluten de maíz, germen de maíz desgrasado, grasa animal (pollo), aceite de salmón (fuente de omega 3 y 6), hidrolizado proteico de menudencias vacunas, porcinas y aviares, pulpa de remolacha (fuente de fructo-oligosacári-dos – FOS), levadura de cerveza, zeolita, sal, extracto de yucca schidigera, manano-oligosacári-dos – MOS, nucleótidos de levadura, carbonato de calcio, dipropionato de amonio, ácido propiónico, acetato de zinc, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, colágeno hidrolizado, ascorbato de manganeso, metionina, antioxidantes naturales: extracto de romero, vitamina C, betacaroteno, ácido cítrico, tocoferoles, licopeno, luteína, polifenoles, taurina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, ácido pantoténico, biotina, colina, minerales: zinc, hierro, cobre, yodo, selenio",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 32,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "32 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 16,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "16 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3.5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3,5 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 8,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "8 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1.2,
+          "maximum": 2,
+          "unit": "%",
+          "rawValue": "1,2 % | 2,0 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1.6,
+          "unit": "%",
+          "rawValue": "0,6 % | 1,6 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3450,
+          "maximum": 3920,
+          "unit": null,
+          "rawValue": "EM TC: 3450 | BS: 3920"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 115,
+          "dailyGramsMax": 180
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 4,
+          "petWeightKgMax": 6,
+          "dailyGramsMin": 180,
+          "dailyGramsMax": 240
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 240,
+          "dailyGramsMax": 340
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 10,
+          "petWeightKgMax": 15,
+          "dailyGramsMin": 340,
+          "dailyGramsMax": 445
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 15,
+          "petWeightKgMax": 20,
+          "dailyGramsMin": 445,
+          "dailyGramsMax": 540
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 20,
+          "petWeightKgMax": 25,
+          "dailyGramsMin": 540,
+          "dailyGramsMax": 625
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 25,
+          "petWeightKgMax": 30,
+          "dailyGramsMin": 500,
+          "dailyGramsMax": 565
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 30,
+          "petWeightKgMax": 35,
+          "dailyGramsMin": 565,
+          "dailyGramsMax": 630
+        },
+        {
+          "condition": "Hasta 2 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 115,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "Hasta 2 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 90,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "Hasta 2 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 70,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "Hasta 2 kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "2 - 4 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 115,
+          "dailyGramsMax": 180
+        },
+        {
+          "condition": "2 - 4 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 90,
+          "dailyGramsMax": 145
+        },
+        {
+          "condition": "2 - 4 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 70,
+          "dailyGramsMax": 110
+        },
+        {
+          "condition": "2 - 4 kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": 90
+        },
+        {
+          "condition": "4 - 6 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 180,
+          "dailyGramsMax": 240
+        },
+        {
+          "condition": "4 - 6 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 145,
+          "dailyGramsMax": 190
+        },
+        {
+          "condition": "4 - 6 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 110,
+          "dailyGramsMax": 145
+        },
+        {
+          "condition": "4 - 6 kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 90,
+          "dailyGramsMax": 120
+        },
+        {
+          "condition": "6 - 10 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 240,
+          "dailyGramsMax": 340
+        },
+        {
+          "condition": "6 - 10 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 190,
+          "dailyGramsMax": 270
+        },
+        {
+          "condition": "6 - 10 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 145,
+          "dailyGramsMax": 200
+        },
+        {
+          "condition": "6 - 10 kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 120,
+          "dailyGramsMax": 170
+        },
+        {
+          "condition": "10 - 15 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 340,
+          "dailyGramsMax": 445
+        },
+        {
+          "condition": "10 - 15 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 270,
+          "dailyGramsMax": 355
+        },
+        {
+          "condition": "10 - 15 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 200,
+          "dailyGramsMax": 270
+        },
+        {
+          "condition": "10 - 15 kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 170,
+          "dailyGramsMax": 220
+        },
+        {
+          "condition": "15 - 20 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 445,
+          "dailyGramsMax": 540
+        },
+        {
+          "condition": "15 - 20 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 355,
+          "dailyGramsMax": 430
+        },
+        {
+          "condition": "15 - 20 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 270,
+          "dailyGramsMax": 320
+        },
+        {
+          "condition": "15 - 20 kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 220,
+          "dailyGramsMax": 270
+        },
+        {
+          "condition": "20 - 25 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 540,
+          "dailyGramsMax": 625
+        },
+        {
+          "condition": "20 - 25 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 430,
+          "dailyGramsMax": 500
+        },
+        {
+          "condition": "20 - 25 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 320,
+          "dailyGramsMax": 375
+        },
+        {
+          "condition": "20 - 25 kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 270,
+          "dailyGramsMax": 310
+        },
+        {
+          "condition": "25 - 30 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 500,
+          "dailyGramsMax": 565
+        },
+        {
+          "condition": "25 - 30 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 375,
+          "dailyGramsMax": 425
+        },
+        {
+          "condition": "25 - 30 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 310,
+          "dailyGramsMax": 350
+        },
+        {
+          "condition": "30 - 35 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 565,
+          "dailyGramsMax": 630
+        },
+        {
+          "condition": "30 - 35 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 425,
+          "dailyGramsMax": 470
+        },
+        {
+          "condition": "30 - 35 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 350,
+          "dailyGramsMax": 390
+        },
+        {
+          "condition": "Más de 35 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 630,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "Más de 35 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 470,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "Más de 35 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 430,
+          "dailyGramsMax": null
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/cachorros-1.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-proteinas-noveles-gatitos-cordero-y-arroz-integral/",
+      "name": "Old Prince Proteínas Noveles Gatitos Cordero y Arroz Integral",
+      "presentations": [
+        1000,
+        3000
+      ],
+      "ingredients": "Harina de cordero, arroz integral, arveja, gluten de maíz, albumina en polvo, huevo en polvo, aceite de salmón (fuente de omega 3 y 6), hidrolizado proteico de menudencias porcinas, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS), levadura de cerveza, zeolita, sal, fuente de fibra insoluble (celulosa), acidificante en polvo (bisulfato acido de sodio), extracto de yucca schidigera, manano-oligosacáridos – MOS, nucleótidos de levadura, dipropionato de amonio, ácido propiónico, pirofosfato ácido de sodio, condroitín sulfato, metionina, L-carnitina, antioxidantes naturales: extracto de romero, vitamina C, betacaroteno, ácido cítrico, tocoferoles, licopeno, luteína, polifenoles, taurina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales: zinc, hierro, cobre, yodo, manganeso, selenio",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 38,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "38 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 18,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "18 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 6,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 0.9,
+          "maximum": 1.2,
+          "unit": "%",
+          "rawValue": "0,9 % | 1,2 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 0.9,
+          "unit": "%",
+          "rawValue": "0,6 % | 0,9 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3665,
+          "maximum": 4165,
+          "unit": null,
+          "rawValue": "EM TC: 3665 | BS: 4165"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": "4 - 6 semanas",
+          "petWeightKgMin": null,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 15,
+          "dailyGramsMax": 30
+        },
+        {
+          "condition": "7 semanas - 5 meses",
+          "petWeightKgMin": null,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 30,
+          "dailyGramsMax": 90
+        },
+        {
+          "condition": "6 - 9 meses",
+          "petWeightKgMin": null,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 90,
+          "dailyGramsMax": 45
+        },
+        {
+          "condition": "9 - 12 meses",
+          "petWeightKgMin": null,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 45,
+          "dailyGramsMax": 30
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Gatitos.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-proteinas-noveles-gatos-adultos-cordero-y-arroz-integral/",
+      "name": "Old Prince Proteínas Noveles Gatos Adultos Cordero y Arroz Integral",
+      "presentations": [
+        1000,
+        3000,
+        7500
+      ],
+      "ingredients": "Harina de cordero, arroz integral, arveja, gluten de maíz, albumina en polvo, huevo en polvo, grasa animal (pollo – cerdo), aceite de salmón (fuente de omega 3 y 6), hidrolizado proteico de menudencias porcinas, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS),levadura de cerveza, zeolita, sal, fuente de fibra insoluble, acidificante en polvo, extracto de yucca schidigera, manano-oligosacáridos – MOS, nucleótidos de levadura, carbonato de calcio,dipropionato de amonio, ácido propiónico, pirofosfato ácido de sodio, bisulfato de sodio,condroitin sulfato, ascorbato de manganeso, metionina, carnitina, antioxidantes naturales:extracto de romero, vitamina C, betacaroteno, ácido cítrico, tocoferoles, licopeno, luteína,polifenoles, taurina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico,pantotenato de calcio, biotina, colina, minerales: zinc, hierro, cobre, yodo, selenio",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 34,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "34 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 15,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "15 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 6,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1.2,
+          "unit": "%",
+          "rawValue": "1, 0% | 1,2 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1,
+          "unit": "%",
+          "rawValue": "0,6 % | 1,0 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3515,
+          "maximum": 3994,
+          "unit": null,
+          "rawValue": "EM TC: 3515 | BS: 3994"
+        }
+      ],
+      "feedingGuide": [],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Gatos-Adultos.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-proteinas-noveles-gatos-esterilizados-cordero-y-arroz-integral/",
+      "name": "Old Prince Proteínas Noveles Gatos Esterilizados Cordero y Arroz Integral",
+      "presentations": [
+        1000,
+        3000,
+        7500
+      ],
+      "ingredients": "Harina de cordero, arroz integral, arveja, gluten de maíz, albumina en polvo, huevo en polvo, grasa animal (pollo), aceite de salmón (fuente de omega 3 y 6), hidrolizado proteico de menudencias porcinas, pulpa de remolacha (fuente de fructooligosacáridos – FOS), levadura de cerveza, zeolita, sal, fuente de fibra insoluble, acidificante en polvo (bisulfato (ácido de sodio), extracto de yucca schidigera, manano-oligosacáridos – MOS, nucleótidos de levadura, glucosamina, condroitin sulfato, colágeno hidrolizado, L-carnitina, carbonato de calcio, ácido propiónico, pirofosfato ácido de sodio, ascorbato de manganeso, metionina, l-carnitina, antioxidantes naturales:extracto de romero, vitamina C, betacaroteno, ácido cítrico, tocoferoles, licopeno, luteína, polifenoles, taurina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales: zinc, hierro, cobre, yodo, selenio",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 37,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "37 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 9,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "9 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "5 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 6,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 0.7,
+          "maximum": 1.1,
+          "unit": "%",
+          "rawValue": "0,7 % | 1,1 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.5,
+          "maximum": 0.8,
+          "unit": "%",
+          "rawValue": "0,5 % | 0,8 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3145,
+          "maximum": 3574,
+          "unit": null,
+          "rawValue": "EM TC: 3145 | BS: 3574"
+        }
+      ],
+      "feedingGuide": [],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Esterilizados.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-premium-adultos/",
+      "name": "Old Prince Premium Adultos",
+      "presentations": [
+        3000,
+        20000
+      ],
+      "ingredients": "Harina de pollo, harina de carne, arroz, maíz, trigo, gluten de maíz, germen de maíz desgrasado, aceite de pollo, aceite de pescado (fuente de omega 3), hidrolizado proteico de menudencias bovinas, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS), fuente de fibra insoluble (celulosa), levadura de cerveza, zeolita, extracto de yucca schidigera, propionato de calcio, ácido propiónico, metionina, antioxidantes naturales: extracto de romero, ácido citrico, vitamina C, betacaroteno, luteína, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotinico, pantotenato de calcio, biotina, colina, minerales: zinc, hierro, cobre, yodo, manganeso y selenio.",
+      "analyticalComposition": [
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12 %"
+        },
+        {
+          "name": "Proteína",
+          "minimum": 23,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "23 %"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 4,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "4 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 10,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "10 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1.6,
+          "unit": "%",
+          "rawValue": "1,0 % | 1,6 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1.2,
+          "unit": "%",
+          "rawValue": "0,6 % | 1, 2 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 853190,
+          "maximum": 3625,
+          "unit": null,
+          "rawValue": "EM 85 TC: 3190 | BS: 3625"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 5,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": 120
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 130,
+          "dailyGramsMax": 190
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 11,
+          "petWeightKgMax": 20,
+          "dailyGramsMin": 200,
+          "dailyGramsMax": 295
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 21,
+          "petWeightKgMax": 30,
+          "dailyGramsMin": 310,
+          "dailyGramsMax": 390
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 31,
+          "petWeightKgMax": 40,
+          "dailyGramsMin": 400,
+          "dailyGramsMax": 475
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 41,
+          "petWeightKgMax": 50,
+          "dailyGramsMin": 480,
+          "dailyGramsMax": 550
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 51,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 560,
+          "dailyGramsMax": null
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Premium-Adulto-1.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/1067/",
+      "name": "Old Prince Premium Adultos Cordero y Arroz",
+      "presentations": [
+        3000,
+        15000
+      ],
+      "ingredients": "Harina de cordero, arroz, gluten de maiz, germen de maíz desgrasado, aceite de pollo, aceite de pescado (fuente de omega 3), hidrolizado proteico de menudencias porcinas, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS), levadura de cerveza, zeolita, extracto de yucca schidigera, manano-oligosacáridos – MOS, propionato de calcio, ácido propiónico, acetato de zinc, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, antioxidantes naturales: extracto de romero, acido cítrico, vitamina C, betacaroteno, luteina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotinico, ácido pantoténico, biotina, colina, minerales: zinc, hierro, cobre, yodo, manganeso y selenio.",
+      "analyticalComposition": [
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 13,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "13 %"
+        },
+        {
+          "name": "Proteína",
+          "minimum": 25,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "25 %"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3.5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3,5 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 8,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "8 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1.5,
+          "unit": "%",
+          "rawValue": "1,0 % | 1,5 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1.2,
+          "unit": "%",
+          "rawValue": "0,6 % | 1,2 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 853326,
+          "maximum": 3780,
+          "unit": null,
+          "rawValue": "EM 85 TC: 3326 | BS: 3780"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 5,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": 110
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 120,
+          "dailyGramsMax": 175
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 11,
+          "petWeightKgMax": 20,
+          "dailyGramsMin": 190,
+          "dailyGramsMax": 280
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 21,
+          "petWeightKgMax": 30,
+          "dailyGramsMin": 290,
+          "dailyGramsMax": 370
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 31,
+          "petWeightKgMax": 40,
+          "dailyGramsMin": 380,
+          "dailyGramsMax": 450
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 41,
+          "petWeightKgMax": 50,
+          "dailyGramsMin": 460,
+          "dailyGramsMax": 520
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 51,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 530,
+          "dailyGramsMax": null
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Premium-Cordero-1.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-premium-cachorros/",
+      "name": "Old Prince Premium Cachorros",
+      "presentations": [
+        3000,
+        15000
+      ],
+      "ingredients": "Harina de pollo, harina de carne, arroz, maiz, trigo, gluten de maíz, germen de maíz desgrasado, aceite de pollo, aceite de pescado (fuente de omega 3), hidrolizado proteico de menudencias bovinas, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS), fuente de fibra insoluble (celulosa), levadura de cerveza, zeolita, extracto de yucca schidigera, metionina, propionato de calcio, ácido propionico, antioxidantes naturales: extracto de romero, ácido cítrico, vitamina C, betacaroteno, luteína, vitaminas: A, D3, E, K, B1,B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales: zinc, hierro, cobre, yodo, manganeso y selenio.",
+      "analyticalComposition": [
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 15,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "15 %"
+        },
+        {
+          "name": "Proteína",
+          "minimum": 26,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "26 %"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 4,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "4 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 8,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "8 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1.2,
+          "maximum": 2,
+          "unit": "%",
+          "rawValue": "1,2 % | 2,0 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.9,
+          "maximum": 1.6,
+          "unit": "%",
+          "rawValue": "0,9 % | 1,6 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 853875,
+          "maximum": 3410,
+          "unit": null,
+          "rawValue": "EM 85 TC: 3875 | BS: 3410"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 5,
+          "dailyGramsMin": 120,
+          "dailyGramsMax": 230
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 230,
+          "dailyGramsMax": 360
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 10,
+          "petWeightKgMax": 15,
+          "dailyGramsMin": 360,
+          "dailyGramsMax": 470
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 15,
+          "petWeightKgMax": 20,
+          "dailyGramsMin": 470,
+          "dailyGramsMax": 570
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 20,
+          "petWeightKgMax": 25,
+          "dailyGramsMin": 460,
+          "dailyGramsMax": 530
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 25,
+          "petWeightKgMax": 30,
+          "dailyGramsMin": 530,
+          "dailyGramsMax": 600
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 30,
+          "petWeightKgMax": 35,
+          "dailyGramsMin": 450,
+          "dailyGramsMax": 500
+        },
+        {
+          "condition": "0 - 2 kg.",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 120,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "0 - 2 kg.",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 100,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "0 - 2 kg.",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 80,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "0 - 2 kg.",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "2 - 5 kg.",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 120,
+          "dailyGramsMax": 230
+        },
+        {
+          "condition": "2 - 5 kg.",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 100,
+          "dailyGramsMax": 180
+        },
+        {
+          "condition": "2 - 5 kg.",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 70,
+          "dailyGramsMax": 14
+        },
+        {
+          "condition": "2 - 5 kg.",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": 120
+        },
+        {
+          "condition": "5- 10 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 230,
+          "dailyGramsMax": 360
+        },
+        {
+          "condition": "5- 10 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 180,
+          "dailyGramsMax": 290
+        },
+        {
+          "condition": "5- 10 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 140,
+          "dailyGramsMax": 220
+        },
+        {
+          "condition": "5- 10 kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 120,
+          "dailyGramsMax": 180
+        },
+        {
+          "condition": "10 -15 kg.",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 360,
+          "dailyGramsMax": 470
+        },
+        {
+          "condition": "10 -15 kg.",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 290,
+          "dailyGramsMax": 380
+        },
+        {
+          "condition": "10 -15 kg.",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 220,
+          "dailyGramsMax": 280
+        },
+        {
+          "condition": "10 -15 kg.",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 180,
+          "dailyGramsMax": 240
+        },
+        {
+          "condition": "15 - 20 kg.",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 470,
+          "dailyGramsMax": 570
+        },
+        {
+          "condition": "15 - 20 kg.",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 380,
+          "dailyGramsMax": 460
+        },
+        {
+          "condition": "15 - 20 kg.",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 280,
+          "dailyGramsMax": 340
+        },
+        {
+          "condition": "15 - 20 kg.",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 240,
+          "dailyGramsMax": 290
+        },
+        {
+          "condition": "20 - 25 kg.",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 460,
+          "dailyGramsMax": 530
+        },
+        {
+          "condition": "20 - 25 kg.",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 340,
+          "dailyGramsMax": 400
+        },
+        {
+          "condition": "20 - 25 kg.",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 290,
+          "dailyGramsMax": 330
+        },
+        {
+          "condition": "25 - 30 kg.",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 530,
+          "dailyGramsMax": 600
+        },
+        {
+          "condition": "25 - 30 kg.",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 400,
+          "dailyGramsMax": 450
+        },
+        {
+          "condition": "25 - 30 kg.",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 330,
+          "dailyGramsMax": 380
+        },
+        {
+          "condition": "30 - 35 kg.",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 450,
+          "dailyGramsMax": 500
+        },
+        {
+          "condition": "30 - 35 kg.",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 380,
+          "dailyGramsMax": 410
+        },
+        {
+          "condition": "Más de 35 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 540,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "Más de 35 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 450,
+          "dailyGramsMax": null
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Premium-Cachorro-1.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-premium-gatitos/",
+      "name": "Old Prince Premium Gatitos",
+      "presentations": [
+        3000,
+        7500
+      ],
+      "ingredients": "Harina de pollo, arroz, gluten de maíz, harina de pescado, harina de carne vacuna, arveja, aceite de pollo, aceite de pescado (fuente de omega 3 y 6), pulpa de remolacha (fuente de fructo-oligosacáridos-FOS), levadura de cerveza, hidrolizado proteico de menudencias porcinas, sal yodada, fibra insoluble (celulosa), acidificante en polvo (bisulfato ácido de sodio), extracto de yucca schidigera, L-carnitina, lisina, taurina, metionina, ácido cítrico, lecitina, tocofero-les, extracto de romero, dipropionato de calcio, ácido propiónico, núcleo vitamínico mineral; vitaminas A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales; zinc, hierro, cobre, yodo, manga- neso y selenio.",
+      "analyticalComposition": [
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 14,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "14 %"
+        },
+        {
+          "name": "Proteina",
+          "minimum": 32,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "32 %"
+        },
+        {
+          "name": "FIbra",
+          "minimum": 3,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3%"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 6,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1,
+          "unit": "%",
+          "rawValue": "1 % | 1 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1,
+          "unit": "%",
+          "rawValue": "0,6 % | 1 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3465.44,
+          "maximum": 4000,
+          "unit": null,
+          "rawValue": "TC: 3465.44 | BS: 4000"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": "4 a 6 semanas",
+          "petWeightKgMin": null,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 20,
+          "dailyGramsMax": 35
+        },
+        {
+          "condition": "7 semanas a 5 meses",
+          "petWeightKgMin": null,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 35,
+          "dailyGramsMax": 100
+        },
+        {
+          "condition": "6 a 9 meses",
+          "petWeightKgMin": null,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 100,
+          "dailyGramsMax": 50
+        },
+        {
+          "condition": "9 a 12 meses",
+          "petWeightKgMin": null,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 50,
+          "dailyGramsMax": 35
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Premium-Gatito-1.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-premium-gatos-adultos/",
+      "name": "Old Prince Premium Gatos Adultos",
+      "presentations": [
+        3000,
+        7500
+      ],
+      "ingredients": "Harina de pollo, arroz, gluten de maíz, harina de pescado, harina de carne vacuna, arveja, aceite de pollo, aceite de pescado (fuente de omega 3 y 6), pulpa de remolacha (fuente de fructo-oligosacáridos-FOS), levadura de cerveza, hidrolizado proteico de menudencias porcinas, sal yodada, fibra insoluble (celulosa), acidificante en polvo (bisulfato ácido de sodio), extracto de yucca schidigera, L-carnitina, lisina, taurina, metionina, ácido cítrico, lecitina, tocoferoles, extracto de romero, dipropionato de calcio, ácido propiónico, núcleo vitamínico-mineral; vitaminas A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales; zinc, hierro, cobre, yodo, manganeso y selenio.",
+      "analyticalComposition": [
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 14,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "14 %"
+        },
+        {
+          "name": "Proteina",
+          "minimum": 32,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "32 %"
+        },
+        {
+          "name": "FIbra",
+          "minimum": 3,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3%"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 6,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1,
+          "unit": "%",
+          "rawValue": "1 % | 1 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1,
+          "unit": "%",
+          "rawValue": "0,6 % | 1 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3465.44,
+          "maximum": 4000,
+          "unit": null,
+          "rawValue": "TC: 3465.44 | BS: 4000"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 3.5,
+          "dailyGramsMin": 35,
+          "dailyGramsMax": 60
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 3.5,
+          "petWeightKgMax": 6,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": 110
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 110,
+          "dailyGramsMax": 180
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Premium-Gato-Adulto.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-premium-gatos-adultos-cordero/",
+      "name": "Old Prince Premium Gatos Adultos Cordero",
+      "presentations": [
+        3000,
+        7500
+      ],
+      "ingredients": "Harina de cordero, arroz, gluten de maíz, arveja, albumina en polvo, huevo en polvo, aceite de pollo, aceite de pescado (fuente de omega 3 y 6), pulpa de remolacha (fuente de fructo-oligo-sacaridos-FOS), levadura de cerveza, hidrolizado proteico de menudencias porcinas, fibra insoluble (celulosa), acidificante en polvo (bisulfato ácido de sodio), extracto de yucca schidigera, propionato de calcio, ácido propionico, lisina, taurina, metionina, ácido cítrico, lecitina, tocoferoles, extracto de romero, núcleo vitamínico-mineral; vitaminas A, D3, E, K, B1, B2, B6, B12, ácido nicotínico, pantotenato de calcio, ácido fólico, colina, biotina, minerales: zinc (oxido de zinc, zinc quelatado), calcio (carbonato de calcio), hierro (sulfato ferroso), manganeso (oxido manganeso), cobre (cobre quelatado), yodo (iodato de calcio) y selenio (levadura de selenio).",
+      "analyticalComposition": [
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 14,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "14 %"
+        },
+        {
+          "name": "Proteina",
+          "minimum": 32,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "32 %"
+        },
+        {
+          "name": "FIbra",
+          "minimum": 3,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3%"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 6,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1,
+          "unit": "%",
+          "rawValue": "1 % | 1 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1,
+          "unit": "%",
+          "rawValue": "0,6 % | 1 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3465.44,
+          "maximum": 4000,
+          "unit": null,
+          "rawValue": "TC: 3465.44 | BS: 4000"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 3.5,
+          "dailyGramsMin": 35,
+          "dailyGramsMax": 60
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 3.5,
+          "petWeightKgMax": 6,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": 110
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 110,
+          "dailyGramsMax": 180
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2025/10/Premium-Gato-Cordero.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-premium-gatos-adultos-urinario/",
+      "name": "Old Prince Premium Gatos Adultos Urinario",
+      "presentations": [
+        3000,
+        7500
+      ],
+      "ingredients": "Harina de pollo, arroz, gluten de maíz, harina de pescado, harina de carne vacuna, arveja, aceite de pollo, aceite de pescado (fuente de omega 3 y 6), pulpa de remolacha (fuente de fructo-oligosacáridos-FOS), levadura de cerveza, hidrolizado proteico de menudencias porcinas, sal yodada, fibra insoluble (celulosa), acidificante en polvo (bisulfato ácido de sodio), extracto de yucca schidigera, L-carnitina, lisina, taurina, metionina, ácido cítrico, lecitina, tocoferoles, extracto de romero, dipropionato de calcio, ácido propiónico, núcleo vitamínico-mineral; vitaminas A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales; zinc, hierro, cobre, yodo, manganeso y selenio.",
+      "analyticalComposition": [
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 14,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "14 %"
+        },
+        {
+          "name": "Proteina",
+          "minimum": 32,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "32 %"
+        },
+        {
+          "name": "FIbra",
+          "minimum": 3,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3%"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 6,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1,
+          "unit": "%",
+          "rawValue": "1 % | 1 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1,
+          "unit": "%",
+          "rawValue": "0,6 % | 1 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3465.44,
+          "maximum": 4000,
+          "unit": null,
+          "rawValue": "TC: 3465.44 | BS: 4000"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 3.5,
+          "dailyGramsMin": 35,
+          "dailyGramsMax": 60
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 3.5,
+          "petWeightKgMax": 6,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": 110
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 110,
+          "dailyGramsMax": 180
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2025/10/Premium-Gato-Urinario.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/perros-old-prince-equilibrium-adultos-razas-pequenas-pollo-y-arroz-2/",
+      "name": "Old Prince Equilibrium Adultos Control de peso Pollo y Arroz",
+      "presentations": [
+        3000,
+        15000
+      ],
+      "ingredients": "Harina de pollo, arroz, gluten de maíz, trigo, germen de maíz desgrasado, arveja, grasa animal (pollo- cerdo), aceite de pescado (fuente de omega 3), fuente de fibra insoluble (celulosa en polvo), hidrolizado de menudencia vacunas, levadura de cerveza, nucleótidos de levadura, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS), zeolita, colágeno hidrolizado, extracto de yucca schidigera, manano-oligosacáridos – MOS, carbonato de calcio, metionina, propionato de calcio, ácido propiónico, glucosamina, pirofosfato ácido de sodio, antioxidantes naturales: extracto de romero, vitamina C, condroitin sulfato, L-carnitina, taurina, polifenoles, luteína, betacaroteno, licopeno, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales: zinc (óxido de zinc), hierro (sulfato ferroso), manganeso (óxido de manganeso), cobre (sulfato de cobre), yodo (iodato de calcio), selenio (levadura de selenio).",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 30,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "30 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 8,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "8 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 6.5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6,5 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 7,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "7 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 0.9,
+          "maximum": 1.2,
+          "unit": "%",
+          "rawValue": "0,9 % | 1,2 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 0.9,
+          "unit": "%",
+          "rawValue": "0,6 % | 0,9 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3400,
+          "maximum": 3864,
+          "unit": null,
+          "rawValue": "TC: 3400 | BS: 3864"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 5,
+          "dailyGramsMin": 75,
+          "dailyGramsMax": 140
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 160,
+          "dailyGramsMax": 230
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 11,
+          "petWeightKgMax": 20,
+          "dailyGramsMin": 240,
+          "dailyGramsMax": 360
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 21,
+          "petWeightKgMax": 30,
+          "dailyGramsMin": 370,
+          "dailyGramsMax": 470
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 31,
+          "petWeightKgMax": 40,
+          "dailyGramsMin": 480,
+          "dailyGramsMax": 570
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 41,
+          "petWeightKgMax": 50,
+          "dailyGramsMin": 580,
+          "dailyGramsMax": 660
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 51,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 670,
+          "dailyGramsMax": null
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Mockup_OP-Equilibrium-Light-3.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/perros-old-prince-equilibrium-adultos-medianos-y-grandes-pollo-y-arro/",
+      "name": "Old Prince Equilibrium Adultos Medianos y Grandes Pollo y Arroz",
+      "presentations": [
+        3000,
+        7500,
+        15000,
+        20000
+      ],
+      "ingredients": "Harina de pollo, arroz, gluten de maíz, germen de maíz desgrasado, aceite de pollo , aceite de pescado (fuente de omega), hidrolizado de menudencias porcinas y aviares, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS), fibra insoluble (celulosa), levadura de cerveza, zeolita, extracto de yucca schidigera, manano-oli-gosacáridos – MOS, dipropionato de calcio, ácido propiónico, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, metionina, antioxidantes naturales: extracto de romero, ácido cítrico, vitamina C, betacaroteno, licopeno, luteína, polifenoles, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales: zinc, hierro, cobre, manganeso, yodo, selenio",
+      "analyticalComposition": [
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 14,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "14 %"
+        },
+        {
+          "name": "Proteína",
+          "minimum": 26,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "26 %"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3.5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3,5 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 8,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "8 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1.5,
+          "unit": "%",
+          "rawValue": "1,0 % | 1,5 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1.2,
+          "unit": "%",
+          "rawValue": "0,6 % | 1,2 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 853326,
+          "maximum": 3780,
+          "unit": null,
+          "rawValue": "EM 85 TC: 3326 | BS: 3780"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 110,
+          "dailyGramsMax": 180
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 11,
+          "petWeightKgMax": 20,
+          "dailyGramsMin": 190,
+          "dailyGramsMax": 280
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 21,
+          "petWeightKgMax": 30,
+          "dailyGramsMin": 290,
+          "dailyGramsMax": 370
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 31,
+          "petWeightKgMax": 40,
+          "dailyGramsMin": 380,
+          "dailyGramsMax": 450
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 41,
+          "petWeightKgMax": 50,
+          "dailyGramsMin": 460,
+          "dailyGramsMax": 520
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 51,
+          "petWeightKgMax": null,
+          "dailyGramsMin": 530,
+          "dailyGramsMax": null
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Mockup_Equilibrium-Adulto-MyG-1.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/perros-old-prince-equilibrium-adultos-razas-pequenas-pollo-y-arroz/",
+      "name": "Old Prince Equilibrium Adultos Razas Pequeñas Pollo y Arroz",
+      "presentations": [
+        3000,
+        7500,
+        15000
+      ],
+      "ingredients": "Harina de pollo, arroz, gluten de maíz, germen de maíz desgrasado, aceite de pollo, aceite de pescado (fuente de omega), hidrolizado de menudencias porcinas y aviares, pulpa de remolacha (fuente de fructooligosacáridos – FOS), fibra insoluble (celulosa), levadura de cerveza, zeolita, extracto de yucca schidigera, manano-oli-oligosacáridos – MOS, dipropionato de calcio, ácido propiónico, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, metionina, antioxidantes naturales: extracto de romero, ácido cítrico, vitamina C, betacaroteno, licopeno, luteína, polifenoles, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales: zinc, hierro, cobre, manganeso, yodo, selenio",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 28,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "28 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 16,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "16 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 7.5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "7,5 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1.4,
+          "unit": "%",
+          "rawValue": "1,0 % | 1,4 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 0.9,
+          "unit": "%",
+          "rawValue": "0,6 % | 0,9"
+        },
+        {
+          "name": "EnergÍa metabolizable",
+          "minimum": 3500,
+          "maximum": 3977,
+          "unit": null,
+          "rawValue": "TC: 3500 | BS: 3977"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 20,
+          "dailyGramsMax": 60
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": 90
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 4,
+          "petWeightKgMax": 6,
+          "dailyGramsMin": 90,
+          "dailyGramsMax": 120
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 6,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 120,
+          "dailyGramsMax": 145
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 8,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 145,
+          "dailyGramsMax": 170
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Mockup_Equilibrium-adulto-Pequeno.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-equilibrium-cachorros-medianos-y-grandes-pollo-y-arro/",
+      "name": "Old Prince Equilibrium Cachorros Medianos y Grandes Pollo y Arroz",
+      "presentations": [
+        3000,
+        7500,
+        15000
+      ],
+      "ingredients": "Harina de pollo, arroz, gluten de maíz, germen de maíz desgrasado, aceite de pollo, aceite de pescado (fuente de omega), hidrolizado de menudencias porcinas y aviares, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS), fibra insoluble (celulosa), levadura de cerveza, zeolita, extracto de yucca schidigera, manano-oli-gosacáridos – MOS, dipropionato de calcio, ácido propiónico, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, metionina, antioxidantes naturales: extracto de romero, ácido cítrico, vitamina C, betacaroteno, licopeno, luteína, polifenoles, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales: zinc, hierro, cobre, manganeso, yodo, selenio",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 28,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "28 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 16,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "16 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3.5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3,5 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 8,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "8 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1.4,
+          "unit": "%",
+          "rawValue": "1,0 % | 1,4 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1,
+          "unit": "%",
+          "rawValue": "0,6 % | 1.0 %"
+        },
+        {
+          "name": "Energía metabolizable:",
+          "minimum": 3500,
+          "maximum": 3977,
+          "unit": null,
+          "rawValue": "TC: 3500 | BS: 3977"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 10,
+          "dailyGramsMin": 220,
+          "dailyGramsMax": 350
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 10,
+          "petWeightKgMax": 20,
+          "dailyGramsMin": 350,
+          "dailyGramsMax": 550
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 20,
+          "petWeightKgMax": 30,
+          "dailyGramsMin": 550,
+          "dailyGramsMax": 720
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 30,
+          "petWeightKgMax": 40,
+          "dailyGramsMin": 580,
+          "dailyGramsMax": 700
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 40,
+          "petWeightKgMax": 50,
+          "dailyGramsMin": 700,
+          "dailyGramsMax": 820
+        },
+        {
+          "condition": "5 - 10 Kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 220,
+          "dailyGramsMax": 350
+        },
+        {
+          "condition": "5 - 10 Kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 175,
+          "dailyGramsMax": 280
+        },
+        {
+          "condition": "5 - 10 Kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 130,
+          "dailyGramsMax": 210
+        },
+        {
+          "condition": "5 - 10 Kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 110,
+          "dailyGramsMax": 175
+        },
+        {
+          "condition": "10 - 20 Kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 350,
+          "dailyGramsMax": 550
+        },
+        {
+          "condition": "10 - 20 Kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 280,
+          "dailyGramsMax": 440
+        },
+        {
+          "condition": "10 - 20 Kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 210,
+          "dailyGramsMax": 330
+        },
+        {
+          "condition": "10 - 20 Kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 175,
+          "dailyGramsMax": 280
+        },
+        {
+          "condition": "20 - 30 Kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 550,
+          "dailyGramsMax": 720
+        },
+        {
+          "condition": "20 - 30 Kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 440,
+          "dailyGramsMax": 580
+        },
+        {
+          "condition": "20 - 30 Kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 330,
+          "dailyGramsMax": 430
+        },
+        {
+          "condition": "20 - 30 Kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 280,
+          "dailyGramsMax": 360
+        },
+        {
+          "condition": "30 - 40 Kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 580,
+          "dailyGramsMax": 700
+        },
+        {
+          "condition": "30 - 40 Kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 430,
+          "dailyGramsMax": 530
+        },
+        {
+          "condition": "30 - 40 Kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 360,
+          "dailyGramsMax": 440
+        },
+        {
+          "condition": "40 - 50 Kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 700,
+          "dailyGramsMax": 820
+        },
+        {
+          "condition": "40 - 50 Kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 530,
+          "dailyGramsMax": 615
+        },
+        {
+          "condition": "40 - 50 Kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 440,
+          "dailyGramsMax": 510
+        },
+        {
+          "condition": "Más de 50 Kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 820,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "Más de 50 Kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 615,
+          "dailyGramsMax": null
+        },
+        {
+          "condition": "Más de 50 Kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 510,
+          "dailyGramsMax": null
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Mockup_Equilibrium-Cachorro-MyG.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-equilibrium-cachorros-razas-pequenas-pollo-y-arroz/",
+      "name": "Old Prince Equilibrium Cachorros Razas Pequeñas Pollo y Arroz",
+      "presentations": [
+        3000,
+        7500
+      ],
+      "ingredients": "Harina de pollo, arroz, gluten de maíz, germen de maíz desgrasado, aceite de pollo, aceite de pescado (fuente de omega), hidrolizado de menudencias porcinas y aviares, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS), fibra insoluble (celulosa), levadura de cerveza, zeolita, extracto de yucca schidigera, manano-oli-gosacáridos – MOS, dipropionato de calcio, ácido propiónico, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, metionina, antioxidantes naturales: extracto de romero, ácido cítrico, vitamina C, betacaroteno, licopeno, luteína, polifenoles, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina,minerales: zinc, hierro, cobre, manganeso, yodo, selenio.",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 30,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "30 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 16,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "16 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 7.5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "7,5 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1.4,
+          "unit": "%",
+          "rawValue": "1,0 % | 1,4 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 0.9,
+          "unit": "%",
+          "rawValue": "0,6 % | 0,9 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3500,
+          "maximum": 3977,
+          "unit": null,
+          "rawValue": "TC: 3500 | BS: 3977"
+        }
+      ],
+      "feedingGuide": [
+        {
+          "condition": null,
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 70,
+          "dailyGramsMax": 115
+        },
+        {
+          "condition": null,
+          "petWeightKgMin": 2,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 115,
+          "dailyGramsMax": 180
+        },
+        {
+          "condition": "1 - 2 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 70,
+          "dailyGramsMax": 115
+        },
+        {
+          "condition": "1 - 2 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": 90
+        },
+        {
+          "condition": "1 - 2 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 45,
+          "dailyGramsMax": 70
+        },
+        {
+          "condition": "1 - 2 kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 40,
+          "dailyGramsMax": 60
+        },
+        {
+          "condition": "2 - 4 kg",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 115,
+          "dailyGramsMax": 180
+        },
+        {
+          "condition": "2 - 4 kg",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 90,
+          "dailyGramsMax": 145
+        },
+        {
+          "condition": "2 - 4 kg",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 70,
+          "dailyGramsMax": 110
+        },
+        {
+          "condition": "2 - 4 kg",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 60,
+          "dailyGramsMax": 90
+        },
+        {
+          "condition": "4 - 6",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 180,
+          "dailyGramsMax": 240
+        },
+        {
+          "condition": "4 - 6",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 145,
+          "dailyGramsMax": 190
+        },
+        {
+          "condition": "4 - 6",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 110,
+          "dailyGramsMax": 145
+        },
+        {
+          "condition": "4 - 6",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 90,
+          "dailyGramsMax": 120
+        },
+        {
+          "condition": "6 - 8",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 240,
+          "dailyGramsMax": 290
+        },
+        {
+          "condition": "6 - 8",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 190,
+          "dailyGramsMax": 230
+        },
+        {
+          "condition": "6 - 8",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 145,
+          "dailyGramsMax": 175
+        },
+        {
+          "condition": "6 - 8",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 120,
+          "dailyGramsMax": 145
+        },
+        {
+          "condition": "8 - 10",
+          "petWeightKgMin": 1,
+          "petWeightKgMax": 2,
+          "dailyGramsMin": 290,
+          "dailyGramsMax": 340
+        },
+        {
+          "condition": "8 - 10",
+          "petWeightKgMin": 3,
+          "petWeightKgMax": 4,
+          "dailyGramsMin": 230,
+          "dailyGramsMax": 270
+        },
+        {
+          "condition": "8 - 10",
+          "petWeightKgMin": 5,
+          "petWeightKgMax": 8,
+          "dailyGramsMin": 175,
+          "dailyGramsMax": 200
+        },
+        {
+          "condition": "8 - 10",
+          "petWeightKgMin": 9,
+          "petWeightKgMax": 12,
+          "dailyGramsMin": 145,
+          "dailyGramsMax": 170
+        }
+      ],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Mockup_Equilibrium-Cachorro-Pequeno.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-equilibrium-gatitos-optimo-crecimiento-pollo-y-arroz/",
+      "name": "Old Prince Equilibrium Gatitos Óptimo Crecimiento Pollo y Arroz",
+      "presentations": [
+        1000,
+        3000
+      ],
+      "ingredients": "Harina de pollo, arroz, gluten de maíz, albúmina en polvo, plasma bovino en polvo, trigo, grasa animal (pollo), aceite de pescado (fuente de omega 3), hidrolizado proteico de menudencias porcinas, pulpa de remolacha (fuente de fructo-oligosa-cáridos – FOS), levadura de cerveza, fuente de fibra insoluble (celulosa), sal, acidificante en polvo (bisulfato ácido de sodio), extracto de yucca schidigera, manano-oligosa-cáridos – MOS, nucleótidos de levadura, carbonato de calcio, ácido propiónico, bisulfato de sodio, oxido de manganeso, metionina, antioxidantes naturales: extracto de romero, ácido cítrico, vitamina C, betacaroteno, luteína, polifenoles, taurina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales: zinc, hierro, cobre, yodo, selenio",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 36,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "36 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 15,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "15 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 6,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 0.9,
+          "maximum": 1.2,
+          "unit": "%",
+          "rawValue": "0,9 % | 1,2 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 0.9,
+          "unit": "%",
+          "rawValue": "0,6 % | 0,9 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3515,
+          "maximum": 3994,
+          "unit": null,
+          "rawValue": "TC: 3515 | BS: 3994"
+        }
+      ],
+      "feedingGuide": [],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Mockup_Equilibrium-Gatito.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-equilibrium-adultos-urinario/",
+      "name": "Old Prince Equilibrium Gato Adultos Urinario",
+      "presentations": [
+        3000,
+        7500
+      ],
+      "ingredients": "Harina de pollo, arroz, gluten de maíz, albúmina en polvo, trigo, grasa animal (pollo), aceite de pescado (fuente de omega 3), hidrolizado proteico de menudencias porcinas, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS), levadura de cerveza, fuente de fibra insoluble (celulosa), sal, acidificante en polvo (bisulfato ácido de sodio), extracto de yucca schidigera, manano-oligosacáridos – MOS, nucleótidos de levadura, carbonato de calcio, dipropionato de amonio, ácido propiónico, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, colágeno hidrolizado, L-carnitina, metionina, antioxidantes naturales: extracto de romero, ácido cítrico, vitamina C, betacaroteno, luteína, polifenoles, taurina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales: zinc, hierro, cobre, manganeso, yodo, selenio",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 34,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "34 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 13,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "13 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "5 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 0.6,
+          "maximum": 0.9,
+          "unit": "%",
+          "rawValue": "0,6 % | 0,9 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.4,
+          "maximum": 0.8,
+          "unit": "%",
+          "rawValue": "0,4 % | 0,8 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3450,
+          "maximum": 3920,
+          "unit": null,
+          "rawValue": "TC: 3450 | BS: 3920"
+        }
+      ],
+      "feedingGuide": [],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Mockup_Equilibrium-Gato-urinario.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-equilibrium-adultos/",
+      "name": "Old Prince Equilibrium Gatos Adultos",
+      "presentations": [
+        3000,
+        7500
+      ],
+      "ingredients": "Harina de pollo, arroz, gluten de maíz, plasma bovino en polvo, huevo en polvo, grasa animal (pollo), aceite de pescado (fuente de omega 3), hidrolizado proteico de menudencias porcinas, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS), levadura de cerveza, fuente de fibra insoluble (celulosa), sal, acidificante en polvo (bisulfato ácido de sodio), extracto de yucca schidigera, manano-oligosacáridos – MOS, nucleótidos de levadura, carbonato de calcio, ácido propiónico, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, colágeno hidrolizado, L-carnitina, metionina, antioxidantes naturales: extracto de romero, ácido cítrico, vitamina C, betacaroteno, luteína, polifenoles, taurina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales: zinc, hierro, cobre, manganeso, yodo, selenio",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 32,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "32 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 15,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "15 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 3,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "3 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 6,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 1,
+          "maximum": 1.2,
+          "unit": "%",
+          "rawValue": "1,0 % | 1,2 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.6,
+          "maximum": 1,
+          "unit": "%",
+          "rawValue": "0,6 % | 1 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3365,
+          "maximum": 3824,
+          "unit": null,
+          "rawValue": "TC: 3365 | BS: 3824"
+        }
+      ],
+      "feedingGuide": [],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Mockup_Gato-adulto-equilibrium-Nuevo-1.png"
+    },
+    {
+      "sourceUrl": "https://oldprince.com.ar/producto/old-prince-equilibrium-adultos-esterilizado/",
+      "name": "Old Prince Equilibrium Gatos Adultos Esterilizado",
+      "presentations": [
+        3000,
+        7500
+      ],
+      "ingredients": "Harina de pollo, arroz, gluten de maíz, albúmina en polvo, plasma bovino en polvo, huevo en polvo, trigo, grasa animal (pollo), aceite de pescado (fuente de omega 3), hidrolizado proteico de menudencias porcinas, pulpa de remolacha (fuente de fructo-oligosacáridos – FOS), levadura de cerveza, fuente de fibra insoluble (celulosa), nucleótidos de levadura, acidificante en polvo (bisulfato ácido de sodio), extracto de yucca schidigera, manano-oligosacáridos – MOS, L-carnitina, carbonato de calcio, dipropionato de amonio, ácido propiónico, pirofosfato ácido de sodio, glucosamina, condroitin sulfato, colágeno hidrolizado, metionina, antioxidantes naturales: extracto de romero, ácido cítrico, vitamina C, betacaroteno, luteína, polifenoles, taurina, vitaminas: A, D3, E, K, B1, B2, B6, B12, ácido fólico, ácido nicotínico, pantotenato de calcio, biotina, colina, minerales: zinc, hierro, cobre, manganeso, yodo, selenio",
+      "analyticalComposition": [
+        {
+          "name": "Proteína",
+          "minimum": 36,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "36 %"
+        },
+        {
+          "name": "Extracto etéreo",
+          "minimum": 9,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "9 %"
+        },
+        {
+          "name": "Humedad",
+          "minimum": 12,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "12%"
+        },
+        {
+          "name": "Fibra cruda",
+          "minimum": 5,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "5 %"
+        },
+        {
+          "name": "Minerales totales",
+          "minimum": 6,
+          "maximum": null,
+          "unit": "%",
+          "rawValue": "6 %"
+        },
+        {
+          "name": "Calcio",
+          "minimum": 0.7,
+          "maximum": 1.1,
+          "unit": "%",
+          "rawValue": "0,7 % | 1,1 %"
+        },
+        {
+          "name": "Fósforo",
+          "minimum": 0.5,
+          "maximum": 0.8,
+          "unit": "%",
+          "rawValue": "0,5 % | 0,8 %"
+        },
+        {
+          "name": "Energía metabolizable",
+          "minimum": 3145,
+          "maximum": 3574,
+          "unit": null,
+          "rawValue": "TC: 3145 | BS: 3574"
+        }
+      ],
+      "feedingGuide": [],
+      "image": "https://oldprince.com.ar/wp-content/uploads/2023/06/Mockup_Equilibrium-Esterilizado.png"
+    }
+  ],
+  "warnings": [
+    "https://oldprince.com.ar/producto/old-prince-proteinas-noveles-gatos-adultos-cordero-y-arroz-integral/: No se encontró tabla diaria.",
+    "https://oldprince.com.ar/producto/old-prince-proteinas-noveles-gatos-esterilizados-cordero-y-arroz-integral/: No se encontró tabla diaria.",
+    "https://oldprince.com.ar/producto/old-prince-equilibrium-gatitos-optimo-crecimiento-pollo-y-arroz/: No se encontró tabla diaria.",
+    "https://oldprince.com.ar/producto/old-prince-equilibrium-adultos-urinario/: No se encontró tabla diaria.",
+    "https://oldprince.com.ar/producto/old-prince-equilibrium-adultos/: No se encontró tabla diaria.",
+    "https://oldprince.com.ar/producto/old-prince-equilibrium-adultos-esterilizado/: No se encontró tabla diaria."
+  ],
+  "errors": []
+}
+x

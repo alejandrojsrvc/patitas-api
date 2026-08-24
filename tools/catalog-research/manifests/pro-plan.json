@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "catalog-research.brand.v1",
+  "brand": "Pro Plan",
+  "productPathContains": ["/proplan/perros/", "/proplan/gatos/"],
+  "categoryUrls": [
+    "https://www.purina.com.ar/proplan/perros",
+    "https://www.purina.com.ar/proplan/gatos"
+  ]
+}

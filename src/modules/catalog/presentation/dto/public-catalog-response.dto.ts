@@ -75,11 +75,13 @@ export class PublicProductResponseDto {
 }
 
 export class PublicFeedingGuideEntryResponseDto {
-  @ApiProperty() public petWeightKg!: number;
+  @ApiProperty() public petWeightKgMin!: number;
+  @ApiPropertyOptional({ nullable: true }) public petWeightKgMax!:
+    number | null;
   @ApiPropertyOptional({ nullable: true }) public lifeStage!: string | null;
   @ApiProperty({ type: Object }) public conditions!: Record<string, string>;
   @ApiProperty() public dailyGramsMin!: number;
-  @ApiProperty() public dailyGramsMax!: number;
+  @ApiPropertyOptional({ nullable: true }) public dailyGramsMax!: number | null;
 }
 
 export class PublicFeedingGuideResponseDto {
@@ -96,6 +98,10 @@ export class PublicProductTechnicalSheetResponseDto {
   @ApiPropertyOptional({ nullable: true }) public lifeStage!: string | null;
   @ApiPropertyOptional({ nullable: true }) public breedSize!: string | null;
   @ApiPropertyOptional({ nullable: true }) public line!: string | null;
+  @ApiPropertyOptional({ nullable: true }) public ingredientsText!:
+    string | null;
+  @ApiPropertyOptional({ type: [Object], nullable: true })
+  public analyticalComposition!: Record<string, unknown> | null;
   @ApiPropertyOptional({ nullable: true })
   public estimatedDailyGramsPerKg!: string | null;
   @ApiPropertyOptional({ type: PublicFeedingGuideResponseDto, nullable: true })

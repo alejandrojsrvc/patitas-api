@@ -11,6 +11,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   ValidateNested,
   Max,
   MaxLength,
@@ -28,6 +29,14 @@ export class ReferenceDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() public active?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsString() public description?:
     string | null;
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @IsString()
+  public ingredientsText?: string | null;
+  @ApiPropertyOptional({ type: Object, nullable: true })
+  @IsOptional()
+  @IsObject()
+  public analyticalComposition?: Record<string, unknown> | null;
   @ApiPropertyOptional() @IsOptional() @IsString() public seoTitle?:
     string | null;
   @ApiPropertyOptional() @IsOptional() @IsString() public seoDescription?:
@@ -63,6 +72,14 @@ export class CreateProductDto {
   public slug?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() public description?:
     string | null;
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @IsString()
+  public ingredientsText?: string | null;
+  @ApiPropertyOptional({ type: Object, nullable: true })
+  @IsOptional()
+  @IsObject()
+  public analyticalComposition?: Record<string, unknown> | null;
   @ApiProperty({ format: 'uuid' }) @IsUUID() public brandId!: string;
   @ApiProperty({ format: 'uuid' }) @IsUUID() public categoryId!: string;
   @ApiPropertyOptional() @IsOptional() @IsString() public species?:
@@ -92,6 +109,11 @@ export class UpdateProductDto extends PartialType(CreateProductDto) {
 export class CreateVariantDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(100) public sku?:
     string | null;
+  @ApiPropertyOptional({ description: 'Código EAN/GTIN del fabricante' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{8,14}$/)
+  public barcode?: string | null;
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -149,10 +171,11 @@ export class UpdateProductMediaDto {
 }
 
 export class UploadProductMediaDto {
-  @ApiProperty({ maxLength: 300 })
+  @ApiPropertyOptional({ maxLength: 300 })
+  @IsOptional()
   @IsString()
   @MaxLength(300)
-  public altText!: string;
+  public altText?: string;
 
   @ApiPropertyOptional({ format: 'uuid', nullable: true })
   @IsOptional()
@@ -172,7 +195,13 @@ export class FeedingGuideEntryDto {
   @Type(() => Number)
   @IsNumber()
   @Min(0.1)
-  public petWeightKg!: number;
+  public petWeightKgMin!: number;
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.1)
+  public petWeightKgMax?: number | null;
   @ApiPropertyOptional() @IsOptional() @IsString() public lifeStage?:
     string | null;
   @ApiPropertyOptional({ type: Object })
@@ -184,11 +213,12 @@ export class FeedingGuideEntryDto {
   @IsNumber()
   @Min(0.1)
   public dailyGramsMin!: number;
-  @ApiProperty()
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0.1)
-  public dailyGramsMax!: number;
+  public dailyGramsMax?: number | null;
 }
 
 export class ReplaceFeedingGuideDto {

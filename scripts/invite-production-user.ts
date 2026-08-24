@@ -1,7 +1,7 @@
-import { config as loadEnv } from 'dotenv';
+import { loadProjectEnv } from './load-project-env';
 import { SupabaseAdminInvitationAdapter } from '../src/infrastructure/identity/supabase/supabase-admin-invitation.adapter';
 
-loadEnv({ path: ['.env.supabase.local', '.env.local', '.env'], quiet: true });
+loadProjectEnv();
 
 const email = readArgument('--email').trim().toLowerCase();
 const confirmation = readArgument('--confirm').trim().toLowerCase();

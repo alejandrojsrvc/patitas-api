@@ -158,6 +158,8 @@ const toPublicProductDetail = (
     lifeStage: detail.product.lifeStage,
     breedSize: detail.product.breedSize,
     line: detail.product.line,
+    ingredientsText: detail.product.ingredientsText,
+    analyticalComposition: detail.product.analyticalComposition,
     estimatedDailyGramsPerKg: detail.product.estimatedDailyGramsPerKg,
     feedingGuide: detail.feedingGuide
       ? {
