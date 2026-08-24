@@ -126,9 +126,7 @@ export const htmlToText = (html: string): string => stripTags(html);
 
 export const extractLinks = (html: string, baseUrl: string): string[] => {
   const links: string[] = [];
-  for (const match of html.matchAll(
-    /<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi,
-  )) {
+  for (const match of html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi)) {
     try {
       links.push(new URL(match[1], baseUrl).toString());
     } catch {

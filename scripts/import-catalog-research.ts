@@ -216,7 +216,9 @@ const importProduct = async (
 const importMedia = async (
   prisma: PrismaClient,
   productId: string,
-  image: NonNullable<CatalogResearchProductResult['product']>['images'][number] | null,
+  image:
+    | NonNullable<CatalogResearchProductResult['product']>['images'][number]
+    | null,
   storage: StorageProvider,
 ): Promise<void> => {
   if (!image) return;
@@ -252,7 +254,9 @@ const importMedia = async (
 
 interface ImportedProduct {
   productId: string;
-  image: NonNullable<CatalogResearchProductResult['product']>['images'][number] | null;
+  image:
+    | NonNullable<CatalogResearchProductResult['product']>['images'][number]
+    | null;
 }
 
 const createStorageProvider = (): StorageProvider =>
@@ -264,8 +268,14 @@ const downloadImage = async (
   const response = await fetch(sourceUrl, { redirect: 'follow' });
   if (!response.ok)
     throw new Error(`HTTP ${response.status} al descargar ${sourceUrl}.`);
-  const contentType = (response.headers.get('content-type') ?? '').split(';')[0];
-  if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(contentType))
+  const contentType = (response.headers.get('content-type') ?? '').split(
+    ';',
+  )[0];
+  if (
+    !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(
+      contentType,
+    )
+  )
     throw new Error(`Tipo de imagen no permitido en ${sourceUrl}.`);
   const data = new Uint8Array(await response.arrayBuffer());
   if (data.byteLength === 0 || data.byteLength > MAX_IMAGE_BYTES)
@@ -320,8 +330,7 @@ const importFeedingGuide = async (
 
 const parseResult = (value: string): CatalogResearchRunResult => {
   const result = JSON.parse(value) as
-    | CatalogResearchRunResult
-    | CatalogBrandResearchResult;
+    CatalogResearchRunResult | CatalogBrandResearchResult;
   if (result.schemaVersion === 'catalog-research.brand-result.v1')
     return normalizeBrandResult(result);
   if (
@@ -367,20 +376,24 @@ const normalizeBrandResult = (
         ingredientsText: product.ingredients,
         analyticalComposition: product.analyticalComposition,
         presentations: product.presentations,
-        feedingGuide: product.feedingGuide
-          .filter((entry) => entry.petWeightKgMin !== null)
-          .map((entry) => ({
-            petWeightKgMin: entry.petWeightKgMin as number,
-            petWeightKgMax: entry.petWeightKgMax,
-            lifeStage: null,
-            conditions: entry.condition
-              ? { condition: entry.condition }
-              : ({} as Record<string, string>),
-            dailyGramsMin: entry.dailyGramsMin,
-            dailyGramsMax: entry.dailyGramsMax,
-            rawWeight: entry.condition ?? `${entry.petWeightKgMin} kg`,
-            rawDailyAmount: `${entry.dailyGramsMin}${entry.dailyGramsMax ? ` - ${entry.dailyGramsMax}` : ''} g`,
-          })),
+        feedingGuide: product.feedingGuide.flatMap((entry) => {
+          if (entry.petWeightKgMin === null) return [];
+          const conditions: Record<string, string> = entry.condition
+            ? { condition: entry.condition }
+            : {};
+          return [
+            {
+              petWeightKgMin: entry.petWeightKgMin,
+              petWeightKgMax: entry.petWeightKgMax,
+              lifeStage: null,
+              conditions,
+              dailyGramsMin: entry.dailyGramsMin,
+              dailyGramsMax: entry.dailyGramsMax,
+              rawWeight: entry.condition ?? `${entry.petWeightKgMin} kg`,
+              rawDailyAmount: `${entry.dailyGramsMin}${entry.dailyGramsMax ? ` - ${entry.dailyGramsMax}` : ''} g`,
+            },
+          ];
+        }),
         images: product.image
           ? [
               {

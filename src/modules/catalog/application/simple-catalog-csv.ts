@@ -18,11 +18,7 @@ export interface SimpleCatalogCsvRow {
   initialStock: number | null;
 }
 
-const REQUIRED_HEADERS = [
-  'name',
-  'brand',
-  'weight_kg',
-];
+const REQUIRED_HEADERS = ['name', 'brand', 'weight_kg'];
 
 type CsvRecord = Record<string, string>;
 
@@ -33,9 +29,14 @@ export const parseSimpleCatalogCsv = (
   if (rows.length === 0) throw new CatalogValidationError('El CSV está vacío.');
 
   const headers = rows.shift()!.map((header) =>
-    header.replace(/^\uFEFF/, '').trim().toLowerCase(),
+    header
+      .replace(/^\uFEFF/, '')
+      .trim()
+      .toLowerCase(),
   );
-  const missing = REQUIRED_HEADERS.filter((header) => !headers.includes(header));
+  const missing = REQUIRED_HEADERS.filter(
+    (header) => !headers.includes(header),
+  );
   if (missing.length > 0) {
     throw new CatalogValidationError(
       `Faltan columnas obligatorias: ${missing.join(', ')}.`,
@@ -54,15 +55,20 @@ export const parseSimpleCatalogCsv = (
         );
       }
       const row = Object.fromEntries(
-        headers.map((header, headerIndex) => [header, values[headerIndex].trim()]),
-      ) as CsvRecord;
+        headers.map((header, headerIndex) => [
+          header,
+          values[headerIndex].trim(),
+        ]),
+      );
       const parsed = mapRow(row, index + 2);
       if (seenSkus.has(parsed.sku)) {
         throw new CatalogValidationError(`El SKU ${parsed.sku} está repetido.`);
       }
       seenSkus.add(parsed.sku);
       if (parsed.barcode && seenBarcodes.has(parsed.barcode)) {
-        throw new CatalogValidationError(`El EAN/GTIN ${parsed.barcode} está repetido.`);
+        throw new CatalogValidationError(
+          `El EAN/GTIN ${parsed.barcode} está repetido.`,
+        );
       }
       if (parsed.barcode) seenBarcodes.add(parsed.barcode);
       const productWeight = `${parsed.slug}:${parsed.weightGrams}`;
@@ -79,22 +85,37 @@ export const parseSimpleCatalogCsv = (
 const mapRow = (row: CsvRecord, rowNumber: number): SimpleCatalogCsvRow => {
   const required = (key: string): string => {
     const value = row[key]?.trim();
-    if (!value) throw new CatalogValidationError(`La fila ${rowNumber} no tiene ${key}.`);
+    if (!value)
+      throw new CatalogValidationError(`La fila ${rowNumber} no tiene ${key}.`);
     return value;
   };
   const weightKg = Number(required('weight_kg').replace(',', '.'));
-  if (!Number.isFinite(weightKg) || weightKg <= 0 || !Number.isInteger(weightKg * 1000)) {
-    throw new CatalogValidationError(`La fila ${rowNumber} tiene un peso inválido.`);
+  if (
+    !Number.isFinite(weightKg) ||
+    weightKg <= 0 ||
+    !Number.isInteger(weightKg * 1000)
+  ) {
+    throw new CatalogValidationError(
+      `La fila ${rowNumber} tiene un peso inválido.`,
+    );
   }
   const salePrice = optionalNumber(row.sale_price, rowNumber, 'sale_price');
-  const initialStock = optionalInteger(row.initial_stock, rowNumber, 'initial_stock');
+  const initialStock = optionalInteger(
+    row.initial_stock,
+    rowNumber,
+    'initial_stock',
+  );
   const barcode = normalizeBarcode(row.barcode || row.ean, rowNumber);
   const imageUrl = row.image_url?.trim() || null;
   if (imageUrl && !/^https?:\/\//i.test(imageUrl)) {
-    throw new CatalogValidationError(`La fila ${rowNumber} tiene una imagen inválida.`);
+    throw new CatalogValidationError(
+      `La fila ${rowNumber} tiene una imagen inválida.`,
+    );
   }
   return {
-    sku: row.sku?.trim().toUpperCase() || generateSku(row.brand, row.name, Math.round(weightKg * 1000)),
+    sku:
+      row.sku?.trim().toUpperCase() ||
+      generateSku(row.brand, row.name, Math.round(weightKg * 1000)),
     barcode,
     name: required('name'),
     slug: slugify(row.slug?.trim() || row.name),
@@ -120,7 +141,9 @@ const optionalNumber = (
   if (!value?.trim()) return null;
   const number = Number(value.replace(',', '.'));
   if (!Number.isFinite(number) || number < 0) {
-    throw new CatalogValidationError(`La fila ${rowNumber} tiene ${field} inválido.`);
+    throw new CatalogValidationError(
+      `La fila ${rowNumber} tiene ${field} inválido.`,
+    );
   }
   return number.toFixed(2);
 };
@@ -133,16 +156,23 @@ const optionalInteger = (
   if (!value?.trim()) return null;
   const number = Number(value);
   if (!Number.isInteger(number) || number < 0) {
-    throw new CatalogValidationError(`La fila ${rowNumber} tiene ${field} inválido.`);
+    throw new CatalogValidationError(
+      `La fila ${rowNumber} tiene ${field} inválido.`,
+    );
   }
   return number;
 };
 
-const normalizeBarcode = (value: string | undefined, rowNumber: number): string | null => {
+const normalizeBarcode = (
+  value: string | undefined,
+  rowNumber: number,
+): string | null => {
   if (!value?.trim()) return null;
   const barcode = value.replace(/[\s-]/g, '');
   if (!/^\d{8,14}$/.test(barcode)) {
-    throw new CatalogValidationError(`La fila ${rowNumber} tiene un EAN/GTIN inválido.`);
+    throw new CatalogValidationError(
+      `La fila ${rowNumber} tiene un EAN/GTIN inválido.`,
+    );
   }
   return barcode;
 };
@@ -150,7 +180,11 @@ const normalizeBarcode = (value: string | undefined, rowNumber: number): string 
 const inferSpecies = (name: string): string =>
   /gato|gatito|cat/i.test(name) ? 'gato' : 'perro';
 
-const generateSku = (brand: string, name: string, weightGrams: number): string => {
+const generateSku = (
+  brand: string,
+  name: string,
+  weightGrams: number,
+): string => {
   const compact = slugify(`${brand}-${name}`)
     .split('-')
     .filter(Boolean)
@@ -194,7 +228,10 @@ const parseRows = (contents: string): string[][] => {
       field = '';
     } else field += character;
   }
-  if (quoted) throw new CatalogValidationError('El CSV termina dentro de un campo entrecomillado.');
+  if (quoted)
+    throw new CatalogValidationError(
+      'El CSV termina dentro de un campo entrecomillado.',
+    );
   if (field.length > 0 || row.length > 0) {
     row.push(field.replace(/\r$/, ''));
     rows.push(row);

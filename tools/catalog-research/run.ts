@@ -137,7 +137,6 @@ export const runBrandResearch = async (
     await readFile(resolve(manifestPath), 'utf8'),
   ) as CatalogBrandResearchManifest;
   validateBrandManifest(manifest);
-  const startedAt = new Date().toISOString();
   const userAgent = manifest.userAgent ?? DEFAULT_USER_AGENT;
   const warnings: string[] = [];
   const errors: string[] = [];
@@ -178,18 +177,18 @@ export const runBrandResearch = async (
         feedingGuide: extracted.product.feedingGuide.map((entry) => ({
           condition:
             entry.conditions['age'] ?? entry.conditions['activity'] ?? null,
-          petWeightKgMin: entry.conditions['age']
-            ? null
-            : entry.petWeightKgMin,
-          petWeightKgMax: entry.conditions['age']
-            ? null
-            : entry.petWeightKgMax,
+          petWeightKgMin: entry.conditions['age'] ? null : entry.petWeightKgMin,
+          petWeightKgMax: entry.conditions['age'] ? null : entry.petWeightKgMax,
           dailyGramsMin: entry.dailyGramsMin,
           dailyGramsMax: entry.dailyGramsMax,
         })),
         image: extracted.product.images[0]?.sourceUrl ?? null,
       });
-      warnings.push(...extracted.warnings.map((warning) => `${manufacturerUrl}: ${warning}`));
+      warnings.push(
+        ...extracted.warnings.map(
+          (warning) => `${manufacturerUrl}: ${warning}`,
+        ),
+      );
     } catch (error) {
       errors.push(`${manufacturerUrl}: ${errorMessage(error)}`);
     }
@@ -256,7 +255,8 @@ const isManufacturerProductUrl = (
     candidate.pathname !== category.pathname &&
     (productPathContains?.some((pattern) =>
       candidate.pathname.includes(pattern),
-    ) ?? candidate.pathname.includes('/producto/'))
+    ) ??
+      candidate.pathname.includes('/producto/'))
   );
 };
 

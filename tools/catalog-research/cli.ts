@@ -4,8 +4,7 @@ import { runBrandResearch, runResearch } from './run';
 
 const args = process.argv.slice(2).filter((argument) => argument !== '--');
 const manifest = args[0];
-const output =
-  args[1] ?? resolve('artifacts/catalog-research/latest.json');
+const output = args[1] ?? resolve('artifacts/catalog-research/latest.json');
 
 if (!manifest) {
   console.error('Uso: pnpm catalog:research -- <manifest.json> [salida.json]');
@@ -26,10 +25,10 @@ const main = async (): Promise<void> => {
 };
 
 main().catch((error: unknown) => {
-    console.error(
-      error instanceof Error
-        ? error.message
-        : 'No se pudo ejecutar la investigación.',
-    );
-    process.exit(1);
-  });
+  console.error(
+    error instanceof Error
+      ? error.message
+      : 'No se pudo ejecutar la investigación.',
+  );
+  process.exit(1);
+});

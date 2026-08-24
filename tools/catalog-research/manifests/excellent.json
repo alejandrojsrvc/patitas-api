@@ -2,7 +2,5 @@
   "schemaVersion": "catalog-research.brand.v1",
   "brand": "Excellent",
   "productPathContains": ["/excellent/"],
-  "categoryUrls": [
-    "https://www.purina.com.ar/excellent/productos"
-  ]
+  "categoryUrls": ["https://www.purina.com.ar/excellent/productos"]
 }

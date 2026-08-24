@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
 import {
   extractAttribute,
   extractJsonLd,
@@ -23,6 +24,8 @@ import type {
   RetailPriceObservation,
   RetailerCode,
 } from './types';
+
+const requireOptional = createRequire(__filename);
 
 export interface FetchedPage {
   url: string;
@@ -65,15 +68,14 @@ const tryRenderWithPlaywright = async (
   userAgent: string,
 ): Promise<string | null> => {
   try {
-    const dynamicImport = new Function(
-      'specifier',
-      'return import(specifier)',
-    ) as (specifier: string) => Promise<unknown>;
-    const module = (await dynamicImport('playwright')) as {
+    const module = requireOptional('playwright') as {
       chromium?: {
         launch: (options: { headless: boolean }) => Promise<{
           newPage: (options: { userAgent: string }) => Promise<{
-            goto: (target: string, options: { waitUntil: string }) => Promise<unknown>;
+            goto: (
+              target: string,
+              options: { waitUntil: string },
+            ) => Promise<unknown>;
             content: () => Promise<string>;
           }>;
           close: () => Promise<void>;
@@ -144,11 +146,13 @@ export const extractManufacturer = (
     presentations,
     feedingGuide: parseFeedingTables(tables),
     images: primaryImage
-      ? [{
-        sourceUrl: primaryImage,
-        altText: title ?? 'Imagen del producto',
-        isPrimary: true,
-      }]
+      ? [
+          {
+            sourceUrl: primaryImage,
+            altText: title ?? 'Imagen del producto',
+            isPrimary: true,
+          },
+        ]
       : [],
     attributes: {
       brand: title?.match(/old prince/i)?.[0] ?? null,
@@ -298,7 +302,10 @@ const extractRoyalCaninMainImage = (html: string): string | null => {
   return (
     mainHtml.match(/<img\b[^>]*src=["']([^"']+)["']/i)?.[1] ??
     mainHtml.match(/<img\b[^>]*data-src=["']([^"']+)["']/i)?.[1] ??
-    mainHtml.match(/<img\b[^>]*srcset=["']([^"']+)["']/i)?.[1]?.split(',')[0]?.trim() ??
+    mainHtml
+      .match(/<img\b[^>]*srcset=["']([^"']+)["']/i)?.[1]
+      ?.split(',')[0]
+      ?.trim() ??
     null
   );
 };

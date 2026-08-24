@@ -208,7 +208,11 @@ export class CatalogService {
     const results: Array<{
       slug: string;
       productId: string;
-      variants: Array<{ id: string; sku: string | null; weightGrams: number | null }>;
+      variants: Array<{
+        id: string;
+        sku: string | null;
+        weightGrams: number | null;
+      }>;
       status: Product['status'];
       published: boolean;
       publishError?: string;
@@ -243,7 +247,11 @@ export class CatalogService {
 
       const knownImages = new Set(product.media.map((media) => media.url));
       const currentVariants = [...product.variants];
-      const importedVariants: Array<{ id: string; sku: string | null; weightGrams: number | null }> = [];
+      const importedVariants: Array<{
+        id: string;
+        sku: string | null;
+        weightGrams: number | null;
+      }> = [];
       for (const row of productRows) {
         let variant = currentVariants.find(
           (item) =>
@@ -271,10 +279,16 @@ export class CatalogService {
             });
           }
         }
-        const existingIndex = currentVariants.findIndex((item) => item.id === variant.id);
+        const existingIndex = currentVariants.findIndex(
+          (item) => item.id === variant.id,
+        );
         if (existingIndex >= 0) currentVariants[existingIndex] = variant;
         else currentVariants.push(variant);
-        importedVariants.push({ id: variant.id, sku: variant.sku, weightGrams: variant.weightGrams });
+        importedVariants.push({
+          id: variant.id,
+          sku: variant.sku,
+          weightGrams: variant.weightGrams,
+        });
         if (row.initialStock !== null) {
           await this.repository.setInventory(variant.id, {
             onHand: row.initialStock,
@@ -300,7 +314,8 @@ export class CatalogService {
           await this.updateProduct(product.id, { status: 'ACTIVE' });
           published = true;
         } catch (error) {
-          publishError = error instanceof Error ? error.message : 'No publicable';
+          publishError =
+            error instanceof Error ? error.message : 'No publicable';
         }
       }
       results.push({

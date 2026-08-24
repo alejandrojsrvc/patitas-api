@@ -1,7 +1,5 @@
 {
   "schemaVersion": "catalog-research.approval.v1",
   "runId": "copiar-el-runId-del-resultado",
-  "approvedProducts": [
-    "old-prince-premium-adulto-perro-pollo-carne"
-  ]
+  "approvedProducts": ["old-prince-premium-adulto-perro-pollo-carne"]
 }
