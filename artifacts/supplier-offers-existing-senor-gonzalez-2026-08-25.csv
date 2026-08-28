@@ -1,0 +1,5 @@
+supplier_id,supplier_name,variant_id,sku,barcode,ean,supplier_sku,unit_cost,stock_status,lead_time_hours,minimum_quantity,active
+766bb960-e8bf-48fa-89da-d2a1560e1769,Señor Gonzalez,,PI-EXC-CAT-AD-75K,,,"EXCELLENT CAT ADULTO 7,5",54200.00,UNKNOWN,,1,true
+766bb960-e8bf-48fa-89da-d2a1560e1769,Señor Gonzalez,,PI-EXC-DOG-AD-MG-15K,,,EXCELLENT Adulto DOG 15,60300.00,UNKNOWN,,1,true
+766bb960-e8bf-48fa-89da-d2a1560e1769,Señor Gonzalez,,PI-EXC-DOG-AD-SM-15K,,,EXCELLENT Adulto DOG Raza Pequeña 15,63200.00,UNKNOWN,,1,true
+766bb960-e8bf-48fa-89da-d2a1560e1769,Señor Gonzalez,,PI-EXC-DOG-PUP-MG-15K,,,EXCELLENT Puppy 15,66500.00,UNKNOWN,,1,true

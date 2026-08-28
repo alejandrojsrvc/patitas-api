@@ -53,4 +53,18 @@ export interface CheckoutRepository {
   findPublicOrder(id: string, token: string): Promise<OrderSummary>;
   listCustomerOrders(customerId: string): Promise<OrderSummary[]>;
   findCustomerOrder(customerId: string, orderId: string): Promise<OrderSummary>;
+  findPetPurchaseHistory(
+    customerId: string,
+    petId: string,
+  ): Promise<{
+    items: Array<{
+      id: string;
+      petId: string;
+      date: Date;
+      foodName: string;
+      presentation: string | null;
+      daysSincePrevious: number | null;
+    }>;
+    averageDays: number | null;
+  }>;
 }

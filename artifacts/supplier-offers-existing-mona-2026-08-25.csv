@@ -1,0 +1,9 @@
+supplier_id,supplier_name,variant_id,sku,barcode,ean,supplier_sku,unit_cost,stock_status,lead_time_hours,minimum_quantity,active
+bcd3b7ea-d7f9-4886-9e48-9b27e0c74814,Distribuidora Mona Pet Shop,,PI-EXC-CAT-AD-75K,,,EXCELLENT CAT ADULTO X 7.5 KG,52151.00,UNKNOWN,,1,true
+bcd3b7ea-d7f9-4886-9e48-9b27e0c74814,Distribuidora Mona Pet Shop,,PI-EXC-DOG-AD-MG-15K,,,EXCELLENT DOG ADULTO X 15 KG,57714.00,UNKNOWN,,1,true
+bcd3b7ea-d7f9-4886-9e48-9b27e0c74814,Distribuidora Mona Pet Shop,,PI-EXC-DOG-AD-SM-15K,,,EXCELLENT DOG ADULTO SMALL X 15 KG,60139.00,UNKNOWN,,1,true
+bcd3b7ea-d7f9-4886-9e48-9b27e0c74814,Distribuidora Mona Pet Shop,,PI-EXC-DOG-PUP-MG-15K,,,EXCELLENT DOG PUPPY X 15 KG,63649.00,UNKNOWN,,1,true
+bcd3b7ea-d7f9-4886-9e48-9b27e0c74814,Distribuidora Mona Pet Shop,,PI-OP-EQ-CAT-AD-75K,,,OLD PRINCE GATO EQUILIBRIUM ADULTO X 7.5 KG,39283.00,UNKNOWN,,1,true
+bcd3b7ea-d7f9-4886-9e48-9b27e0c74814,Distribuidora Mona Pet Shop,,PI-OP-EQ-DOG-AD-MG-15K,,,OLD PRINCE EQUILIBRIUM ADULTO X 15 KG,41243.00,UNKNOWN,,1,true
+bcd3b7ea-d7f9-4886-9e48-9b27e0c74814,Distribuidora Mona Pet Shop,,PI-OP-EQ-DOG-AD-SM-15K,,,OLD PRINCE EQUILIBRIUM ADULTO SMALL X 15 KG,46156.00,UNKNOWN,,1,true
+bcd3b7ea-d7f9-4886-9e48-9b27e0c74814,Distribuidora Mona Pet Shop,,PI-PP-DOG-AD-MED-12K,,,PRO PLAN ADULT DOG RAZA MEDIANA 12KG,76991.00,UNKNOWN,,1,true

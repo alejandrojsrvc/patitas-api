@@ -1,7 +1,9 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
+  Header,
   Param,
   Patch,
   Post,
@@ -9,8 +11,16 @@ import {
   UseFilters,
   UseGuards,
   UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiProduces,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Roles } from '../../auth/presentation/decorators/roles.decorator';
 import { AuthGuard } from '../../auth/presentation/guards/auth.guard';
 import { RolesGuard } from '../../auth/presentation/guards/roles.guard';
@@ -60,8 +70,46 @@ export class AdminSuppliersController {
   ) {
     return this.suppliers.listOffers(query);
   }
+  @Get('supplier-offers/import-template')
+  @ApiProduces('text/csv')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header(
+    'Content-Disposition',
+    'attachment; filename="supplier-offers-template.csv"',
+  )
+  public importTemplate() {
+    return [
+      'supplier_id,supplier_name,variant_id,sku,barcode,ean,supplier_sku,unit_cost,stock_status,lead_time_hours,minimum_quantity,active',
+      ',NOMBRE_PROVEEDOR,,,SKU_VARIANTE,,PROV-001,12500.00,AVAILABLE,48,1,true',
+      '',
+    ].join('\n');
+  }
   @Get('supplier-offers/:id') public offer(@Param('id') id: string) {
     return this.suppliers.findOffer(id);
+  }
+  @Post('supplier-offers/import-csv')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        dryRun: { type: 'boolean', default: false },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
+  )
+  public importOffers(
+    @UploadedFile() file: UploadedSupplierOffersCsv | undefined,
+    @Body('dryRun') dryRun?: string | boolean,
+  ) {
+    if (!file) throw new BadRequestException('Se requiere un archivo CSV.');
+    return this.suppliers.importOffers(file.buffer, {
+      dryRun: dryRun === true || dryRun === 'true',
+    });
   }
   @Post('supplier-offers') public createOffer(
     @Body() input: CreateSupplierOfferDto,
@@ -75,3 +123,9 @@ export class AdminSuppliersController {
     return this.suppliers.updateOffer(id, input);
   }
 }
+
+type UploadedSupplierOffersCsv = {
+  buffer: Buffer;
+  originalname: string;
+  mimetype: string;
+};

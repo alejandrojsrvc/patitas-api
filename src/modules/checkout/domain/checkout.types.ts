@@ -43,9 +43,12 @@ export interface OrderSummary {
   currency: 'ARS';
   contactName: string;
   contactEmail: string;
+  petName: string | null;
+  date: Date;
   lines: Array<{
     variantId: string;
     productName: string;
+    presentation: string | null;
     quantity: number;
     unitPrice: string;
     lineTotal: string;

@@ -123,6 +123,9 @@ export class CheckoutService {
   public customerOrder(customerId: string, orderId: string) {
     return this.repository.findCustomerOrder(customerId, orderId);
   }
+  public petPurchaseHistory(customerId: string, petId: string) {
+    return this.repository.findPetPurchaseHistory(customerId, petId);
+  }
 
   private async resolveMedia<
     T extends { items: Array<{ imageUrl: string | null }> },

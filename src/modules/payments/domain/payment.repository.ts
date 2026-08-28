@@ -19,6 +19,7 @@ export interface PaymentRepository {
   handleWebhook(input: {
     headers: Record<string, string | string[] | undefined>;
     body: unknown;
+    dataId?: string | string[];
   }): Promise<{
     accepted: boolean;
     duplicate: boolean;

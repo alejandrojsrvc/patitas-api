@@ -38,8 +38,30 @@ export class ReplenishmentService {
       );
     return this.repository.setStatus(id, owner, status);
   }
-  public reorder(id: string, owner: ReplenishmentOwner) {
-    return this.repository.createReorderCart(id, owner);
+  public updateSchedule(
+    id: string,
+    owner: ReplenishmentOwner,
+    nextReminderAt: Date,
+  ) {
+    if (nextReminderAt.getTime() < Date.now())
+      throw new ReplenishmentValidationError(
+        'El próximo recordatorio debe estar en el futuro.',
+      );
+    return this.repository.updateSchedule(id, owner, nextReminderAt);
+  }
+  public recalibrate(id: string, owner: ReplenishmentOwner, days: number) {
+    if (![3, 7, 14].includes(days))
+      throw new ReplenishmentValidationError(
+        'El intervalo de recalibración no es válido.',
+      );
+    return this.repository.recalibrate(id, owner, days);
+  }
+  public reorder(
+    id: string,
+    owner: ReplenishmentOwner,
+    options?: { anonymousToken?: boolean },
+  ) {
+    return this.repository.createReorderCart(id, owner, options);
   }
 }
 

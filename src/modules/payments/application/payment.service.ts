@@ -23,6 +23,7 @@ export class PaymentService {
   public async webhook(input: {
     headers: Record<string, string | string[] | undefined>;
     body: unknown;
+    dataId?: string | string[];
   }) {
     const result = await this.repository.handleWebhook(input);
     if (result.orderId && result.status === 'APPROVED' && this.marketing)

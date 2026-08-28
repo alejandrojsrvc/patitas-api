@@ -30,11 +30,19 @@ export class StructuredExceptionFilter implements ExceptionFilter {
         : error instanceof Error
           ? error.message
           : 'Error interno.';
+    const extra =
+      typeof payload === 'object' && payload && !Array.isArray(payload)
+        ? (payload as { code?: string; fieldErrors?: Record<string, string> })
+        : {};
     response.status(status).json({
       statusCode: status,
-      code: error instanceof DomainError ? error.code : `HTTP_${status}`,
+      code:
+        extra.code ??
+        (error instanceof DomainError ? error.code : `HTTP_${status}`),
       message,
+      fieldErrors: extra.fieldErrors,
       requestId: request.requestId ?? randomUUID(),
+      traceId: request.requestId ?? randomUUID(),
     });
   }
 }

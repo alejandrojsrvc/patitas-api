@@ -6,6 +6,8 @@ import {
   type StorageProvider,
 } from '../../shared/application/ports/storage-provider.interface';
 import { AuthModule } from '../auth/auth.module';
+import { SuppliersModule } from '../suppliers/suppliers.module';
+import { SupplierService } from '../suppliers/application/supplier.service';
 import { PromotionsModule } from '../promotions/promotions.module';
 import { CatalogService } from './application/catalog.service';
 import {
@@ -17,17 +19,26 @@ import { AdminCatalogController } from './presentation/controllers/admin-catalog
 import { PublicCatalogController } from './presentation/controllers/public-catalog.controller';
 
 @Module({
-  imports: [PrismaModule, AuthModule, StorageModule, PromotionsModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    StorageModule,
+    PromotionsModule,
+    SuppliersModule,
+  ],
   controllers: [PublicCatalogController, AdminCatalogController],
   providers: [
     { provide: CATALOG_REPOSITORY, useClass: PrismaCatalogRepository },
     {
       provide: CatalogService,
-      inject: [CATALOG_REPOSITORY, STORAGE_PROVIDER],
-      useFactory: (repository: CatalogRepository, storage: StorageProvider) =>
-        new CatalogService(repository, storage),
+      inject: [CATALOG_REPOSITORY, STORAGE_PROVIDER, SupplierService],
+      useFactory: (
+        repository: CatalogRepository,
+        storage: StorageProvider,
+        supplierOffers: SupplierService,
+      ) => new CatalogService(repository, storage, supplierOffers),
     },
   ],
-  exports: [CATALOG_REPOSITORY],
+  exports: [CATALOG_REPOSITORY, CatalogService],
 })
 export class CatalogModule {}

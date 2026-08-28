@@ -4,6 +4,7 @@ import {
   Headers,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -45,7 +46,8 @@ export class PaymentController {
   public webhook(
     @Headers() headers: Record<string, string | string[] | undefined>,
     @Body() body: unknown,
+    @Query('data.id') dataId?: string,
   ) {
-    return this.payments.webhook({ headers, body });
+    return this.payments.webhook({ headers, body, dataId });
   }
 }

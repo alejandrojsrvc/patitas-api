@@ -1,7 +1,10 @@
 import { createHash } from 'node:crypto';
 import type { NotificationProvider } from '../../../shared/application/ports/notification-provider.interface';
 import { DomainError } from '../../../shared/domain/domain-error';
-import type { NotificationRepository } from '../domain/notification.repository';
+import type {
+  NotificationPreferences,
+  NotificationRepository,
+} from '../domain/notification.repository';
 
 export class NotificationValidationError extends DomainError {
   public constructor(message: string) {
@@ -14,6 +17,35 @@ export class NotificationService {
     private readonly repository: NotificationRepository,
     private readonly provider: NotificationProvider,
   ) {}
+
+  public getPreferences(customerId: string) {
+    return this.repository.getPreferences(customerId);
+  }
+
+  public updatePreferences(customerId: string, input: NotificationPreferences) {
+    return this.repository.updatePreferences(customerId, input);
+  }
+
+  public registerDeviceToken(input: {
+    customerId: string;
+    token: string;
+    platform: string;
+    appVersion?: string | null;
+  }) {
+    if (!input.token.trim())
+      throw new NotificationValidationError(
+        'El token del dispositivo es obligatorio.',
+      );
+    if (!['ios', 'android'].includes(input.platform.toLowerCase()))
+      throw new NotificationValidationError(
+        'La plataforma del dispositivo no es válida.',
+      );
+    return this.repository.registerDeviceToken({
+      ...input,
+      token: input.token.trim(),
+      platform: input.platform.toLowerCase(),
+    });
+  }
 
   public async recordConsent(input: {
     customerId?: string;

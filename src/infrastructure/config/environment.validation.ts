@@ -8,6 +8,11 @@ export interface EnvironmentVariables {
   NODE_ENV: ApplicationEnvironment;
   PORT: number;
   CORS_ORIGINS: string;
+  PAYMENT_PROVIDER: 'simulated' | 'mercadopago';
+  MERCADOPAGO_ACCESS_TOKEN?: string;
+  MERCADOPAGO_WEBHOOK_SECRET?: string;
+  MERCADOPAGO_NOTIFICATION_URL?: string;
+  PUBLIC_WEB_URL?: string;
 }
 
 const requireValue = (
@@ -60,6 +65,45 @@ export const validateEnvironment = (
     typeof rawCorsOrigins === 'string' && rawCorsOrigins.trim()
       ? rawCorsOrigins.trim()
       : 'http://localhost:3000';
+  const rawPaymentProvider = environment['PAYMENT_PROVIDER'];
+  const paymentProvider =
+    typeof rawPaymentProvider === 'string'
+      ? rawPaymentProvider.trim().toLowerCase()
+      : 'simulated';
+  if (!['simulated', 'mercadopago'].includes(paymentProvider)) {
+    throw new Error('PAYMENT_PROVIDER debe ser simulated o mercadopago.');
+  }
+  if (nodeEnv === 'production' && paymentProvider !== 'mercadopago')
+    throw new Error(
+      'En producción PAYMENT_PROVIDER debe ser mercadopago; el proveedor simulado solo está permitido fuera de producción.',
+    );
+  const mercadoPagoAccessToken = optionalValue(
+    environment['MERCADOPAGO_ACCESS_TOKEN'],
+  );
+  const mercadoPagoWebhookSecret = optionalValue(
+    environment['MERCADOPAGO_WEBHOOK_SECRET'],
+  );
+  const mercadoPagoNotificationUrl = optionalValue(
+    environment['MERCADOPAGO_NOTIFICATION_URL'],
+  );
+  const publicWebUrl = optionalValue(environment['PUBLIC_WEB_URL']);
+  if (publicWebUrl)
+    validateUrl(publicWebUrl, 'PUBLIC_WEB_URL', ['http:', 'https:']);
+  if (paymentProvider === 'mercadopago') {
+    if (!mercadoPagoAccessToken)
+      throw new Error(
+        'MERCADOPAGO_ACCESS_TOKEN es obligatoria cuando PAYMENT_PROVIDER=mercadopago.',
+      );
+    if (!mercadoPagoWebhookSecret)
+      throw new Error(
+        'MERCADOPAGO_WEBHOOK_SECRET es obligatoria cuando PAYMENT_PROVIDER=mercadopago.',
+      );
+  }
+  if (mercadoPagoNotificationUrl)
+    validateUrl(mercadoPagoNotificationUrl, 'MERCADOPAGO_NOTIFICATION_URL', [
+      'http:',
+      'https:',
+    ]);
 
   return {
     DATABASE_URL: validateUrl(
@@ -80,5 +124,19 @@ export const validateEnvironment = (
     NODE_ENV: nodeEnv as ApplicationEnvironment,
     PORT: port,
     CORS_ORIGINS: corsOrigins,
+    PAYMENT_PROVIDER: paymentProvider as 'simulated' | 'mercadopago',
+    ...(mercadoPagoAccessToken
+      ? { MERCADOPAGO_ACCESS_TOKEN: mercadoPagoAccessToken }
+      : {}),
+    ...(mercadoPagoWebhookSecret
+      ? { MERCADOPAGO_WEBHOOK_SECRET: mercadoPagoWebhookSecret }
+      : {}),
+    ...(mercadoPagoNotificationUrl
+      ? { MERCADOPAGO_NOTIFICATION_URL: mercadoPagoNotificationUrl }
+      : {}),
+    ...(publicWebUrl ? { PUBLIC_WEB_URL: publicWebUrl } : {}),
   };
 };
+
+const optionalValue = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.trim() ? value.trim() : undefined;

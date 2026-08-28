@@ -1,0 +1,11 @@
+sku,barcode,name,slug,brand,category,species,line,life_stage,breed_size,weight_kg,description,image_url,sale_price,initial_stock,supplier,supplier_product_name,cost_price,supplier_stock_status
+OLD-PRINCE-PREMIUM-ADULTO-20KG,,Old Prince Premium Adulto,old-prince-premium-adulto,Old Prince,alimento-seco,perro,,adulto,,20,,,,,,,,UNKNOWN
+EXCELLENT-ADULTO-FORMULA-20KG,,Excellent Adulto Formula,excellent-adulto-formula,Excellent,alimento-seco,perro,Formula,adulto,,20,,,,,Señor Gonzalez,EXCELLENT PERRO FORMULA - Mantenimiento Adulto 20,54600.00,UNKNOWN
+DOG-CHOW-ADULTO-MED-GRANDE-20KG,,Dog Chow Adulto Med/Grande,dog-chow-adulto-med-grande,Dog Chow,alimento-seco,perro,,adulto,mediano-grande,20,,,,,Señor Gonzalez,DOG CHOW ADULTO Mediana y Grande Triple Proteina 20,50200.00,UNKNOWN
+PRO-PLAN-ADULTO-MED-GRANDE-15KG,,Pro Plan Adulto Med/Grande,pro-plan-adulto-med-grande,Pro Plan,alimento-seco,perro,,adulto,mediano-grande,15,,,,,Señor Gonzalez,PRO - PLAN ADULTO Raza Med. Grande 15,100690.00,UNKNOWN
+ROYAL-CANIN-MEDIUM-ADULT-15KG,,Royal Canin Medium Adult,royal-canin-medium-adult,Royal Canin,alimento-seco,perro,,adulto,mediano,15,,,,,Señor Gonzalez,ROYAL CANIN MEDIUM ADULTO 15,120600.00,UNKNOWN
+OLD-PRINCE-GATO-PREMIUM-ADULTO-75KG,,Old Prince Premium Gato Adulto,old-prince-premium-gato-adulto,Old Prince,alimento-seco,gato,,adulto,,7.5,,,,,,,,UNKNOWN
+EXCELLENT-GATO-ADULTO-75KG,,Excellent Gato Adulto,excellent-gato-adulto,Excellent,alimento-seco,gato,,adulto,,7.5,,,,,Señor Gonzalez,"EXCELLENT CAT ADULTO 7,5",54200.00,UNKNOWN
+PRO-PLAN-GATO-ADULTO-75KG,,Pro Plan Gato Adulto,pro-plan-gato-adulto,Pro Plan,alimento-seco,gato,,adulto,,7.5,,,,,Señor Gonzalez,"PRO - PLAN CAT Adulto 7,5",85460.00,UNKNOWN
+CAT-CHOW-ADULTO-8KG,,Cat Chow Adulto,cat-chow-adulto,Cat Chow,alimento-seco,gato,,adulto,,8,,,,,Señor Gonzalez,CAT CHOW PESCADO / CARNE 8,41700.00,UNKNOWN
+EXCELLENT-GATO-STERILIZED-75KG,,Excellent Gato Sterilized,excellent-gato-sterilized,Excellent,alimento-seco,gato,,adulto,,7.5,,,,,Señor Gonzalez,"EXCELLENT CAT STERILIZED 7,5",62800.00,UNKNOWN

@@ -5,6 +5,7 @@ import type {
   AbandonedCartRecord,
   NotificationChannel,
   NotificationConsentRecord,
+  NotificationPreferences,
   NotificationRepository,
   ReminderPlanRecord,
 } from '../domain/notification.repository';
@@ -27,6 +28,56 @@ type PlanRecord = Prisma.ReplenishmentPlanGetPayload<{
 @Injectable()
 export class PrismaNotificationRepository implements NotificationRepository {
   public constructor(private readonly prisma: PrismaService) {}
+
+  public async getPreferences(
+    customerId: string,
+  ): Promise<NotificationPreferences> {
+    const value = await this.prisma.customerNotificationPreference.findUnique({
+      where: { customerId },
+    });
+    return {
+      push: value?.push ?? false,
+      email: value?.email ?? true,
+      whatsapp: value?.whatsapp ?? false,
+    };
+  }
+
+  public async updatePreferences(
+    customerId: string,
+    input: NotificationPreferences,
+  ) {
+    const value = await this.prisma.customerNotificationPreference.upsert({
+      where: { customerId },
+      create: { customerId, ...input },
+      update: input,
+    });
+    return { push: value.push, email: value.email, whatsapp: value.whatsapp };
+  }
+
+  public async registerDeviceToken(input: {
+    customerId: string;
+    token: string;
+    platform: string;
+    appVersion?: string | null;
+  }) {
+    await this.prisma.deviceToken.upsert({
+      where: {
+        customerId_token: { customerId: input.customerId, token: input.token },
+      },
+      create: {
+        customerId: input.customerId,
+        token: input.token,
+        platform: input.platform,
+        appVersion: input.appVersion ?? null,
+        active: true,
+      },
+      update: {
+        platform: input.platform,
+        appVersion: input.appVersion ?? null,
+        active: true,
+      },
+    });
+  }
 
   public async upsertConsent(input: {
     customerId?: string;

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import {
@@ -25,7 +26,11 @@ const orderInclude = {
 type OrderRecord = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
 type OrderInventoryTransaction = Pick<
   PrismaService,
-  'inventoryItem' | 'inventoryMovement'
+  | 'inventoryItem'
+  | 'inventoryMovement'
+  | 'couponRedemption'
+  | 'coupon'
+  | 'promotion'
 >;
 
 @Injectable()
@@ -109,6 +114,7 @@ export class PrismaOrderRepository implements OrderRepository {
       const shippingCost = Number(input.shippingCost ?? '0');
       const created = await transaction.order.create({
         data: {
+          id: randomUUID(),
           customerId: input.customerId ?? null,
           status: 'DRAFT',
           paymentStatus: 'UNPAID',
@@ -120,7 +126,9 @@ export class PrismaOrderRepository implements OrderRepository {
           contactPhone: input.contactPhone ?? null,
           shippingAddress: input.shippingAddress,
           notes: input.notes ?? null,
-          lines: { create: lines },
+          lines: {
+            create: lines.map((line) => ({ id: randomUUID(), ...line })),
+          },
         },
         include: { lines: true },
       });
@@ -178,6 +186,7 @@ export class PrismaOrderRepository implements OrderRepository {
         );
       await transaction.orderPayment.create({
         data: {
+          id: randomUUID(),
           orderId: id,
           amount: input.amount,
           method: input.method,
@@ -227,7 +236,11 @@ export class PrismaOrderRepository implements OrderRepository {
       if (status === 'PAID')
         await ensureReservation(transaction, order.lines, id);
       if (status === 'SHIPPED') await ship(transaction, order.lines, id);
-      if (status === 'CANCELLED') await release(transaction, order.lines, id);
+      if (status === 'CANCELLED') {
+        await release(transaction, order.lines, id);
+        if (order.paymentStatus !== 'PAID')
+          await reverseCouponRedemptions(transaction, id);
+      }
       await transaction.order.update({ where: { id }, data: { status } });
       return mapOrder(
         await transaction.order.findUniqueOrThrow({
@@ -297,6 +310,7 @@ const reserve = async (
     });
     await transaction.inventoryMovement.create({
       data: {
+        id: randomUUID(),
         variantId: line.variantId,
         orderId,
         type: 'RESERVE',
@@ -340,6 +354,7 @@ const release = async (
     });
     await transaction.inventoryMovement.create({
       data: {
+        id: randomUUID(),
         variantId: line.variantId,
         orderId,
         type: 'RELEASE',
@@ -376,12 +391,40 @@ const ship = async (
     });
     await transaction.inventoryMovement.create({
       data: {
+        id: randomUUID(),
         variantId: line.variantId,
         orderId,
         type: 'SHIP',
         quantity: line.quantity,
         reason: 'Despacho de pedido',
       },
+    });
+  }
+};
+
+const reverseCouponRedemptions = async (
+  transaction: OrderInventoryTransaction,
+  orderId: string,
+) => {
+  const redemptions = await transaction.couponRedemption.findMany({
+    where: { orderId },
+    select: { id: true, couponId: true },
+  });
+  for (const redemption of redemptions) {
+    await transaction.couponRedemption.delete({
+      where: { id: redemption.id },
+    });
+    await transaction.coupon.update({
+      where: { id: redemption.couponId },
+      data: { redemptionCount: { decrement: 1 } },
+    });
+    const coupon = await transaction.coupon.findUniqueOrThrow({
+      where: { id: redemption.couponId },
+      select: { promotionId: true },
+    });
+    await transaction.promotion.update({
+      where: { id: coupon.promotionId },
+      data: { redemptionCount: { decrement: 1 } },
     });
   }
 };

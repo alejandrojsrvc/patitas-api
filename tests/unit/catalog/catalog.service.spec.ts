@@ -71,6 +71,47 @@ const product: Product = {
 };
 
 describe('CatalogService', () => {
+  it('updates a variant without requiring the active product to be publishable', async () => {
+    const updatedVariant = {
+      ...variant,
+      sku: 'PI-EXC-CAT-AD-75K',
+      presentation: '7.5 kg',
+      weightGrams: 7500,
+      preferredSupplierOfferId: 'offer-1',
+    };
+    const updateVariant = jest.fn().mockResolvedValue(updatedVariant);
+    const repository = {
+      findProductByVariantId: jest.fn().mockResolvedValue(product),
+      findSupplierOfferFulfillment: jest.fn().mockResolvedValue({
+        stockStatus: 'AVAILABLE',
+        leadTimeHours: 48,
+      }),
+      updateVariant,
+    } as unknown as CatalogRepository;
+    const service = new CatalogService(repository);
+
+    await expect(
+      service.updateVariant('variant-1', {
+        sku: updatedVariant.sku,
+        barcode: null,
+        presentation: updatedVariant.presentation,
+        weightGrams: updatedVariant.weightGrams,
+        active: true,
+        preferredSupplierOfferId: updatedVariant.preferredSupplierOfferId,
+      }),
+    ).resolves.toEqual(updatedVariant);
+
+    expect(updateVariant).toHaveBeenCalledWith(
+      'variant-1',
+      expect.objectContaining({
+        sku: 'PI-EXC-CAT-AD-75K',
+        presentation: '7.5 kg',
+        weightGrams: 7500,
+        preferredSupplierOfferId: 'offer-1',
+      }),
+    );
+  });
+
   it('calculates duration for imported products without a configured daily factor', async () => {
     const repository = {
       findPublicProductBySlug: jest.fn().mockResolvedValue(product),

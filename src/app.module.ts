@@ -22,6 +22,7 @@ import { MarketingModule } from './modules/marketing/marketing.module';
 import { ReferralsModule } from './modules/referrals/referrals.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { PetsModule } from './modules/pets/pets.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     InventoryModule,
     DashboardModule,
     AnalyticsModule,
+    PetsModule,
   ],
 })
 export class AppModule {}

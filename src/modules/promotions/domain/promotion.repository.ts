@@ -13,6 +13,7 @@ export interface PromotionRepository {
   create(input: PromotionInput): Promise<Promotion>;
   update(id: string, input: Partial<PromotionInput>): Promise<Promotion>;
   listCoupons(): Promise<Coupon[]>;
+  findCouponById(id: string): Promise<Coupon | null>;
   findCoupon(code: string): Promise<Coupon | null>;
   createCoupon(input: CouponInput): Promise<Coupon>;
   updateCoupon(id: string, input: Partial<CouponInput>): Promise<Coupon>;

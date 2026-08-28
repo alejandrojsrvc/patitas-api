@@ -1,6 +1,8 @@
 import { CatalogValidationError } from '../domain/errors/catalog.error';
+import type { SupplierStockStatus } from '../domain/catalog.types';
 
 export interface SimpleCatalogCsvRow {
+  rowNumber: number;
   sku: string;
   barcode: string | null;
   name: string;
@@ -16,6 +18,10 @@ export interface SimpleCatalogCsvRow {
   imageUrl: string | null;
   salePrice: string | null;
   initialStock: number | null;
+  supplierName: string | null;
+  supplierSku: string | null;
+  supplierUnitCost: string | null;
+  supplierStockStatus: SupplierStockStatus;
 }
 
 const REQUIRED_HEADERS = ['name', 'brand', 'weight_kg'];
@@ -112,7 +118,26 @@ const mapRow = (row: CsvRecord, rowNumber: number): SimpleCatalogCsvRow => {
       `La fila ${rowNumber} tiene una imagen inválida.`,
     );
   }
+  const supplierName = optional(row.supplier || row.supplier_name);
+  const supplierSku = optional(row.supplier_product_name || row.supplier_sku);
+  const supplierUnitCost = optionalSupplierCost(
+    row.cost_price || row.unit_cost,
+    rowNumber,
+  );
+  if (
+    (supplierName || supplierSku || supplierUnitCost) &&
+    (!supplierName || !supplierUnitCost)
+  ) {
+    throw new CatalogValidationError(
+      `La fila ${rowNumber} debe tener supplier y cost_price para importar la oferta.`,
+    );
+  }
+  const supplierStockStatus = parseSupplierStockStatus(
+    row.supplier_stock_status || row.stock_status,
+    rowNumber,
+  );
   return {
+    rowNumber,
     sku:
       row.sku?.trim().toUpperCase() ||
       generateSku(row.brand, row.name, Math.round(weightKg * 1000)),
@@ -130,7 +155,43 @@ const mapRow = (row: CsvRecord, rowNumber: number): SimpleCatalogCsvRow => {
     imageUrl,
     salePrice,
     initialStock,
+    supplierName,
+    supplierSku,
+    supplierUnitCost,
+    supplierStockStatus,
   };
+};
+
+const optional = (value: string | undefined): string | null =>
+  value?.trim() || null;
+
+const optionalSupplierCost = (
+  value: string | undefined,
+  rowNumber: number,
+): string | null => {
+  if (!value?.trim()) return null;
+  const normalized = value.replace(',', '.').trim();
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized) || Number(normalized) <= 0) {
+    throw new CatalogValidationError(
+      `La fila ${rowNumber} tiene cost_price inválido.`,
+    );
+  }
+  return Number(normalized).toFixed(2);
+};
+
+const parseSupplierStockStatus = (
+  value: string | undefined,
+  rowNumber: number,
+): SupplierStockStatus => {
+  const normalized = value?.trim().toUpperCase() || 'AVAILABLE';
+  if (
+    !['AVAILABLE', 'OUT_OF_STOCK', 'ON_REQUEST', 'UNKNOWN'].includes(normalized)
+  ) {
+    throw new CatalogValidationError(
+      `La fila ${rowNumber} tiene supplier_stock_status inválido.`,
+    );
+  }
+  return normalized as SupplierStockStatus;
 };
 
 const optionalNumber = (

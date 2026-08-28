@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import {
@@ -40,50 +41,85 @@ export class PrismaPromotionRepository implements PromotionRepository {
     return row ? mapPromotion(row) : null;
   }
   public async create(input: PromotionInput) {
-    return this.prisma.$transaction(async (transaction) => {
-      const row = await transaction.promotion.create({
-        data: {
-          ...promotionData(input),
-          name: input.name,
-          type: input.type,
-          value: input.value,
-          kind: input.kind ?? 'DISCOUNT',
-          targets: { create: input.targets ?? [] },
-          bundleItems: { create: input.bundleItems ?? [] },
-        },
-        include: promotionInclude,
+    try {
+      return await this.prisma.$transaction(async (transaction) => {
+        const row = await transaction.promotion.create({
+          data: {
+            ...promotionData(input),
+            id: randomUUID(),
+            name: input.name,
+            type: input.type,
+            value: input.value,
+            kind: input.kind ?? 'DISCOUNT',
+            targets: {
+              create: (input.targets ?? []).map((target) => ({
+                id: randomUUID(),
+                ...target,
+              })),
+            },
+            bundleItems: {
+              create: (input.bundleItems ?? []).map((item) => ({
+                id: randomUUID(),
+                ...item,
+              })),
+            },
+          },
+          include: promotionInclude,
+        });
+        return mapPromotion(row);
       });
-      return mapPromotion(row);
-    });
+    } catch (error) {
+      throw mapPromotionPersistenceError(error);
+    }
   }
   public async update(id: string, input: Partial<PromotionInput>) {
-    return this.prisma.$transaction(async (transaction) => {
-      const existing = await transaction.promotion.findUnique({
-        where: { id },
-      });
-      if (!existing) throw new PromotionNotFoundError();
-      if (input.targets)
-        await transaction.promotionTarget.deleteMany({
-          where: { promotionId: id },
+    try {
+      return await this.prisma.$transaction(async (transaction) => {
+        const existing = await transaction.promotion.findUnique({
+          where: { id },
         });
-      if (input.bundleItems)
-        await transaction.promotionBundleItem.deleteMany({
-          where: { promotionId: id },
+        if (!existing) throw new PromotionNotFoundError();
+        if (input.targets)
+          await transaction.promotionTarget.deleteMany({
+            where: { promotionId: id },
+          });
+        if (input.bundleItems)
+          await transaction.promotionBundleItem.deleteMany({
+            where: { promotionId: id },
+          });
+        const row = await transaction.promotion.update({
+          where: { id },
+          data: {
+            ...promotionData(input),
+            ...(input.kind !== undefined ? { kind: input.kind } : {}),
+            ...(input.targets
+              ? {
+                  targets: {
+                    create: input.targets.map((target) => ({
+                      id: randomUUID(),
+                      ...target,
+                    })),
+                  },
+                }
+              : {}),
+            ...(input.bundleItems
+              ? {
+                  bundleItems: {
+                    create: input.bundleItems.map((item) => ({
+                      id: randomUUID(),
+                      ...item,
+                    })),
+                  },
+                }
+              : {}),
+          },
+          include: promotionInclude,
         });
-      const row = await transaction.promotion.update({
-        where: { id },
-        data: {
-          ...promotionData(input),
-          ...(input.kind !== undefined ? { kind: input.kind } : {}),
-          ...(input.targets ? { targets: { create: input.targets } } : {}),
-          ...(input.bundleItems
-            ? { bundleItems: { create: input.bundleItems } }
-            : {}),
-        },
-        include: promotionInclude,
+        return mapPromotion(row);
       });
-      return mapPromotion(row);
-    });
+    } catch (error) {
+      throw mapPromotionPersistenceError(error);
+    }
   }
   public async listCoupons() {
     const rows = await this.prisma.coupon.findMany({
@@ -91,6 +127,13 @@ export class PrismaPromotionRepository implements PromotionRepository {
       orderBy: { createdAt: 'desc' },
     });
     return rows.map(mapCoupon);
+  }
+  public async findCouponById(id: string) {
+    const row = await this.prisma.coupon.findUnique({
+      where: { id },
+      include: couponInclude,
+    });
+    return row ? mapCoupon(row) : null;
   }
   public async findCoupon(code: string) {
     const row = await this.prisma.coupon.findUnique({
@@ -103,7 +146,7 @@ export class PrismaPromotionRepository implements PromotionRepository {
     try {
       return mapCoupon(
         await this.prisma.coupon.create({
-          data: input,
+          data: { id: randomUUID(), ...input },
           include: couponInclude,
         }),
       );
@@ -113,6 +156,11 @@ export class PrismaPromotionRepository implements PromotionRepository {
         error.code === 'P2002'
       )
         throw new PromotionValidationError('El código del cupón ya existe.');
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      )
+        throw new PromotionValidationError('La promoción del cupón no existe.');
       throw error;
     }
   }
@@ -131,6 +179,11 @@ export class PrismaPromotionRepository implements PromotionRepository {
         error.code === 'P2025'
       )
         throw new PromotionNotFoundError('El cupón no existe.');
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      )
+        throw new PromotionValidationError('La promoción del cupón no existe.');
       throw error;
     }
   }
@@ -189,3 +242,23 @@ const mapCoupon = (value: CouponRecord): Coupon => ({
   perCustomerLimit: value.perCustomerLimit,
   promotion: mapPromotion(value.promotion),
 });
+
+const mapPromotionPersistenceError = (error: unknown): Error => {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  )
+    return new PromotionValidationError(
+      'La promoción contiene un valor duplicado.',
+    );
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2003'
+  )
+    return new PromotionValidationError(
+      'La promoción referencia un producto, variante, categoría o marca inexistente.',
+    );
+  return error instanceof Error
+    ? error
+    : new Error('Error al guardar la promoción.');
+};

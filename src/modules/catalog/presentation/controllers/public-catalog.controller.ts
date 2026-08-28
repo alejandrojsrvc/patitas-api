@@ -85,6 +85,20 @@ export class PublicCatalogController {
     return this.catalog.getPublicBrand(slug).then(toPublicReference);
   }
 
+  @Get('offers')
+  public async offers() {
+    return (await this.activePromotions()).map((promotion) => ({
+      id: promotion.id,
+      name: promotion.name,
+      type: promotion.type,
+      value: promotion.value,
+      startsAt: promotion.startsAt,
+      endsAt: promotion.endsAt,
+      priority: promotion.priority,
+      targets: promotion.targets,
+    }));
+  }
+
   private async activePromotions() {
     return (await this.promotions.list(true)).filter(
       (promotion) =>
@@ -166,7 +180,10 @@ const toPublicProductDetail = (
           sourceLabel: detail.feedingGuide.sourceLabel,
           sourceUrl: detail.feedingGuide.sourceUrl,
           requiredDimensions: detail.feedingGuide.requiredDimensions,
-          entries: detail.feedingGuide.entries,
+          entries: detail.feedingGuide.entries.map((entry) => ({
+            ...entry,
+            petWeightKg: entry.petWeightKgMin,
+          })),
         }
       : null,
   },

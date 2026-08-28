@@ -36,9 +36,9 @@ export class CreateReplenishmentPlanDto {
   @Type(() => Date)
   @IsDate()
   public estimatedDepletionDate!: Date;
-  @ApiProperty({ enum: ['EMAIL', 'WHATSAPP'] })
-  @IsIn(['EMAIL', 'WHATSAPP'])
-  public channel!: 'EMAIL' | 'WHATSAPP';
+  @ApiProperty({ enum: ['EMAIL', 'WHATSAPP', 'PUSH'] })
+  @IsIn(['EMAIL', 'WHATSAPP', 'PUSH'])
+  public channel!: 'EMAIL' | 'WHATSAPP' | 'PUSH';
   @ApiProperty() @IsString() @MaxLength(40) public consentVersion!: string;
   @ApiProperty({
     description: 'Email o WhatsApp consentido; no se devuelve en el plan.',

@@ -3,6 +3,7 @@ import { PrismaModule } from '../../infrastructure/database/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { PricingService } from './application/pricing.service';
 import { PricingCalculator } from './domain/pricing-calculator';
+import { PricingScenarioCalculator } from './domain/pricing-scenario-calculator';
 import {
   PRICING_REPOSITORY,
   type PricingRepository,
@@ -15,6 +16,7 @@ import { AdminPricingController } from './presentation/admin-pricing.controller'
   controllers: [AdminPricingController],
   providers: [
     PricingCalculator,
+    PricingScenarioCalculator,
     { provide: PRICING_REPOSITORY, useClass: PrismaPricingRepository },
     {
       provide: PricingService,

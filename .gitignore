@@ -64,3 +64,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /.vercel
 .vercel
+
+# Repository-local Codex configuration and MCP credentials
+/.codex/

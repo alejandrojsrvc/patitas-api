@@ -52,7 +52,10 @@ const sessionInclude = {
   },
   shippingOption: true,
 } as const;
-const orderInclude = { lines: true } as const;
+const orderInclude = {
+  lines: true,
+  replenishmentPlans: { select: { petName: true } },
+} as const;
 type SessionRecord = Prisma.CheckoutSessionGetPayload<{
   include: typeof sessionInclude;
 }>;
@@ -422,6 +425,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
         const externalPayment = session.paymentMethod === 'MERCADO_PAGO';
         const created = await transaction.order.create({
           data: {
+            id: randomUUID(),
             customerId: session.customerId,
             status: externalPayment ? 'PENDING_PAYMENT' : 'PAID',
             paymentStatus: externalPayment ? 'PENDING' : 'PAID',
@@ -452,6 +456,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
                     'La variante del pedido ya no está disponible.',
                   );
                 return {
+                  id: randomUUID(),
                   variantId: line.variantId,
                   productName: variant.product.name,
                   sku: variant.sku,
@@ -469,6 +474,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
               : {
                   payments: {
                     create: {
+                      id: randomUUID(),
                       amount: total.toFixed(2),
                       method: session.paymentMethod!,
                       reference: 'SIMULATED',
@@ -477,7 +483,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
                   },
                 }),
           },
-          include: { lines: true },
+          include: orderInclude,
         });
         for (const line of promotionLines) {
           await transaction.inventoryItem.update({
@@ -486,6 +492,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
           });
           await transaction.inventoryMovement.create({
             data: {
+              id: randomUUID(),
               variantId: line.variantId,
               orderId: created.id,
               type: 'RESERVE',
@@ -508,6 +515,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
           }
           await transaction.couponRedemption.create({
             data: {
+              id: randomUUID(),
               couponId: coupon.id,
               orderId: created.id,
               customerId: session.customerId,
@@ -552,7 +560,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
   public async findPublicOrder(id: string, tokenHash: string) {
     const order = await this.prisma.order.findFirst({
       where: { id, publicAccessTokenHash: tokenHash },
-      include: { lines: true },
+      include: orderInclude,
     });
     if (!order)
       throw new CheckoutNotFoundError(
@@ -563,7 +571,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
   public async listCustomerOrders(customerId: string) {
     const orders = await this.prisma.order.findMany({
       where: { customerId },
-      include: { lines: true },
+      include: orderInclude,
       orderBy: { createdAt: 'desc' },
     });
     return orders.map(mapOrder);
@@ -571,10 +579,46 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
   public async findCustomerOrder(customerId: string, orderId: string) {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, customerId },
-      include: { lines: true },
+      include: orderInclude,
     });
     if (!order) throw new CheckoutNotFoundError('El pedido no existe.');
     return mapOrder(order);
+  }
+
+  public async findPetPurchaseHistory(customerId: string, petId: string) {
+    const plans = await this.prisma.replenishmentPlan.findMany({
+      where: { customerId, petId, orderId: { not: null } },
+      include: {
+        order: { select: { id: true, createdAt: true } },
+        variant: { include: { product: true } },
+      },
+      orderBy: { order: { createdAt: 'asc' } },
+    });
+    const items = plans.map((plan, index) => {
+      const previous = index > 0 ? plans[index - 1].order?.createdAt : null;
+      const date = plan.order!.createdAt;
+      return {
+        id: plan.order!.id,
+        petId,
+        date,
+        foodName: plan.variant.product.name,
+        presentation: plan.presentationSnapshot ?? plan.variant.presentation,
+        daysSincePrevious: previous
+          ? Math.round((date.getTime() - previous.getTime()) / 86_400_000)
+          : null,
+      };
+    });
+    const intervals = items
+      .map((item) => item.daysSincePrevious)
+      .filter((days): days is number => days !== null);
+    return {
+      items,
+      averageDays: intervals.length
+        ? Math.round(
+            intervals.reduce((sum, days) => sum + days, 0) / intervals.length,
+          )
+        : null,
+    };
   }
 
   private async authorizedSession(
@@ -750,9 +794,12 @@ const mapOrder = (
   currency: 'ARS',
   contactName: value.contactName,
   contactEmail: value.contactEmail,
+  petName: value.replenishmentPlans[0]?.petName ?? null,
+  date: value.createdAt,
   lines: value.lines.map((line) => ({
     variantId: line.variantId,
     productName: line.productName,
+    presentation: line.presentation,
     quantity: line.quantity,
     unitPrice: line.unitPrice.toString(),
     lineTotal: line.lineTotal.toString(),

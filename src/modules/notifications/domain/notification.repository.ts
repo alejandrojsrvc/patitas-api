@@ -1,5 +1,11 @@
 export const NOTIFICATION_REPOSITORY = Symbol('NOTIFICATION_REPOSITORY');
-export type NotificationChannel = 'EMAIL' | 'WHATSAPP';
+export type NotificationChannel = 'EMAIL' | 'WHATSAPP' | 'PUSH';
+
+export interface NotificationPreferences {
+  push: boolean;
+  email: boolean;
+  whatsapp: boolean;
+}
 
 export interface NotificationConsentRecord {
   id: string;
@@ -23,6 +29,17 @@ export interface ReminderPlanRecord {
   petName: string;
 }
 export interface NotificationRepository {
+  getPreferences(customerId: string): Promise<NotificationPreferences>;
+  updatePreferences(
+    customerId: string,
+    input: NotificationPreferences,
+  ): Promise<NotificationPreferences>;
+  registerDeviceToken(input: {
+    customerId: string;
+    token: string;
+    platform: string;
+    appVersion?: string | null;
+  }): Promise<void>;
   upsertConsent(input: {
     customerId?: string;
     guestTokenHash?: string;

@@ -21,6 +21,6 @@ import { AdminSuppliersController } from './presentation/admin-suppliers.control
         new SupplierService(repository),
     },
   ],
-  exports: [SUPPLIER_REPOSITORY],
+  exports: [SUPPLIER_REPOSITORY, SupplierService],
 })
 export class SuppliersModule {}

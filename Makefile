@@ -1,7 +1,7 @@
 PNPM ?= pnpm
 name ?=
 
-.PHONY: help install bootstrap infra-up infra-down infra-status db-deploy db-status db-generate db-seed db-migrate check dev
+.PHONY: help install bootstrap infra-up infra-down infra-status db-deploy db-status db-generate db-seed db-migrate check dev start stop restart status logs
 
 help:
 	@echo "Patitas API"
@@ -15,7 +15,12 @@ help:
 	@echo "  make db-migrate name=...   Crea una migración contra PostgreSQL local"
 	@echo "  make db-seed               Carga datos descartables de desarrollo"
 	@echo "  make check                 Ejecuta validaciones, tests y build"
-	@echo "  make dev                   Inicia NestJS en modo watch"
+	@echo "  make dev                   Inicia NestJS en modo watch (sin PM2)"
+	@echo "  make start                 Levanta este proceso con PM2 (modo dev)"
+	@echo "  make stop                  Detiene este proceso en PM2"
+	@echo "  make restart               Reinicia este proceso en PM2"
+	@echo "  make status                Muestra el estado de PM2"
+	@echo "  make logs                  Sigue los logs de este proceso en PM2"
 
 install:
 	$(PNPM) install --frozen-lockfile
@@ -57,3 +62,22 @@ check:
 
 dev:
 	$(PNPM) dev
+
+PM2_STACK ?= $(abspath ../patitas/ecosystem.patitas.config.cjs)
+PM2_PROCESS ?= patitas-api
+
+start:
+	pm2 start $(PM2_STACK) --only $(PM2_PROCESS)
+	pm2 save
+
+stop:
+	pm2 stop $(PM2_PROCESS)
+
+restart:
+	pm2 restart $(PM2_PROCESS)
+
+status:
+	pm2 status
+
+logs:
+	pm2 logs $(PM2_PROCESS)

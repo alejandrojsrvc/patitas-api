@@ -26,11 +26,24 @@ import type { StorageProvider } from '../../../shared/application/ports/storage-
 import { calculateFoodDuration } from '../domain/feeding-calculator';
 import { calculateCompetitivePriceAverage } from '../domain/competitive-price';
 import { parseSimpleCatalogCsv } from './simple-catalog-csv';
+import type { SupplierOfferImportOptions } from '../../suppliers/domain/repositories/supplier.repository';
+import type {
+  SupplierOfferImportResult,
+  SupplierOfferImportRow,
+} from '../../suppliers/domain/supplier.types';
+
+interface CatalogSupplierOfferImporter {
+  importOfferRows(
+    rows: SupplierOfferImportRow[],
+    options: SupplierOfferImportOptions,
+  ): Promise<SupplierOfferImportResult>;
+}
 
 export class CatalogService {
   public constructor(
     private readonly repository: CatalogRepository,
     private readonly storage?: StorageProvider,
+    private readonly supplierOffers?: CatalogSupplierOfferImporter,
   ) {}
 
   public async listPublicProducts(filter: PublicProductFilter) {
@@ -126,6 +139,44 @@ export class CatalogService {
     );
   }
 
+  public async calculateFoodDurationByIds(input: {
+    productId: string;
+    variantId: string;
+    petWeightKg: number;
+    lifeStage?: string;
+    attributes?: Record<string, string>;
+  }) {
+    const product = await this.repository.findProductById(input.productId);
+    if (!product || product.status !== 'ACTIVE')
+      throw new CatalogValidationError('El producto no se puede vender.');
+    if (!product.variants.some((variant) => variant.id === input.variantId))
+      throw new CatalogValidationError('La variante no pertenece al producto.');
+    return this.calculateFoodDuration({
+      productSlug: product.slug,
+      variantId: input.variantId,
+      petWeightKg: input.petWeightKg,
+      lifeStage: input.lifeStage,
+      attributes: input.attributes,
+    });
+  }
+
+  public calculateCustomFoodDuration(input: {
+    species: string;
+    petWeightKg: number;
+    presentationGrams: number;
+    lifeStage?: string;
+  }) {
+    return calculateFoodDuration(
+      {
+        petWeightKg: input.petWeightKg,
+        presentationGrams: input.presentationGrams,
+        lifeStage: input.lifeStage,
+        fallbackGramsPerKg: defaultFallbackGramsPerKg(input.species),
+      },
+      null,
+    );
+  }
+
   public async listAdminProducts(filter: AdminProductFilter) {
     const page = await this.repository.listAdminProducts(filter);
     return {
@@ -217,6 +268,7 @@ export class CatalogService {
       published: boolean;
       publishError?: string;
     }> = [];
+    const supplierOfferRows: SupplierOfferImportRow[] = [];
 
     for (const [slug, productRows] of grouped) {
       const first = productRows[0];
@@ -289,6 +341,22 @@ export class CatalogService {
           sku: variant.sku,
           weightGrams: variant.weightGrams,
         });
+        if (row.supplierName && row.supplierUnitCost) {
+          supplierOfferRows.push({
+            rowNumber: row.rowNumber,
+            supplierId: null,
+            supplierName: row.supplierName,
+            variantId: variant.id,
+            sku: variant.sku,
+            barcode: variant.barcode,
+            supplierSku: row.supplierSku,
+            unitCost: row.supplierUnitCost,
+            stockStatus: row.supplierStockStatus,
+            leadTimeHours: null,
+            minimumQuantity: 1,
+            active: true,
+          });
+        }
         if (row.initialStock !== null) {
           await this.repository.setInventory(variant.id, {
             onHand: row.initialStock,
@@ -327,12 +395,20 @@ export class CatalogService {
         ...(publishError ? { publishError } : {}),
       });
     }
+    const supplierOffers =
+      supplierOfferRows.length && this.supplierOffers
+        ? await this.supplierOffers.importOfferRows(supplierOfferRows, {
+            dryRun: false,
+            createMissingSuppliers: true,
+          })
+        : null;
     return {
       rows: rows.length,
       products: results.length,
       published: results.filter((item) => item.published).length,
       draft: results.filter((item) => !item.published).length,
       items: results,
+      supplierOffers,
     };
   }
 
@@ -382,17 +458,8 @@ export class CatalogService {
       (variant) => variant.id === id,
     );
     if (!currentVariant) throw new CatalogNotFoundError('La variante');
-    let fulfillment = {
-      supplierStockStatus: currentVariant.supplierStockStatus,
-      supplierLeadTimeHours: currentVariant.supplierLeadTimeHours,
-    };
     if (input.preferredSupplierOfferId !== undefined) {
-      if (input.preferredSupplierOfferId === null) {
-        fulfillment = {
-          supplierStockStatus: null,
-          supplierLeadTimeHours: null,
-        };
-      } else {
+      if (input.preferredSupplierOfferId !== null) {
         const offer = await this.repository.findSupplierOfferFulfillment(
           id,
           input.preferredSupplierOfferId,
@@ -402,19 +469,7 @@ export class CatalogService {
             'La oferta preferida no pertenece a la variante.',
           );
         }
-        fulfillment = {
-          supplierStockStatus: offer.stockStatus,
-          supplierLeadTimeHours: offer.leadTimeHours,
-        };
       }
-    }
-    const nextVariants = product.variants.map((variant) =>
-      variant.id === id
-        ? { ...variant, ...normalizeVariant(input), ...fulfillment }
-        : variant,
-    );
-    if (product.status === 'ACTIVE') {
-      assertPublishable({ ...product, variants: nextVariants });
     }
     return this.repository.updateVariant(id, normalizeVariant(input));
   }
@@ -844,27 +899,19 @@ const assertPublishable = (product: {
     active: boolean;
     sku: string | null;
     salePrice: string | null;
-    availableQuantity: number;
-    supplierStockStatus: string | null;
   }>;
   media: Array<{ url: string }>;
 }) => {
   const sellableVariants = product.variants.filter(isSellable);
-  const hasFulfillment = sellableVariants.some(
-    (variant) =>
-      variant.availableQuantity > 0 ||
-      ['AVAILABLE', 'ON_REQUEST'].includes(variant.supplierStockStatus ?? ''),
-  );
   if (
     !product.categoryId ||
     !product.category?.active ||
     !product.brand.active ||
     sellableVariants.length === 0 ||
-    !product.media.some((media) => media.url.trim()) ||
-    !hasFulfillment
+    !product.media.some((media) => media.url.trim())
   ) {
     throw new CatalogValidationError(
-      'Para activar el producto se requiere categoría, imagen, precio y fulfillment configurado.',
+      'Para activar el producto se requiere categoría, imagen, variante activa con SKU y precio de venta.',
     );
   }
 };

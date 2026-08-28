@@ -7,9 +7,16 @@ import type {
   SupplierPage,
   UpdateSupplierInput,
   UpdateSupplierOfferInput,
+  SupplierOfferImportRow,
+  SupplierOfferImportResult,
 } from '../supplier.types';
 
 export const SUPPLIER_REPOSITORY = Symbol('SUPPLIER_REPOSITORY');
+
+export interface SupplierOfferImportOptions {
+  dryRun: boolean;
+  createMissingSuppliers?: boolean;
+}
 
 export interface SupplierRepository {
   listSuppliers(filter: SupplierFilter): Promise<SupplierPage>;
@@ -27,4 +34,8 @@ export interface SupplierRepository {
     id: string,
     input: UpdateSupplierOfferInput,
   ): Promise<SupplierOffer>;
+  importOffers(
+    rows: SupplierOfferImportRow[],
+    options: SupplierOfferImportOptions,
+  ): Promise<SupplierOfferImportResult>;
 }

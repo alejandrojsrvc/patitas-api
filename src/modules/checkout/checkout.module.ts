@@ -18,6 +18,13 @@ import { CheckoutController } from './presentation/checkout.controller';
 import { CustomerOrdersController } from './presentation/customer-orders.controller';
 import { PaymentsModule } from '../payments/payments.module';
 import { PaymentService } from '../payments/application/payment.service';
+import { CheckoutHandoffService } from './application/checkout-handoff.service';
+import {
+  CHECKOUT_HANDOFF_REPOSITORY,
+  type CheckoutHandoffRepository,
+} from './domain/checkout-handoff.repository';
+import { PrismaCheckoutHandoffRepository } from './infrastructure/prisma-checkout-handoff.repository';
+import { CheckoutHandoffController } from './presentation/checkout-handoff.controller';
 
 @Module({
   imports: [
@@ -28,7 +35,11 @@ import { PaymentService } from '../payments/application/payment.service';
     StorageModule,
     PaymentsModule,
   ],
-  controllers: [CheckoutController, CustomerOrdersController],
+  controllers: [
+    CheckoutController,
+    CustomerOrdersController,
+    CheckoutHandoffController,
+  ],
   providers: [
     { provide: CHECKOUT_REPOSITORY, useClass: PrismaCheckoutRepository },
     {
@@ -40,7 +51,17 @@ import { PaymentService } from '../payments/application/payment.service';
         payments: PaymentService,
       ) => new CheckoutService(repository, storage, payments),
     },
+    {
+      provide: CHECKOUT_HANDOFF_REPOSITORY,
+      useClass: PrismaCheckoutHandoffRepository,
+    },
+    {
+      provide: CheckoutHandoffService,
+      inject: [CHECKOUT_HANDOFF_REPOSITORY],
+      useFactory: (repository: CheckoutHandoffRepository) =>
+        new CheckoutHandoffService(repository),
+    },
   ],
-  exports: [CheckoutService],
+  exports: [CheckoutService, CheckoutHandoffService],
 })
 export class CheckoutModule {}

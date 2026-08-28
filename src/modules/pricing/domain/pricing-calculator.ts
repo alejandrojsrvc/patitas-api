@@ -9,6 +9,7 @@ export class PricingCalculator {
   public calculate(
     context: PricingContext,
     rules: PricingRuleValues,
+    options: { fixedCostPerUnit?: string } = {},
   ): PricingCalculation {
     assertComplete(rules);
     const product = Money.parse(context.supplierUnitCost);
@@ -17,10 +18,20 @@ export class PricingCalculator {
     const paymentFixed = Money.parse(rules.paymentFixedCost);
     const shipping = Money.parse(rules.subsidizedShippingCost);
     const other = Money.parse(rules.otherCost);
+    const fixedMonthlyAllocation = Money.parse(
+      options.fixedCostPerUnit ?? '0.00',
+    );
     const paymentRate = percentToBasisPoints(rules.paymentFeePercent);
+    const paymentFeeVatApplies = rules.paymentFeeVatApplies !== false;
+    const paymentFeeVatRate = paymentFeeVatApplies
+      ? percentToBasisPoints(rules.paymentFeeVatPercent ?? '0.00')
+      : 0;
+    const paymentFeeTaxRate = Math.ceil(
+      (paymentRate * paymentFeeVatRate) / 10_000,
+    );
     const taxRate = percentToBasisPoints(rules.taxPercent);
     const targetMargin = percentToBasisPoints(rules.targetMarginPercent);
-    const totalRate = paymentRate + taxRate + targetMargin;
+    const totalRate = paymentRate + paymentFeeTaxRate + taxRate + targetMargin;
     if (totalRate >= 10_000) {
       throw new PricingPreconditionError(
         'La suma de tasas variables y margen debe ser menor que 100%.',
@@ -34,14 +45,16 @@ export class PricingCalculator {
       paymentFixed,
       shipping,
       other,
+      fixedMonthlyAllocation,
     ].reduce((sum, value) => sum.add(value), Money.zero());
     const recommended = Money.fromCents(
       divideCeil(fixed.cents * 10_000n, BigInt(10_000 - totalRate)),
     );
     const commercial = recommended.nextPriceEnding990();
     const paymentVariable = commercial.percent(paymentRate);
+    const paymentFeeTax = paymentVariable.percent(paymentFeeVatRate);
     const taxes = commercial.percent(taxRate);
-    const effective = fixed.add(paymentVariable).add(taxes);
+    const effective = fixed.add(paymentVariable).add(paymentFeeTax).add(taxes);
     const profit = commercial.subtract(effective);
     const resultingMargin =
       commercial.cents === 0n
@@ -57,6 +70,8 @@ export class PricingCalculator {
         packaging: packaging.toString(),
         paymentFixed: paymentFixed.toString(),
         paymentVariable: paymentVariable.toString(),
+        paymentFeeTax: paymentFeeTax.toString(),
+        fixedMonthlyAllocation: fixedMonthlyAllocation.toString(),
         subsidizedShipping: shipping.toString(),
         taxes: taxes.toString(),
         other: other.toString(),
@@ -118,12 +133,51 @@ const percentToBasisPoints = (value: string): number => {
   return Number(whole) * 100 + Number(fraction.padEnd(2, '0'));
 };
 
-function assertComplete(rules: PricingRuleValues): asserts rules is {
-  [K in keyof PricingRuleValues]: string;
-} {
-  if (Object.values(rules).some((value) => value === null)) {
+type CompletePricingRules = PricingRuleValues & {
+  fulfillmentCost: string;
+  packagingCost: string;
+  paymentFixedCost: string;
+  paymentFeePercent: string;
+  subsidizedShippingCost: string;
+  taxPercent: string;
+  otherCost: string;
+  targetMarginPercent: string;
+};
+
+function assertComplete(
+  rules: PricingRuleValues,
+): asserts rules is CompletePricingRules {
+  const missing = requiredRuleKeys
+    .filter((key) => {
+      const value = rules[key];
+      return value === null || value === undefined || value === '';
+    })
+    .map((key) => requiredRuleLabels[key] ?? key);
+  if (missing.length) {
     throw new PricingPreconditionError(
-      'La configuración de pricing debe estar completa antes de calcular.',
+      `La configuración de pricing debe estar completa antes de calcular. Faltan: ${missing.join(', ')}.`,
     );
   }
 }
+
+const requiredRuleKeys = [
+  'fulfillmentCost',
+  'packagingCost',
+  'paymentFixedCost',
+  'paymentFeePercent',
+  'subsidizedShippingCost',
+  'taxPercent',
+  'otherCost',
+  'targetMarginPercent',
+] as const;
+
+const requiredRuleLabels: Record<string, string> = {
+  fulfillmentCost: 'Fulfillment',
+  packagingCost: 'Packaging',
+  paymentFixedCost: 'costo fijo de pago',
+  paymentFeePercent: 'comisión de pago',
+  subsidizedShippingCost: 'logística absorbida',
+  taxPercent: 'impuestos',
+  otherCost: 'otros costos',
+  targetMarginPercent: 'margen objetivo',
+};

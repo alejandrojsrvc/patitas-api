@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import type {
   OrderStatus,
@@ -78,6 +79,7 @@ export class PrismaPaymentRepository implements PaymentRepository {
     });
     const attempt = await this.prisma.paymentAttempt.create({
       data: {
+        id: randomUUID(),
         orderId,
         provider: result.provider,
         externalPreferenceId: result.preferenceId ?? null,
@@ -105,11 +107,13 @@ export class PrismaPaymentRepository implements PaymentRepository {
   public async handleWebhook(input: {
     headers: Record<string, string | string[] | undefined>;
     body: unknown;
+    dataId?: string | string[];
   }) {
     const event = await this.provider.parseWebhook(input);
     try {
       await this.prisma.paymentWebhookEvent.create({
         data: {
+          id: randomUUID(),
           provider: this.provider.name,
           externalId: event.externalEventId,
           eventType: event.eventType,
@@ -190,7 +194,33 @@ export class PrismaPaymentRepository implements PaymentRepository {
         }
       >
     )[event.status];
+    const wasFailed = new Set<PaymentAttemptStatus>([
+      'REJECTED',
+      'CANCELLED',
+      'EXPIRED',
+      'FAILED',
+    ]).has(attempt.status);
+    const isApprovedRegression =
+      attempt.status === 'APPROVED' && mapped.paymentStatus !== 'PAID';
     await this.prisma.$transaction(async (transaction) => {
+      if (isApprovedRegression) {
+        await transaction.paymentWebhookEvent.updateMany({
+          where: {
+            provider: this.provider.name,
+            externalId: event.externalEventId,
+          },
+          data: {
+            status: 'IGNORED',
+            processedAt: new Date(),
+            error: 'Se ignoró una transición posterior al pago aprobado.',
+          },
+        });
+        return;
+      }
+      const currentOrder = await transaction.order.findUnique({
+        where: { id: attempt.orderId },
+        select: { status: true },
+      });
       await transaction.paymentAttempt.update({
         where: { id: attempt.id },
         data: {
@@ -212,6 +242,7 @@ export class PrismaPaymentRepository implements PaymentRepository {
       if (mapped.paymentStatus === 'PAID' && attempt.status !== 'APPROVED')
         await transaction.orderPayment.create({
           data: {
+            id: randomUUID(),
             orderId: attempt.orderId,
             amount: attempt.amount,
             method: this.provider.name,
@@ -222,25 +253,29 @@ export class PrismaPaymentRepository implements PaymentRepository {
             paidAt: new Date(),
           },
         });
-      if (mapped.paymentStatus === 'FAILED') {
-        const lines = await transaction.orderLine.findMany({
-          where: { orderId: attempt.orderId },
-        });
-        for (const line of lines) {
-          await transaction.inventoryItem.updateMany({
-            where: { variantId: line.variantId },
-            data: { reserved: { decrement: line.quantity } },
+      if (mapped.paymentStatus === 'FAILED' && !wasFailed) {
+        if (currentOrder?.status !== 'CANCELLED') {
+          const lines = await transaction.orderLine.findMany({
+            where: { orderId: attempt.orderId },
           });
-          await transaction.inventoryMovement.create({
-            data: {
-              variantId: line.variantId,
-              orderId: attempt.orderId,
-              type: 'RELEASE',
-              quantity: line.quantity,
-              reason: 'Pago externo rechazado o expirado',
-            },
-          });
+          for (const line of lines) {
+            await transaction.inventoryItem.updateMany({
+              where: { variantId: line.variantId },
+              data: { reserved: { decrement: line.quantity } },
+            });
+            await transaction.inventoryMovement.create({
+              data: {
+                id: randomUUID(),
+                variantId: line.variantId,
+                orderId: attempt.orderId,
+                type: 'RELEASE',
+                quantity: line.quantity,
+                reason: 'Pago externo rechazado o expirado',
+              },
+            });
+          }
         }
+        await reverseCouponRedemptions(transaction, attempt.orderId);
       }
       await transaction.paymentWebhookEvent.updateMany({
         where: {
@@ -259,6 +294,38 @@ export class PrismaPaymentRepository implements PaymentRepository {
     };
   }
 }
+
+type PaymentTransaction = Pick<
+  PrismaService,
+  'couponRedemption' | 'coupon' | 'promotion'
+>;
+
+const reverseCouponRedemptions = async (
+  transaction: PaymentTransaction,
+  orderId: string,
+) => {
+  const redemptions = await transaction.couponRedemption.findMany({
+    where: { orderId },
+    select: { id: true, couponId: true },
+  });
+  for (const redemption of redemptions) {
+    await transaction.couponRedemption.delete({
+      where: { id: redemption.id },
+    });
+    await transaction.coupon.update({
+      where: { id: redemption.couponId },
+      data: { redemptionCount: { decrement: 1 } },
+    });
+    const coupon = await transaction.coupon.findUniqueOrThrow({
+      where: { id: redemption.couponId },
+      select: { promotionId: true },
+    });
+    await transaction.promotion.update({
+      where: { id: coupon.promotionId },
+      data: { redemptionCount: { decrement: 1 } },
+    });
+  }
+};
 
 const mapLink = (
   value: Prisma.PaymentAttemptGetPayload<Prisma.PaymentAttemptDefaultArgs>,

@@ -75,6 +75,10 @@ export class PublicProductResponseDto {
 }
 
 export class PublicFeedingGuideEntryResponseDto {
+  @ApiProperty({
+    description: 'Compatibilidad con clientes que usan un único peso.',
+  })
+  public petWeightKg!: number;
   @ApiProperty() public petWeightKgMin!: number;
   @ApiPropertyOptional({ nullable: true }) public petWeightKgMax!:
     number | null;

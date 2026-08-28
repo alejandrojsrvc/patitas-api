@@ -13,4 +13,7 @@ export const errorResponse = (
   requestId:
     host.switchToHttp().getRequest<Request & { requestId?: string }>()
       .requestId ?? null,
+  traceId:
+    host.switchToHttp().getRequest<Request & { requestId?: string }>()
+      .requestId ?? null,
 });

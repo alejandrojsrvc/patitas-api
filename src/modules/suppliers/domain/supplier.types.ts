@@ -57,3 +57,31 @@ export interface CreateSupplierOfferInput {
 export type UpdateSupplierOfferInput = Partial<
   Omit<CreateSupplierOfferInput, 'supplierId' | 'variantId'>
 >;
+
+export interface SupplierOfferImportRow {
+  rowNumber: number;
+  supplierId: string | null;
+  supplierName: string | null;
+  variantId: string | null;
+  sku: string | null;
+  barcode: string | null;
+  supplierSku: string | null;
+  unitCost: string;
+  stockStatus: SupplierOfferStockStatus;
+  leadTimeHours: number | null;
+  minimumQuantity: number;
+  active: boolean;
+}
+
+export interface SupplierOfferImportError {
+  row: number;
+  message: string;
+}
+
+export interface SupplierOfferImportResult {
+  total: number;
+  created: number;
+  updated: number;
+  errors: SupplierOfferImportError[];
+  dryRun: boolean;
+}

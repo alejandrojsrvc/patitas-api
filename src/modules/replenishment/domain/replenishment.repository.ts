@@ -12,6 +12,16 @@ export interface ReplenishmentRepository {
     input: CreateReplenishmentPlanInput,
     owner: ReplenishmentOwner,
   ): Promise<ReplenishmentPlan>;
+  updateSchedule(
+    id: string,
+    owner: ReplenishmentOwner,
+    nextReminderAt: Date,
+  ): Promise<ReplenishmentPlan>;
+  recalibrate(
+    id: string,
+    owner: ReplenishmentOwner,
+    days: number,
+  ): Promise<ReplenishmentPlan>;
   list(owner: ReplenishmentOwner): Promise<ReplenishmentPlan[]>;
   find(id: string, owner: ReplenishmentOwner): Promise<ReplenishmentPlan>;
   setStatus(
@@ -22,5 +32,6 @@ export interface ReplenishmentRepository {
   createReorderCart(
     id: string,
     owner: ReplenishmentOwner,
+    options?: { anonymousToken?: boolean },
   ): Promise<{ cartId: string; cartToken: string | null; status: string }>;
 }

@@ -1,11 +1,16 @@
 import { DomainError } from '../../../shared/domain/domain-error';
-import type { SupplierRepository } from '../domain/repositories/supplier.repository';
+import { parseSupplierOffersCsv } from './supplier-offers-csv';
+import type {
+  SupplierOfferImportOptions,
+  SupplierRepository,
+} from '../domain/repositories/supplier.repository';
 import type {
   CreateSupplierInput,
   CreateSupplierOfferInput,
   UpdateSupplierInput,
   UpdateSupplierOfferInput,
   SupplierFilter,
+  SupplierOfferImportRow,
 } from '../domain/supplier.types';
 
 export class SupplierValidationError extends DomainError {
@@ -73,6 +78,23 @@ export class SupplierService {
   public updateOffer(id: string, input: UpdateSupplierOfferInput) {
     validateOffer(input);
     return this.repository.updateOffer(id, input);
+  }
+  public importOffers(data: Uint8Array, options: SupplierOfferImportOptions) {
+    let rows: SupplierOfferImportRow[];
+    try {
+      rows = parseSupplierOffersCsv(data);
+    } catch (error) {
+      throw new SupplierValidationError(
+        error instanceof Error ? error.message : 'El CSV no es válido.',
+      );
+    }
+    return this.importOfferRows(rows, options);
+  }
+  public importOfferRows(
+    rows: SupplierOfferImportRow[],
+    options: SupplierOfferImportOptions,
+  ) {
+    return this.repository.importOffers(rows, options);
   }
 }
 

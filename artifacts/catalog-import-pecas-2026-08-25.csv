@@ -1,0 +1,11 @@
+sku,barcode,name,slug,brand,category,species,line,life_stage,breed_size,weight_kg,description,image_url,sale_price,initial_stock,supplier,supplier_product_name,cost_price,supplier_stock_status
+OLD-PRINCE-PREMIUM-ADULTO-20KG,,Old Prince Premium Adulto,old-prince-premium-adulto,Old Prince,alimento-seco,perro,,adulto,,20,,,,,Pecas,OLD PRINCE PERRO ADUL TO PREMIUM 20KG,45927.00,UNKNOWN
+EXCELLENT-ADULTO-FORMULA-20KG,,Excellent Adulto Formula,excellent-adulto-formula,Excellent,alimento-seco,perro,Formula,adulto,,20,,,,,Pecas,EXCELLENT PERRO ADUL T MANTENIMIENT O 20KG,54873.00,UNKNOWN
+DOG-CHOW-ADULTO-MED-GRANDE-20KG,,Dog Chow Adulto Med/Grande,dog-chow-adulto-med-grande,Dog Chow,alimento-seco,perro,,adulto,mediano-grande,20,,,,,Pecas,DOGCHOW PERRO ADUL TO MEDIANA/GRAND 20KG,50526.00,UNKNOWN
+PRO-PLAN-ADULTO-MED-GRANDE-15KG,,Pro Plan Adulto Med/Grande,pro-plan-adulto-med-grande,Pro Plan,alimento-seco,perro,,adulto,mediano-grande,15,,,,,Pecas,PROPLAN PERRO ADUL TO MEDIANA/GRANDE 15KG,100023.00,UNKNOWN
+ROYAL-CANIN-MEDIUM-ADULT-15KG,,Royal Canin Medium Adult,royal-canin-medium-adult,Royal Canin,alimento-seco,perro,,adulto,mediano,15,,,,,,,,UNKNOWN
+OLD-PRINCE-GATO-PREMIUM-ADULTO-75KG,,Old Prince Premium Gato Adulto,old-prince-premium-gato-adulto,Old Prince,alimento-seco,gato,,adulto,,7.5,,,,,Pecas,OLD PRINCE GA TO ADUL TO PREMIUM 7.5KG,29421.00,UNKNOWN
+EXCELLENT-GATO-ADULTO-75KG,,Excellent Gato Adulto,excellent-gato-adulto,Excellent,alimento-seco,gato,,adulto,,7.5,,,,,Pecas,EXCELLENT GA TO ADUL TO 7.5KG,53865.00,UNKNOWN
+PRO-PLAN-GATO-ADULTO-75KG,,Pro Plan Gato Adulto,pro-plan-gato-adulto,Pro Plan,alimento-seco,gato,,adulto,,7.5,,,,,Pecas,PROPLAN GA TO ADUL TO 7.5KG,85050.00,UNKNOWN
+CAT-CHOW-ADULTO-8KG,,Cat Chow Adulto,cat-chow-adulto,Cat Chow,alimento-seco,gato,,adulto,,8,,,,,Pecas,CATCHOW GA TO ADUL TO CARNE/PESCADO 8KG,41496.00,UNKNOWN
+EXCELLENT-GATO-STERILIZED-75KG,,Excellent Gato Sterilized,excellent-gato-sterilized,Excellent,alimento-seco,gato,,adulto,,7.5,,,,,Pecas,EXCELLENT GA TO ESTERILIZADO 7.5KG,62076.00,UNKNOWN

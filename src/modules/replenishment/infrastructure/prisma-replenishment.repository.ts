@@ -15,7 +15,7 @@ import type {
 import type { ReplenishmentRepository } from '../domain/replenishment.repository';
 
 type PlanRecord = Prisma.ReplenishmentPlanGetPayload<{
-  include: { variant: true };
+  include: { variant: { include: { product: true } } };
 }>;
 
 @Injectable()
@@ -26,6 +26,14 @@ export class PrismaReplenishmentRepository implements ReplenishmentRepository {
     input: CreateReplenishmentPlanInput,
     owner: ReplenishmentOwner,
   ) {
+    if (input.idempotencyKey) {
+      const existing = await this.prisma.replenishmentPlan.findUnique({
+        where: { idempotencyKey: input.idempotencyKey },
+        include: { variant: { include: { product: true } } },
+      });
+      if (existing && existing.customerId === owner.customerId)
+        return mapPlan(existing);
+    }
     const variant = await this.prisma.productVariant.findFirst({
       where: { id: input.variantId, productId: input.productId, active: true },
       include: { product: true },
@@ -38,6 +46,8 @@ export class PrismaReplenishmentRepository implements ReplenishmentRepository {
       data: {
         customerId: owner.customerId ?? null,
         orderId: input.orderId ?? null,
+        petId: input.petId ?? null,
+        estimateId: input.estimateId ?? null,
         guestAccessTokenHash:
           owner.guestTokenHash ?? input.guestAccessTokenHash ?? null,
         petName: input.petName.trim(),
@@ -50,6 +60,8 @@ export class PrismaReplenishmentRepository implements ReplenishmentRepository {
         skuSnapshot: variant.sku,
         presentationSnapshot: variant.presentation,
         dailyConsumption: input.dailyConsumption,
+        dailyGramsMin: input.dailyGramsMin ?? null,
+        dailyGramsMax: input.dailyGramsMax ?? null,
         consumptionUnit: input.consumptionUnit.trim(),
         durationDaysMin: input.durationDaysMin,
         durationDaysMax: input.durationDaysMax,
@@ -59,11 +71,13 @@ export class PrismaReplenishmentRepository implements ReplenishmentRepository {
           input.estimatedDepletionDate.getTime() - 5 * 24 * 60 * 60 * 1000,
         ),
         channel: input.channel,
+        reminderChannels: input.reminderChannels ?? [input.channel],
+        idempotencyKey: input.idempotencyKey ?? null,
         consentAt: new Date(),
         consentVersion: input.consentVersion.trim(),
         status: 'ACTIVE',
       },
-      include: { variant: true },
+      include: { variant: { include: { product: true } } },
     });
     await this.prisma.communicationConsent.create({
       data: {
@@ -88,7 +102,7 @@ export class PrismaReplenishmentRepository implements ReplenishmentRepository {
       where: owner.customerId
         ? { customerId: owner.customerId }
         : { guestAccessTokenHash: owner.guestTokenHash },
-      include: { variant: true },
+      include: { variant: { include: { product: true } } },
       orderBy: { createdAt: 'desc' },
     });
     return rows.map(mapPlan);
@@ -105,7 +119,7 @@ export class PrismaReplenishmentRepository implements ReplenishmentRepository {
           ? { customerId: owner.customerId }
           : { guestAccessTokenHash: owner.guestTokenHash }),
       },
-      include: { variant: true },
+      include: { variant: { include: { product: true } } },
     });
     if (!row)
       throw new ReplenishmentValidationError(
@@ -126,12 +140,57 @@ export class PrismaReplenishmentRepository implements ReplenishmentRepository {
           status,
           ...(status === 'CANCELLED' ? { unsubscribedAt: new Date() } : {}),
         },
-        include: { variant: true },
+        include: { variant: { include: { product: true } } },
       }),
     );
   }
 
-  public async createReorderCart(id: string, owner: ReplenishmentOwner) {
+  public async updateSchedule(
+    id: string,
+    owner: ReplenishmentOwner,
+    nextReminderAt: Date,
+  ) {
+    await this.find(id, owner);
+    return mapPlan(
+      await this.prisma.replenishmentPlan.update({
+        where: { id },
+        data: { nextReminderAt },
+        include: { variant: { include: { product: true } } },
+      }),
+    );
+  }
+
+  public async recalibrate(
+    id: string,
+    owner: ReplenishmentOwner,
+    days: number,
+  ) {
+    await this.find(id, owner);
+    const estimatedDepletionDate = new Date();
+    estimatedDepletionDate.setUTCDate(
+      estimatedDepletionDate.getUTCDate() + days,
+    );
+    const nextReminderAt = new Date(estimatedDepletionDate);
+    nextReminderAt.setUTCDate(nextReminderAt.getUTCDate() - 5);
+    return mapPlan(
+      await this.prisma.replenishmentPlan.update({
+        where: { id },
+        data: {
+          estimatedDepletionDate,
+          nextReminderAt,
+          needsReview: false,
+          reviewReason: null,
+        },
+        include: { variant: { include: { product: true } } },
+      }),
+    );
+  }
+
+  public async createReorderCart(
+    id: string,
+    owner: ReplenishmentOwner,
+    options: { anonymousToken?: boolean } = {},
+  ) {
     const plan = await this.prisma.replenishmentPlan.findFirst({
       where: {
         id,
@@ -157,7 +216,10 @@ export class PrismaReplenishmentRepository implements ReplenishmentRepository {
       throw new ReplenishmentValidationError(
         'La variante está agotada; revisa el catálogo para elegir una alternativa.',
       );
-    const token = owner.customerId ? null : createAnonymousToken();
+    const token =
+      owner.customerId && !options.anonymousToken
+        ? null
+        : createAnonymousToken();
     const cart = await this.prisma.cart.create({
       data: {
         customerId: owner.customerId ?? null,
@@ -176,6 +238,8 @@ const mapPlan = (value: PlanRecord): ReplenishmentPlan => ({
   id: value.id,
   customerId: value.customerId,
   orderId: value.orderId,
+  petId: value.petId,
+  estimateId: value.estimateId,
   petName: value.petName,
   petSpecies: value.petSpecies,
   petWeightKg: value.petWeightKg.toString(),
@@ -183,10 +247,15 @@ const mapPlan = (value: PlanRecord): ReplenishmentPlan => ({
   petBreed: value.petBreed,
   productId: value.productId,
   variantId: value.variantId,
+  weightGrams: value.variant?.weightGrams ?? null,
+  productName: value.variant?.product?.name ?? null,
+  salePrice: value.variant?.salePrice?.toString() ?? null,
   sku: value.skuSnapshot ?? value.variant?.sku ?? null,
   presentation:
     value.presentationSnapshot ?? value.variant?.presentation ?? null,
   dailyConsumption: value.dailyConsumption.toString(),
+  dailyGramsMin: value.dailyGramsMin ? Number(value.dailyGramsMin) : null,
+  dailyGramsMax: value.dailyGramsMax ? Number(value.dailyGramsMax) : null,
   consumptionUnit: value.consumptionUnit,
   durationDaysMin: value.durationDaysMin,
   durationDaysMax: value.durationDaysMax,
@@ -194,7 +263,9 @@ const mapPlan = (value: PlanRecord): ReplenishmentPlan => ({
   estimatedDepletionDate: value.estimatedDepletionDate,
   nextReminderAt: value.nextReminderAt,
   channel: value.channel,
+  reminderChannels: value.reminderChannels,
   status: value.status,
   needsReview: value.needsReview,
   reviewReason: value.reviewReason,
+  createdAt: value.createdAt,
 });

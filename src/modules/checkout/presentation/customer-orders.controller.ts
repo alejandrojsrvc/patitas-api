@@ -31,4 +31,15 @@ export class CustomerOrdersController {
       id,
     );
   }
+
+  @Get('/pets/:petId/purchase-history')
+  public async history(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('petId') petId: string,
+  ) {
+    return this.checkout.petPurchaseHistory(
+      (await this.customers.findByUserId(user.userId)).id,
+      petId,
+    );
+  }
 }

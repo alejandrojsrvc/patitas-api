@@ -1,4 +1,8 @@
-import { ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  ValidationError,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -19,7 +23,15 @@ async function bootstrap() {
   app.enableCors({
     origin: corsOrigins,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Request-Id',
+      'X-Cart-Token',
+      'X-Checkout-Token',
+      'X-Order-Token',
+      'Idempotency-Key',
+    ],
     exposedHeaders: ['X-Request-Id'],
     credentials: false,
     optionsSuccessStatus: 204,
@@ -49,6 +61,18 @@ async function bootstrap() {
       transform: true,
       whitelist: true,
       forbidNonWhitelisted: true,
+      exceptionFactory: (errors: ValidationError[]) =>
+        new BadRequestException({
+          code: 'VALIDATION_ERROR',
+          message: 'Revisá los datos ingresados.',
+          fieldErrors: Object.fromEntries(
+            errors.map((error) => [
+              error.property,
+              Object.values(error.constraints ?? {})[0] ??
+                'El valor no es válido.',
+            ]),
+          ),
+        }),
     }),
   );
 

@@ -158,7 +158,17 @@ export class PrismaCatalogRepository implements CatalogRepository {
             ],
           }
         : {}),
-      ...(filter.species ? { species: filter.species } : {}),
+      ...(filter.species
+        ? {
+            AND: [
+              {
+                OR: speciesAliases(filter.species).map((species) => ({
+                  species: { equals: species, mode: 'insensitive' as const },
+                })),
+              },
+            ],
+          }
+        : {}),
       ...(lifeStages ? { lifeStage: { in: lifeStages } } : {}),
       ...(filter.featured ? { featuredRank: { not: null } } : {}),
       brand: { active: true, ...(brands ? { slug: { in: brands } } : {}) },
@@ -192,7 +202,14 @@ export class PrismaCatalogRepository implements CatalogRepository {
       }),
       this.prisma.product.count({ where }),
     ]);
-    const products = records.map(mapProduct).map(onlySellableVariants);
+    const variantFilter = {
+      weights,
+      minPrice: filter.minPrice ? Number(filter.minPrice) : undefined,
+      maxPrice: filter.maxPrice ? Number(filter.maxPrice) : undefined,
+    };
+    const products = records
+      .map(mapProduct)
+      .map((product) => onlySellableVariants(product, variantFilter));
     if (isPriceSort)
       products.sort((left, right) => compareProducts(left, right, filter.sort));
     return isPriceSort
@@ -250,7 +267,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
 
     return candidates
       .map(mapProduct)
-      .map(onlySellableVariants)
+      .map((candidate) => onlySellableVariants(candidate))
       .sort(
         (left, right) =>
           relatedScore(right, product) - relatedScore(left, product),
@@ -853,24 +870,44 @@ const mapProduct = (value: PersistenceProduct): Product => ({
   variants: value.variants.map(mapVariant),
   media: value.media.map(mapMedia),
 });
-const onlySellableVariants = (product: Product): Product => ({
-  ...product,
-  variants: product.variants.filter(
-    (variant) =>
-      variant.active && Boolean(variant.sku) && Number(variant.salePrice) > 0,
-  ),
-  media: product.media.filter(
-    (media) =>
-      !media.variantId ||
-      product.variants.some(
-        (variant) =>
-          variant.id === media.variantId &&
-          variant.active &&
-          Boolean(variant.sku) &&
-          Number(variant.salePrice) > 0,
-      ),
-  ),
-});
+
+const speciesAliases = (value: string): string[] => {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'cat' || normalized === 'gato') return ['cat', 'gato'];
+  if (normalized === 'dog' || normalized === 'perro') {
+    return ['dog', 'perro'];
+  }
+  return [normalized];
+};
+
+const onlySellableVariants = (
+  product: Product,
+  filter?: {
+    weights?: number[];
+    minPrice?: number;
+    maxPrice?: number;
+  },
+): Product => {
+  const variants = product.variants.filter((variant) => {
+    const price = Number(variant.salePrice);
+    return (
+      variant.active &&
+      Boolean(variant.sku) &&
+      price > 0 &&
+      (!filter?.weights || filter.weights.includes(variant.weightGrams ?? 0)) &&
+      (filter?.minPrice === undefined || price >= filter.minPrice) &&
+      (filter?.maxPrice === undefined || price <= filter.maxPrice)
+    );
+  });
+  const visibleVariantIds = new Set(variants.map((variant) => variant.id));
+  return {
+    ...product,
+    variants,
+    media: product.media.filter(
+      (media) => !media.variantId || visibleVariantIds.has(media.variantId),
+    ),
+  };
+};
 const minimumPrice = (product: Product) =>
   Math.min(...product.variants.map((variant) => Number(variant.salePrice)));
 const compareProducts = (left: Product, right: Product, sort = 'featured') => {

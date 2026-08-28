@@ -1,0 +1,5 @@
+supplier_id,supplier_name,variant_id,sku,barcode,ean,supplier_sku,unit_cost,stock_status,lead_time_hours,minimum_quantity,active
+a5728ebc-e014-4493-9bd4-8e2ad74c508c,Distribuidora Pecas,,PI-EXC-CAT-AD-75K,,,EXCELLENT GA TO ADUL TO 7.5KG,53865.00,UNKNOWN,,1,true
+a5728ebc-e014-4493-9bd4-8e2ad74c508c,Distribuidora Pecas,,PI-EXC-DOG-AD-SM-15K,,,EXCELLENT PERRO ADUL TO PEQUEÑA 15KG,62412.00,UNKNOWN,,1,true
+a5728ebc-e014-4493-9bd4-8e2ad74c508c,Distribuidora Pecas,,PI-OP-EQ-CAT-AD-75K,,,OLD PRINCE GA TO ADUL TO 7.5KG,41706.00,UNKNOWN,,1,true
+a5728ebc-e014-4493-9bd4-8e2ad74c508c,Distribuidora Pecas,,PI-OP-EQ-DOG-AD-SM-15K,,,OLD PRINCE PERRO ADUL TO PEQUEÑA 15KG,49014.00,UNKNOWN,,1,true

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import type { AnalyticsRepository } from '../domain/analytics.repository';
 import type { ProductViewStats } from '../domain/analytics.types';
@@ -32,23 +31,18 @@ export class PrismaAnalyticsRepository implements AnalyticsRepository {
         },
         update: { totalViews: { increment: 1 } },
       });
-      let unique = false;
-      try {
-        await transaction.productViewVisitorDaily.create({
+      const visitorInsert =
+        await transaction.productViewVisitorDaily.createMany({
           data: {
             productId: product.id,
             viewDate: day,
             visitorHash: viewerKey,
             lastViewedAt: new Date(),
           },
+          skipDuplicates: true,
         });
-        unique = true;
-      } catch (error) {
-        if (!(
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === 'P2002'
-        ))
-          throw error;
+      const unique = visitorInsert.count > 0;
+      if (!unique) {
         await transaction.productViewVisitorDaily.update({
           where: {
             productId_viewDate_visitorHash: {
