@@ -20,6 +20,7 @@ import {
   CreateShippingOptionDto,
   CreateShippingZoneDto,
   UpdateShippingOptionDto,
+  ShippingDeliveryWindowsDto,
   UpdateShippingZoneDto,
 } from './shipping.dto';
 import { ShippingExceptionFilter } from './shipping.exception.filter';
@@ -46,8 +47,31 @@ export class ShippingController {
   ) {
     return this.shipping.update(id, input);
   }
+  @Get('quote') public quote(
+    @Query('postalCode') postalCode?: string,
+    @Query('neighborhood') neighborhood?: string,
+    @Query('city') city?: string,
+    @Query('province') province?: string,
+    @Query('subtotal') subtotal = '0',
+    @Query('weightGrams') weight?: string,
+  ) {
+    return this.shipping.quote({
+      postalCode,
+      neighborhood,
+      city,
+      province,
+      subtotal,
+      weightGrams: weight ? Number(weight) : undefined,
+    });
+  }
   @Get('zones') public zones(@Query('active') active?: string) {
     return this.shipping.listZones(active === 'true');
+  }
+  @Patch('zones/:id/delivery-windows') public updateDeliveryWindows(
+    @Param('id') id: string,
+    @Body() input: ShippingDeliveryWindowsDto,
+  ) {
+    return this.shipping.updateZone(id, { deliveryWindows: input });
   }
   @Post('zones') public createZone(@Body() input: CreateShippingZoneDto) {
     return this.shipping.createZone(input);

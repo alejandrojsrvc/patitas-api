@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import type {
-  CreatePaymentLinkInput,
-  PaymentLinkResult,
+  InitiatePaymentInput,
+  PaymentInitiationResult,
   PaymentProvider,
+  PaymentWebhookReceipt,
   PaymentWebhookResult,
 } from '../../shared/application/ports/payment-provider.interface';
 
@@ -11,17 +12,27 @@ import type {
 export class SimulatedPaymentAdapter implements PaymentProvider {
   public readonly name = 'simulated';
 
-  public createPaymentLink(
-    input: CreatePaymentLinkInput,
-  ): Promise<PaymentLinkResult> {
+  public createExternalReference(input: {
+    orderId: string;
+    attemptId: string;
+  }): string {
+    return `simulated:${input.orderId}:${input.attemptId}`;
+  }
+
+  public initiatePayment(
+    input: InitiatePaymentInput,
+  ): Promise<PaymentInitiationResult> {
     const id = createHash('sha256')
       .update(`${input.orderId}:${input.amount}`)
       .digest('hex')
       .slice(0, 24);
     return Promise.resolve({
       provider: this.name,
-      preferenceId: `SIM-${id}`,
+      externalId: `SIM-${id}`,
       paymentUrl: `/mock-payment/${input.orderId}`,
+      status: 'PENDING',
+      amount: input.amount,
+      currency: input.currency,
       expiresAt: input.expiresAt,
       rawResponse: { simulated: true },
     });
@@ -30,7 +41,7 @@ export class SimulatedPaymentAdapter implements PaymentProvider {
   public parseWebhook(input: {
     headers: Record<string, string | string[] | undefined>;
     body: unknown;
-  }): Promise<PaymentWebhookResult> {
+  }): Promise<PaymentWebhookReceipt> {
     const body = asRecord(input.body);
     const data = asRecord(body.data);
     return Promise.resolve({
@@ -44,8 +55,25 @@ export class SimulatedPaymentAdapter implements PaymentProvider {
         typeof body.external_reference === 'string'
           ? body.external_reference
           : undefined,
-      status: 'PENDING',
       rawPayload: input.body,
+    });
+  }
+
+  public resolveWebhook(
+    receipt: PaymentWebhookReceipt,
+  ): Promise<PaymentWebhookResult> {
+    return Promise.resolve({ ...receipt, status: 'PENDING' });
+  }
+
+  public refundPayment(): Promise<{
+    status: 'REFUNDED';
+    externalOperationId: string;
+    rawResponse: { simulated: true };
+  }> {
+    return Promise.resolve({
+      status: 'REFUNDED',
+      externalOperationId: `SIM-REFUND-${Date.now()}`,
+      rawResponse: { simulated: true },
     });
   }
 }

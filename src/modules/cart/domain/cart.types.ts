@@ -12,6 +12,7 @@ export interface CartItem {
   unitPrice: string;
   quantity: number;
   lineTotal: string;
+  weightGrams?: number | null;
   availableQuantity: number;
 }
 

@@ -8,7 +8,16 @@ export type OrderStatus =
   | 'CANCELLED';
 
 export type PaymentStatus =
-  'UNPAID' | 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+  | 'UNPAID'
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'PAID'
+  | 'FAILED'
+  | 'PARTIALLY_REFUNDED'
+  | 'REFUNDED'
+  | 'CHARGED_BACK';
+
+export type OrderPaymentKind = 'PAYMENT' | 'REFUND' | 'CHARGEBACK';
 
 export interface OrderLine {
   id: string;
@@ -23,7 +32,13 @@ export interface OrderLine {
 
 export interface OrderPayment {
   id: string;
+  paymentAttemptId: string | null;
   amount: string;
+  currency: 'ARS';
+  kind: OrderPaymentKind;
+  provider: string | null;
+  externalPaymentId: string | null;
+  externalOperationId: string | null;
   method: string;
   reference: string | null;
   proofUrl: string | null;
@@ -36,11 +51,21 @@ export interface Order {
   customerId: string | null;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  canRetry: boolean;
+  reconciliationRequired: boolean;
+  reconciliationReason: string | null;
+  reservationExpiresAt: Date | null;
   paymentMethod: string | null;
   paymentReference: string | null;
   currency: 'ARS';
   subtotal: string;
   shippingCost: string;
+  shippingProviderCost: string;
+  shippingSubsidy: string;
+  shippingDeliveryCount: number;
+  shippingVat: string;
+  shippingDeliverySlot: string | null;
+  shippingDeliveryDate: Date | null;
   total: string;
   contactName: string;
   contactEmail: string;

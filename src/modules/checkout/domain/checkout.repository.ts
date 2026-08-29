@@ -30,6 +30,7 @@ export interface CheckoutRepository {
     id: string,
     owner: CheckoutOwner,
     shippingOptionId: string,
+    deliverySlotId?: string,
   ): Promise<CheckoutSession>;
   setPaymentMethod(
     id: string,

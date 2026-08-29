@@ -27,18 +27,18 @@ export class PrismaCheckoutHandoffRepository implements CheckoutHandoffRepositor
 
   public async consume(tokenHash: string) {
     const result = await this.prisma.$transaction(async (tx) => {
-      const handoff = await tx.checkoutHandoff.findFirst({
+      const claimed = await tx.checkoutHandoff.updateMany({
         where: { tokenHash, consumedAt: null, expiresAt: { gt: new Date() } },
+        data: { consumedAt: new Date() },
       });
-      if (!handoff)
+      if (claimed.count !== 1)
         throw new CheckoutHandoffError(
           'El enlace de checkout no existe o expiró.',
         );
-      const cartToken = createAnonymousToken();
-      await tx.checkoutHandoff.update({
-        where: { id: handoff.id },
-        data: { consumedAt: new Date() },
+      const handoff = await tx.checkoutHandoff.findUniqueOrThrow({
+        where: { tokenHash },
       });
+      const cartToken = createAnonymousToken();
       await tx.cart.update({
         where: { id: handoff.cartId },
         data: { anonymousTokenHash: hashAnonymousToken(cartToken) },

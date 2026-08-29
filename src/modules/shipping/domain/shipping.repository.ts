@@ -1,6 +1,7 @@
 import type {
   ShippingOption,
   ShippingOptionInput,
+  ShippingOptionQuote,
   ShippingQuote,
   ShippingZone,
   ShippingZoneInput,
@@ -17,6 +18,15 @@ export interface ShippingRepository {
     input: Partial<ShippingOptionInput>,
   ): Promise<ShippingOption>;
   listZones(activeOnly?: boolean): Promise<ShippingZone[]>;
+  quoteOptions(input: {
+    postalCode?: string;
+    neighborhood?: string;
+    city?: string;
+    province?: string;
+    subtotal: string;
+    weightGrams?: number;
+    stockAvailable?: boolean;
+  }): Promise<ShippingOptionQuote[]>;
   createZone(input: ShippingZoneInput): Promise<ShippingZone>;
   updateZone(
     id: string,
@@ -25,7 +35,10 @@ export interface ShippingRepository {
   quote(input: {
     postalCode?: string;
     neighborhood?: string;
+    city?: string;
+    province?: string;
     subtotal: string;
     weightGrams?: number;
+    stockAvailable?: boolean;
   }): Promise<ShippingQuote>;
 }

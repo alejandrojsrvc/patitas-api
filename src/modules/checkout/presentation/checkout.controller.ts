@@ -15,12 +15,12 @@ import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { OptionalAuthGuard } from '../../auth/presentation/guards/optional-auth.guard';
 import { CustomerService } from '../../customers/application/customer.service';
-import { ShippingService } from '../../shipping/application/shipping.service';
 import { CheckoutService } from '../application/checkout.service';
 import { CheckoutExceptionFilter } from './checkout.exception.filter';
 import { CheckoutValidationError } from '../domain/checkout.error';
 import {
   ContactStepDto,
+  ConfirmCheckoutDto,
   CreateCheckoutSessionDto,
   CouponDto,
   PaymentMethodStepDto,
@@ -40,7 +40,6 @@ export class CheckoutController {
   public constructor(
     private readonly checkout: CheckoutService,
     private readonly customers: CustomerService,
-    private readonly shipping: ShippingService,
   ) {}
 
   @Post('sessions') public async create(
@@ -84,10 +83,20 @@ export class CheckoutController {
     );
   }
   @Get('sessions/:id/shipping-options') public options(
-    @Param('id') _id: string,
+    @Req() request: Request,
+    @Param('id') id: string,
   ) {
-    void _id;
-    return this.shipping.list(true);
+    return ownerFromRequest(request, this.customers, 'checkout')
+      .then((owner) => this.checkout.shippingOptions(id, owner))
+      .then((options) =>
+        options
+          .filter((option) => option.available)
+          .map(({ id, cost, deliverySlots }) => ({
+            id,
+            cost,
+            deliverySlots,
+          })),
+      );
   }
   @Patch('sessions/:id/shipping-option') public async option(
     @Req() request: Request,
@@ -98,6 +107,7 @@ export class CheckoutController {
       id,
       await ownerFromRequest(request, this.customers, 'checkout'),
       input.shippingOptionId,
+      input.deliverySlotId,
     );
   }
   @Post('sessions/:id/coupon') public async coupon(
@@ -131,13 +141,27 @@ export class CheckoutController {
       input.paymentMethod,
     );
   }
-  @Post('sessions/:id/confirm') public async confirm(
+  @Post('sessions/:id/confirm')
+  @ApiHeader({ name: 'Idempotency-Key', required: false })
+  public async confirm(
     @Req() request: Request,
     @Param('id') id: string,
+    @Body() input: ConfirmCheckoutDto,
+    @Headers('idempotency-key') idempotencyKey?: string,
   ) {
     return this.checkout.confirm(
       id,
       await ownerFromRequest(request, this.customers, 'checkout'),
+      input?.payment
+        ? {
+            type: 'TOKENIZED_CARD',
+            token: input.payment.token,
+            installments: input.payment.installments,
+            paymentMethodReference: input.payment.paymentMethodId,
+            cardBin: input.payment.bin,
+          }
+        : undefined,
+      idempotencyKey,
     );
   }
   @Get('orders/:id') public publicOrder(
@@ -156,8 +180,13 @@ const ownerFromRequest = async (
 ) => {
   const userId = (request as Request & { user?: { userId: string } }).user
     ?.userId;
-  if (userId) return { customerId: (await customers.findByUserId(userId)).id };
-  return ownerFromRequestSync(request, tokenType);
+  const tokenOwner = ownerFromRequestSync(request, tokenType);
+  if (userId)
+    return {
+      customerId: (await customers.findByUserId(userId)).id,
+      ...tokenOwner,
+    };
+  return tokenOwner;
 };
 const ownerFromRequestSync = (
   request: Request,

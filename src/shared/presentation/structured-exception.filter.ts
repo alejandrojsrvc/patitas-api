@@ -19,9 +19,11 @@ export class StructuredExceptionFilter implements ExceptionFilter {
     const status =
       error instanceof HttpException
         ? error.getStatus()
-        : error instanceof DomainError
-          ? HttpStatus.UNPROCESSABLE_ENTITY
-          : HttpStatus.INTERNAL_SERVER_ERROR;
+        : error instanceof DomainError && error.code.endsWith('_CONFLICT')
+          ? HttpStatus.CONFLICT
+          : error instanceof DomainError
+            ? HttpStatus.UNPROCESSABLE_ENTITY
+            : HttpStatus.INTERNAL_SERVER_ERROR;
     const payload =
       error instanceof HttpException ? error.getResponse() : undefined;
     const message =

@@ -2,6 +2,7 @@ import { DomainError } from '../../../shared/domain/domain-error';
 import type { ShippingRepository } from '../domain/shipping.repository';
 import type {
   ShippingOptionInput,
+  ShippingOptionQuote,
   ShippingZoneInput,
 } from '../domain/shipping.types';
 
@@ -30,24 +31,52 @@ export class ShippingService {
   public listZones(activeOnly = false) {
     return this.repository.listZones(activeOnly);
   }
+  public quoteOptions(input: {
+    postalCode?: string;
+    neighborhood?: string;
+    city?: string;
+    province?: string;
+    subtotal: string;
+    weightGrams?: number;
+    stockAvailable?: boolean;
+  }): Promise<ShippingOptionQuote[]> {
+    return this.repository.quoteOptions(input);
+  }
   public createZone(input: ShippingZoneInput) {
     validateZone(input);
+    if (input.deliveryWindows !== undefined)
+      validateDeliveryWindows(input.deliveryWindows);
     return this.repository.createZone(normalizeZone(input));
   }
   public updateZone(id: string, input: Partial<ShippingZoneInput>) {
     validateZone(input);
+    if (input.deliveryWindows !== undefined)
+      validateDeliveryWindows(input.deliveryWindows);
     return this.repository.updateZone(id, normalizeZone(input));
   }
   public quote(input: {
     postalCode?: string;
     neighborhood?: string;
+    city?: string;
+    province?: string;
     subtotal: string;
     weightGrams?: number;
+    stockAvailable?: boolean;
   }) {
-    if (!input.postalCode && !input.neighborhood)
+    if (!input.postalCode && !input.neighborhood && !input.city)
       throw new ShippingValidationError(
-        'Indica código postal o barrio para calcular la cobertura.',
+        'Indica código postal, localidad o barrio para calcular la cobertura.',
       );
+    const subtotal = Number(input.subtotal);
+    if (!Number.isFinite(subtotal) || subtotal < 0 || subtotal > 100_000_000)
+      throw new ShippingValidationError('El subtotal no es válido.');
+    if (
+      input.weightGrams !== undefined &&
+      (!Number.isFinite(input.weightGrams) ||
+        input.weightGrams < 0 ||
+        input.weightGrams > 1_000_000)
+    )
+      throw new ShippingValidationError('El peso no es válido.');
     return this.repository.quote(input);
   }
 }
@@ -81,6 +110,46 @@ const validateZone = (input: Partial<ShippingZoneInput>) => {
     throw new ShippingValidationError('El plazo mínimo no es válido.');
   if (input.estimatedDaysMax !== undefined && input.estimatedDaysMax < 0)
     throw new ShippingValidationError('El plazo máximo no es válido.');
+};
+const validateDeliveryWindows = (value: unknown) => {
+  if (!value || typeof value !== 'object')
+    throw new ShippingValidationError('La configuración horaria no es válida.');
+  const record = value as Record<string, unknown>;
+  const slots = record.deliverySlots;
+  if (!Array.isArray(slots) || slots.length !== 2)
+    throw new ShippingValidationError(
+      'La configuración debe contener exactamente dos franjas.',
+    );
+  if (
+    slots.some((slot) => {
+      if (!slot || typeof slot !== 'object') return true;
+      const item = slot as Record<string, unknown>;
+      return (
+        typeof item.id !== 'string' ||
+        typeof item.label !== 'string' ||
+        !isTime(item.start) ||
+        !isTime(item.end) ||
+        timeToMinutes(item.start) >= timeToMinutes(item.end)
+      );
+    })
+  )
+    throw new ShippingValidationError('Las franjas horarias no son válidas.');
+  if (
+    !Array.isArray(record.daysOfWeek) ||
+    record.daysOfWeek.some(
+      (day) => !Number.isInteger(day) || Number(day) < 1 || Number(day) > 7,
+    ) ||
+    !isTime(record.cutoff)
+  )
+    throw new ShippingValidationError(
+      'Los días y el corte horario no son válidos.',
+    );
+};
+const isTime = (value: unknown): value is string =>
+  typeof value === 'string' && /^(\d{2}):([0-5]\d)$/.test(value);
+const timeToMinutes = (value: string): number => {
+  const [hour, minute] = value.split(':').map(Number);
+  return hour * 60 + minute;
 };
 const normalizeZone = <
   T extends ShippingZoneInput | Partial<ShippingZoneInput>,

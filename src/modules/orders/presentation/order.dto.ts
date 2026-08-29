@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
+  IsDateString,
   IsEmail,
   IsIn,
   IsInt,
@@ -90,6 +91,10 @@ export class RegisterPaymentDto {
   @IsString()
   @MaxLength(2_000)
   public proofUrl?: string | null;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  public paidAt?: string | null;
 }
 
 export class TransitionOrderDto {
@@ -152,11 +157,37 @@ export class OrdersQueryDto {
   ])
   public status?: TransitionOrderDto['status'];
   @ApiPropertyOptional({
-    enum: ['UNPAID', 'PENDING', 'PAID', 'FAILED', 'REFUNDED'],
+    enum: [
+      'UNPAID',
+      'PENDING',
+      'PROCESSING',
+      'PAID',
+      'FAILED',
+      'PARTIALLY_REFUNDED',
+      'REFUNDED',
+      'CHARGED_BACK',
+    ],
   })
   @IsOptional()
-  @IsIn(['UNPAID', 'PENDING', 'PAID', 'FAILED', 'REFUNDED'])
-  public paymentStatus?: 'UNPAID' | 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+  @IsIn([
+    'UNPAID',
+    'PENDING',
+    'PROCESSING',
+    'PAID',
+    'FAILED',
+    'PARTIALLY_REFUNDED',
+    'REFUNDED',
+    'CHARGED_BACK',
+  ])
+  public paymentStatus?:
+    | 'UNPAID'
+    | 'PENDING'
+    | 'PROCESSING'
+    | 'PAID'
+    | 'FAILED'
+    | 'PARTIALLY_REFUNDED'
+    | 'REFUNDED'
+    | 'CHARGED_BACK';
   @ApiPropertyOptional({ default: 1 })
   @Transform(({ value }) => Number(value ?? 1))
   @IsInt()

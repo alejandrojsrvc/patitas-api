@@ -69,6 +69,7 @@ export class OrderService {
         method: input.method.trim(),
         reference: input.reference?.trim() || null,
         proofUrl: input.proofUrl?.trim() || null,
+        paidAt: input.paidAt ?? null,
       }),
     );
   }
@@ -76,6 +77,10 @@ export class OrderService {
   public async transition(id: string, status: OrderStatus) {
     await this.find(id);
     return this.resolveProofUrls(await this.repository.transition(id, status));
+  }
+
+  public expirePaymentReservations() {
+    return this.repository.expirePaymentReservations();
   }
 
   public async uploadPaymentProof(

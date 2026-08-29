@@ -22,6 +22,8 @@ export interface CheckoutSession {
   shippingCost: string;
   shippingZoneId: string | null;
   shippingEstimate: string | null;
+  shippingDeliverySlot: string | null;
+  shippingDeliveryDate: Date | null;
   paymentMethod: string | null;
   couponCode: string | null;
   orderId: string | null;
@@ -36,6 +38,10 @@ export interface OrderSummary {
   id: string;
   status: string;
   paymentStatus: string;
+  canRetry: boolean;
+  reconciliationRequired: boolean;
+  reconciliationReason: string | null;
+  reservationExpiresAt: Date | null;
   subtotal: string;
   discountTotal: string;
   shippingCost: string;

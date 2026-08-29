@@ -58,7 +58,10 @@ export class AdminOrderController {
     @Param('id') id: string,
     @Body() input: RegisterPaymentDto,
   ) {
-    return this.orders.registerPayment(id, input);
+    return this.orders.registerPayment(id, {
+      ...input,
+      paidAt: input.paidAt ? new Date(input.paidAt) : null,
+    });
   }
   @Post(':id/status') public status(
     @Param('id') id: string,
@@ -68,6 +71,9 @@ export class AdminOrderController {
   }
   @Post(':id/cancel') public cancel(@Param('id') id: string) {
     return this.orders.transition(id, 'CANCELLED');
+  }
+  @Post('expire-payment-reservations') public expireReservations() {
+    return this.orders.expirePaymentReservations();
   }
   @Post(':orderId/payments/:paymentId/proof/upload')
   @ApiConsumes('multipart/form-data')

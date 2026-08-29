@@ -97,9 +97,12 @@ se resuelven mediante URLs firmadas de `StorageProvider`.
 
 La confirmación del checkout es transaccional: recalcula precios, promociones,
 envío e inventario, registra la reserva y convierte el carrito. El método
-`SIMULATED_*` crea un pedido de demostración pagado. `MERCADO_PAGO` crea un
-pedido `PENDING_PAYMENT`; el pedido solo pasa a pagado mediante webhook firmado.
-No se almacenan datos de tarjetas.
+`SIMULATED_*` crea un pedido de demostración pagado. `MERCADO_PAGO` y `PAYWAY`
+crean pedidos `PENDING_PAYMENT`. Mercado Pago devuelve una redirección a
+Checkout Pro; Payway recibe exclusivamente el token temporal creado por su SDK
+en el frontend y puede aprobar el cobro en forma síncrona. Los webhooks se
+resuelven explícitamente por proveedor y Payway consulta el pago autenticado
+antes de aplicar el estado. No se almacenan datos ni tokens de tarjetas.
 
 Un carrito mantiene una única sesión de checkout. Crear una sesión es idempotente
 por `cartId`: si el cliente abandonó el flujo antes de confirmar, se reutilizan
@@ -107,7 +110,9 @@ los datos ya guardados, se extiende la expiración y se rota el token temporal.
 Así el cliente puede volver directamente al paso pendiente sin comenzar desde
 cero. Un carrito ya convertido en pedido no puede reabrirse.
 
-Los pagos, notificaciones y marketing están detrás de ports configurables. Las
+Los pagos, notificaciones y marketing están detrás de ports configurables. Un
+resolver de pagos elige el adapter por el método guardado en cada orden, por lo
+que Mercado Pago y Payway pueden operar simultáneamente. Las
 zonas de envío se cotizan por código postal o barrio y los planes de reposición
 solo generan carritos de recompra: nunca cobran automáticamente. Los jobs
 externos usan `X-Cron-Secret` y los eventos de marketing se deduplican mediante

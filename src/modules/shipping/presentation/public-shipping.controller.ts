@@ -11,14 +11,25 @@ export class PublicShippingController {
   @Get('quote') public quote(
     @Query('postalCode') postalCode?: string,
     @Query('neighborhood') neighborhood?: string,
+    @Query('city') city?: string,
+    @Query('province') province?: string,
     @Query('subtotal') subtotal = '0',
     @Query('weightGrams') weight?: string,
   ) {
-    return this.shipping.quote({
-      postalCode,
-      neighborhood,
-      subtotal,
-      weightGrams: weight ? Number(weight) : undefined,
-    });
+    return this.shipping
+      .quote({
+        postalCode,
+        neighborhood,
+        city,
+        province,
+        subtotal,
+        weightGrams: weight ? Number(weight) : undefined,
+      })
+      .then(({ available, cost, estimate, message }) => ({
+        available,
+        cost,
+        estimate,
+        message,
+      }));
   }
 }

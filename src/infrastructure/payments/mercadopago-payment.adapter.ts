@@ -1,15 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { createHash } from 'node:crypto';
 import {
   MercadoPagoConfig,
   Payment,
+  PaymentRefund,
   Preference,
   WebhookSignatureValidator,
 } from 'mercadopago';
 import type {
-  CreatePaymentLinkInput,
-  PaymentLinkResult,
+  InitiatePaymentInput,
+  PaymentInitiationResult,
   PaymentProvider,
+  PaymentWebhookReceipt,
   PaymentWebhookResult,
 } from '../../shared/application/ports/payment-provider.interface';
 
@@ -21,6 +24,7 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
   private readonly notificationUrl: string | undefined;
   private readonly preference: Preference;
   private readonly payment: Payment;
+  private readonly refund: PaymentRefund;
 
   public constructor(config: ConfigService) {
     this.accessToken = config
@@ -35,11 +39,56 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
     });
     this.preference = new Preference(mercadoPagoConfig);
     this.payment = new Payment(mercadoPagoConfig);
+    this.refund = new PaymentRefund(mercadoPagoConfig);
   }
 
-  public async createPaymentLink(
-    input: CreatePaymentLinkInput,
-  ): Promise<PaymentLinkResult> {
+  public async refundPayment(input: {
+    paymentId: string;
+    amount: string;
+    currency: string;
+    idempotencyKey: string;
+  }) {
+    if (!this.accessToken)
+      throw new Error('MERCADOPAGO_ACCESS_TOKEN no está configurado.');
+    try {
+      const response = await this.refund.create({
+        payment_id: input.paymentId,
+        body: { amount: Number(input.amount) },
+        requestOptions: { idempotencyKey: input.idempotencyKey },
+      });
+      const status = String(response.status ?? '').toLowerCase();
+      return {
+        status:
+          status === 'approved' || status === 'refunded'
+            ? ('REFUNDED' as const)
+            : status === 'pending' || status === 'in_process'
+              ? ('PROCESSING' as const)
+              : ('FAILED' as const),
+        externalOperationId:
+          response.id !== undefined ? String(response.id) : undefined,
+        rawResponse: sanitize(response),
+      };
+    } catch (error) {
+      return {
+        status: 'FAILED' as const,
+        rawResponse: sanitize({ error: safeError(error) }),
+      };
+    }
+  }
+
+  public createExternalReference(input: {
+    orderId: string;
+    attemptId: string;
+  }): string {
+    return `order-${input.orderId}-${createHash('sha256')
+      .update(input.attemptId)
+      .digest('hex')
+      .slice(0, 16)}`;
+  }
+
+  public async initiatePayment(
+    input: InitiatePaymentInput,
+  ): Promise<PaymentInitiationResult> {
     if (!this.accessToken)
       throw new Error('MERCADOPAGO_ACCESS_TOKEN no está configurado.');
     const response = await this.preference.create({
@@ -59,43 +108,59 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
         expires: Boolean(input.expiresAt),
         expiration_date_to: input.expiresAt?.toISOString(),
       },
-      requestOptions: { idempotencyKey: input.orderId },
+      requestOptions: { idempotencyKey: input.idempotencyKey },
     });
     if (typeof response.init_point !== 'string')
       throw new Error('Mercado Pago no pudo crear la preferencia.');
     return {
       provider: this.name,
-      preferenceId: response.id,
+      externalId: response.id,
       paymentUrl: response.init_point,
+      status: 'PENDING',
+      amount: input.amount,
+      currency: input.currency,
       expiresAt: input.expiresAt,
       rawResponse: response,
     };
   }
 
-  public async parseWebhook(input: {
+  public parseWebhook(input: {
     headers: Record<string, string | string[] | undefined>;
     body: unknown;
     dataId?: string | string[];
-  }): Promise<PaymentWebhookResult> {
+  }): Promise<PaymentWebhookReceipt> {
     const body = asRecord(input.body);
     const data = asRecord(body.data);
-    this.verifySignature(input.headers, input.dataId ?? scalarString(data.id));
+    const bodyDataId = scalarString(data.id);
+    const queryDataId = scalarString(input.dataId);
+    if (bodyDataId && queryDataId && bodyDataId !== queryDataId)
+      throw new Error('El ID del webhook de Mercado Pago no coincide.');
+    this.verifySignature(input.headers, queryDataId ?? bodyDataId);
     const type =
       scalarString(body.type) ?? scalarString(body.action) ?? 'payment';
-    const paymentId = scalarString(data.id) ?? scalarString(body.id) ?? '';
-    const payment = type.includes('merchant_order')
-      ? { status: 'PENDING' as const, externalReference: undefined }
-      : await this.fetchPaymentStatus(paymentId);
-    return {
-      externalEventId: `${type}:${paymentId}`,
+    const paymentId = bodyDataId ?? scalarString(body.id) ?? '';
+    return Promise.resolve({
+      externalEventId:
+        scalarString(body.id) ?? `${type}:${paymentId || 'unknown'}`,
       eventType: type,
       externalPaymentId: paymentId || undefined,
-      externalReference:
-        typeof body.external_reference === 'string'
-          ? body.external_reference
-          : payment.externalReference,
+      externalReference: scalarString(body.external_reference),
+      rawPayload: sanitize(input.body),
+    });
+  }
+
+  public async resolveWebhook(
+    receipt: PaymentWebhookReceipt,
+  ): Promise<PaymentWebhookResult> {
+    const payment = receipt.eventType.includes('merchant_order')
+      ? { status: 'PENDING' as const, externalReference: undefined }
+      : await this.fetchPaymentStatus(receipt.externalPaymentId ?? '');
+    return {
+      ...receipt,
+      externalReference: receipt.externalReference ?? payment.externalReference,
       status: payment.status,
-      rawPayload: input.body,
+      amount: payment.amount,
+      currency: payment.currency,
     };
   }
 
@@ -126,6 +191,8 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
   private async fetchPaymentStatus(paymentId: string): Promise<{
     status: PaymentWebhookResult['status'];
     externalReference?: string;
+    amount?: string;
+    currency?: string;
   }> {
     if (!paymentId || !this.accessToken) return { status: 'PENDING' };
     try {
@@ -139,14 +206,25 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
               in_process: 'PENDING',
               rejected: 'REJECTED',
               cancelled: 'CANCELLED',
-              refunded: 'FAILED',
-              charged_back: 'FAILED',
+              refunded: 'REFUNDED',
+              partially_refunded: 'PARTIALLY_REFUNDED',
+              charged_back: 'CHARGED_BACK',
+              in_mediation: 'PROCESSING',
             } as Record<string, PaymentWebhookResult['status']>
           )[response.status ?? 'pending'] ?? 'PENDING',
         externalReference: response.external_reference,
+        amount:
+          typeof response.transaction_amount === 'number'
+            ? response.transaction_amount.toFixed(2)
+            : undefined,
+        currency: response.currency_id,
       };
-    } catch {
-      return { status: 'PENDING' };
+    } catch (error) {
+      throw new Error(
+        `No se pudo verificar el pago de Mercado Pago: ${
+          error instanceof Error ? error.message : 'error desconocido'
+        }`,
+      );
     }
   }
 }
@@ -163,3 +241,17 @@ const scalarString = (value: unknown): string | undefined =>
   typeof value === 'string' || typeof value === 'number'
     ? String(value)
     : undefined;
+
+const sanitize = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(sanitize);
+  if (value === null || typeof value !== 'object') return value;
+  const blocked = new Set(['token', 'card_number', 'security_code']);
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => !blocked.has(key.toLowerCase()))
+      .map(([key, item]) => [key, sanitize(item)]),
+  );
+};
+
+const safeError = (error: unknown): string =>
+  error instanceof Error ? error.message.slice(0, 500) : 'Error desconocido';

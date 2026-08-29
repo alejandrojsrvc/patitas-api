@@ -82,7 +82,11 @@ export class PrismaOrderRepository implements OrderRepository {
     return this.prisma.$transaction(async (transaction) => {
       const variantIds = input.lines.map((line) => line.variantId);
       const variants = await transaction.productVariant.findMany({
-        where: { id: { in: variantIds }, active: true },
+        where: {
+          id: { in: variantIds },
+          active: true,
+          product: { status: 'ACTIVE' },
+        },
         include: { product: true },
       });
       if (variants.length !== new Set(variantIds).size)
@@ -166,6 +170,9 @@ export class PrismaOrderRepository implements OrderRepository {
     input: RegisterPaymentInput,
   ): Promise<Order> {
     return this.prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw(
+        Prisma.sql`SELECT id FROM orders WHERE id = ${id} FOR UPDATE`,
+      );
       const order = await transaction.order.findUnique({
         where: { id },
         include: { payments: true },
@@ -176,10 +183,10 @@ export class PrismaOrderRepository implements OrderRepository {
           'No se puede registrar un pago en el estado actual del pedido.',
         );
       const paid =
-        order.payments.reduce(
-          (sum, payment) => sum + Number(payment.amount),
-          0,
-        ) + Number(input.amount);
+        order.payments
+          .filter((payment) => payment.kind === 'PAYMENT' && payment.paidAt)
+          .reduce((sum, payment) => sum + Number(payment.amount), 0) +
+        (input.paidAt ? Number(input.amount) : 0);
       if (order.paymentStatus === 'PAID' || paid > Number(order.total))
         throw new OrderConflictError(
           'El importe supera el saldo pendiente del pedido.',
@@ -189,6 +196,8 @@ export class PrismaOrderRepository implements OrderRepository {
           id: randomUUID(),
           orderId: id,
           amount: input.amount,
+          currency: order.currency,
+          kind: 'PAYMENT',
           method: input.method,
           reference: input.reference ?? null,
           proofUrl: input.proofUrl ?? null,
@@ -215,7 +224,7 @@ export class PrismaOrderRepository implements OrderRepository {
     return this.prisma.$transaction(async (transaction) => {
       const order = await transaction.order.findUnique({
         where: { id },
-        include: { lines: true },
+        include: { lines: true, payments: true },
       });
       if (!order) throw new OrderNotFoundError();
       if (order.status === status && status === 'CANCELLED')
@@ -233,6 +242,19 @@ export class PrismaOrderRepository implements OrderRepository {
         throw new OrderConflictError(
           'El pedido debe tener un pago completo antes de marcarse como PAID.',
         );
+      const captured = order.payments
+        .filter((payment) => payment.kind === 'PAYMENT' && payment.paidAt)
+        .reduce((sum, payment) => sum + Number(payment.amount), 0);
+      const refunded = order.payments
+        .filter((payment) => payment.kind === 'REFUND' && payment.paidAt)
+        .reduce((sum, payment) => sum + Number(payment.amount), 0);
+      const chargedBack = order.payments
+        .filter((payment) => payment.kind === 'CHARGEBACK' && payment.paidAt)
+        .reduce((sum, payment) => sum + Number(payment.amount), 0);
+      if (status === 'CANCELLED' && captured - refunded - chargedBack > 0)
+        throw new OrderConflictError(
+          'El pedido tiene dinero capturado. Requiere un refund explícito antes de cancelarse.',
+        );
       if (status === 'PAID')
         await ensureReservation(transaction, order.lines, id);
       if (status === 'SHIPPED') await ship(transaction, order.lines, id);
@@ -249,6 +271,70 @@ export class PrismaOrderRepository implements OrderRepository {
         }),
       );
     });
+  }
+
+  public async expirePaymentReservations(): Promise<{ expired: number }> {
+    const candidates = await this.prisma.order.findMany({
+      where: {
+        status: 'PENDING_PAYMENT',
+        reservationReleasedAt: null,
+        reservationExpiresAt: { lte: new Date() },
+        paymentStatus: {
+          notIn: ['PAID', 'PARTIALLY_REFUNDED', 'REFUNDED', 'CHARGED_BACK'],
+        },
+      },
+      select: { id: true },
+    });
+    let expired = 0;
+    for (const candidate of candidates) {
+      const changed = await this.prisma.$transaction(async (transaction) => {
+        await transaction.$queryRaw(
+          Prisma.sql`SELECT id FROM orders WHERE id = ${candidate.id} FOR UPDATE`,
+        );
+        const order = await transaction.order.findFirst({
+          where: {
+            id: candidate.id,
+            status: 'PENDING_PAYMENT',
+            reservationReleasedAt: null,
+            reservationExpiresAt: { lte: new Date() },
+            paymentStatus: {
+              notIn: ['PAID', 'PARTIALLY_REFUNDED', 'REFUNDED', 'CHARGED_BACK'],
+            },
+          },
+          include: { lines: true },
+        });
+        if (!order) return false;
+        await release(
+          transaction,
+          order.lines,
+          order.id,
+          'Expiración de reserva',
+        );
+        await reverseCouponRedemptions(transaction, order.id);
+        await transaction.paymentAttempt.updateMany({
+          where: {
+            orderId: order.id,
+            status: { in: ['CREATED', 'PROCESSING', 'PENDING'] },
+          },
+          data: {
+            status: 'EXPIRED',
+            processingLeaseToken: null,
+            processingLeaseUntil: null,
+          },
+        });
+        await transaction.order.update({
+          where: { id: order.id },
+          data: {
+            status: 'CANCELLED',
+            paymentStatus: 'FAILED',
+            reservationReleasedAt: new Date(),
+          },
+        });
+        return true;
+      });
+      if (changed) expired += 1;
+    }
+    return { expired };
   }
 
   public async uploadPaymentProof(
@@ -338,14 +424,30 @@ const release = async (
   transaction: OrderInventoryTransaction,
   lines: Array<{ variantId: string; quantity: number }>,
   orderId: string,
+  reason = 'Cancelación de pedido',
 ) => {
   for (const line of lines) {
     const inventory = await transaction.inventoryItem.findUnique({
       where: { variantId: line.variantId },
     });
+    const movements = await transaction.inventoryMovement.findMany({
+      where: {
+        orderId,
+        variantId: line.variantId,
+        type: { in: ['RESERVE', 'RELEASE'] },
+      },
+      select: { type: true, quantity: true },
+    });
+    const reserved = movements
+      .filter((movement) => movement.type === 'RESERVE')
+      .reduce((sum, movement) => sum + movement.quantity, 0);
+    const released = movements
+      .filter((movement) => movement.type === 'RELEASE')
+      .reduce((sum, movement) => sum + movement.quantity, 0);
     const quantity = Math.min(
       line.quantity,
-      Math.max(0, inventory?.reserved ?? 0),
+      Math.max(0, reserved - released),
+      inventory?.reserved ?? 0,
     );
     if (!quantity) continue;
     await transaction.inventoryItem.update({
@@ -359,7 +461,7 @@ const release = async (
         orderId,
         type: 'RELEASE',
         quantity,
-        reason: 'Cancelación de pedido',
+        reason,
       },
     });
   }
@@ -434,11 +536,25 @@ const mapOrder = (value: OrderRecord): Order => ({
   customerId: value.customerId,
   status: value.status,
   paymentStatus: value.paymentStatus,
+  canRetry:
+    value.status === 'PENDING_PAYMENT' &&
+    value.paymentStatus === 'FAILED' &&
+    !value.reconciliationRequired &&
+    (!value.reservationExpiresAt || value.reservationExpiresAt > new Date()),
+  reconciliationRequired: value.reconciliationRequired,
+  reconciliationReason: value.reconciliationReason,
+  reservationExpiresAt: value.reservationExpiresAt,
   paymentMethod: value.paymentMethod,
   paymentReference: value.paymentReference,
   currency: 'ARS',
   subtotal: value.subtotal.toString(),
   shippingCost: value.shippingCost.toString(),
+  shippingProviderCost: value.shippingProviderCost.toString(),
+  shippingSubsidy: value.shippingSubsidy.toString(),
+  shippingDeliveryCount: value.shippingDeliveryCount,
+  shippingVat: value.shippingVat.toString(),
+  shippingDeliverySlot: value.shippingDeliverySlot,
+  shippingDeliveryDate: value.shippingDeliveryDate,
   total: value.total.toString(),
   contactName: value.contactName,
   contactEmail: value.contactEmail,
@@ -461,7 +577,13 @@ const mapOrder = (value: OrderRecord): Order => ({
   })),
   payments: value.payments.map((payment) => ({
     id: payment.id,
+    paymentAttemptId: payment.paymentAttemptId,
     amount: payment.amount.toString(),
+    currency: payment.currency as 'ARS',
+    kind: payment.kind,
+    provider: payment.provider,
+    externalPaymentId: payment.externalPaymentId,
+    externalOperationId: payment.externalOperationId,
     method: payment.method,
     reference: payment.reference,
     proofUrl: payment.proofUrl,

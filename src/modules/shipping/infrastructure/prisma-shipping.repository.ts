@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { ShippingValidationError } from '../application/shipping.service';
+import { calculateShipping } from '../domain/shipping-calculator';
 import type { ShippingRepository } from '../domain/shipping.repository';
 import type {
   ShippingOption,
@@ -49,6 +50,40 @@ export class PrismaShippingRepository implements ShippingRepository {
     });
     return rows.map(mapZone);
   }
+  public async quoteOptions(input: {
+    postalCode?: string;
+    neighborhood?: string;
+    city?: string;
+    province?: string;
+    subtotal: string;
+    weightGrams?: number;
+    stockAvailable?: boolean;
+  }) {
+    const [options, zones, rules] = await Promise.all([
+      this.prisma.shippingOption.findMany({
+        where: { active: true },
+        orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
+      }),
+      this.prisma.shippingZone.findMany({
+        where: { active: true },
+        orderBy: [{ priority: 'desc' }, { name: 'asc' }],
+      }),
+      this.prisma.pricingRuleSet.findFirst({
+        where: { status: 'ACTIVE' },
+        orderBy: { version: 'desc' },
+        select: { subsidizedShippingCost: true },
+      }),
+    ]);
+    const quote = calculateShipping(
+      zones.map(mapZone),
+      input,
+      rules?.subsidizedShippingCost?.toString() ?? '0.00',
+    );
+    return options.map((option) => ({
+      ...mapOption(option),
+      ...quote,
+    }));
+  }
   public async createZone(input: ShippingZoneInput) {
     const { polygon, deliveryWindows, ...rest } = input;
     return mapZone(
@@ -90,51 +125,26 @@ export class PrismaShippingRepository implements ShippingRepository {
   public async quote(input: {
     postalCode?: string;
     neighborhood?: string;
+    city?: string;
+    province?: string;
     subtotal: string;
     weightGrams?: number;
+    stockAvailable?: boolean;
   }): Promise<ShippingQuote> {
     const zones = await this.prisma.shippingZone.findMany({
       where: { active: true },
       orderBy: [{ priority: 'desc' }, { name: 'asc' }],
     });
-    const postalCode = input.postalCode?.trim().toUpperCase();
-    const neighborhood = input.neighborhood?.trim().toLowerCase();
-    const zone = zones.find(
-      (candidate) =>
-        (!candidate.maxWeightGrams ||
-          !input.weightGrams ||
-          input.weightGrams <= candidate.maxWeightGrams) &&
-        ((postalCode &&
-          candidate.postalCodes.some(
-            (value: string) => value.toUpperCase() === postalCode,
-          )) ||
-          (neighborhood &&
-            candidate.neighborhoods.some(
-              (value: string) => value.toLowerCase() === neighborhood,
-            ))),
+    const rules = await this.prisma.pricingRuleSet.findFirst({
+      where: { status: 'ACTIVE' },
+      orderBy: { version: 'desc' },
+      select: { subsidizedShippingCost: true },
+    });
+    return calculateShipping(
+      zones.map(mapZone),
+      input,
+      rules?.subsidizedShippingCost?.toString() ?? '0.00',
     );
-    if (!zone)
-      return {
-        available: false,
-        zoneId: null,
-        zoneName: null,
-        cost: '0.00',
-        estimate: null,
-        message: 'La dirección está fuera de cobertura.',
-      };
-    const cost =
-      zone.freeShippingFrom !== null &&
-      Number(input.subtotal) >= Number(zone.freeShippingFrom)
-        ? 0
-        : Number(zone.cost);
-    return {
-      available: true,
-      zoneId: zone.id,
-      zoneName: zone.name,
-      cost: cost.toFixed(2),
-      estimate: `${zone.estimatedDaysMin}-${zone.estimatedDaysMax} días hábiles`,
-      message: 'Envío disponible.',
-    };
   }
 }
 const mapOption = (

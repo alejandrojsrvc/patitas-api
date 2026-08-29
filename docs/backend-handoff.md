@@ -21,9 +21,18 @@ pedido o esperar la actualización del webhook.
 
 ## Catálogo, envío y recompra
 
-- `GET /api/v1/shipping/quote` devuelve cobertura, costo y plazo real según
-  código postal/barrio, subtotal y peso.
-- Admin configura zonas en `/api/v1/admin/shipping-options/zones`.
+- `GET /api/v1/shipping/quote` devuelve disponibilidad, costo final y plazo
+  según localidad, subtotal y peso. La respuesta pública no expone el costo
+  logístico ni el subsidio.
+- `GET /api/v1/checkout/sessions/:id/shipping-options` devuelve las opciones
+  disponibles para la sesión con `id`, `name` y `cost` final para el cliente.
+- Admin configura opciones en `/api/v1/admin/shipping-options` y zonas en
+  `/api/v1/admin/shipping-options/zones`.
+- `GET /api/v1/admin/shipping-options/quote` devuelve el desglose interno de
+  tarifa, IVA, subsidio, cantidad de entregas, cobertura y cortes de colecta.
+- El cálculo usa una entrega hasta 20 kg, dos entregas entre más de 20 kg y 30
+  kg, IVA del 21% y el subsidio de la regla de pricing activa. Más de 30 kg no
+  está disponible.
 - `/api/v1/replenishment-plans` permite crear, consultar, pausar, reactivar,
   cancelar y generar un carrito de recompra.
 - Una recompra solo crea un carrito; nunca realiza un cobro automático.
@@ -98,11 +107,33 @@ estas tablas: planes, intentos/webhooks de pago, zonas, consentimientos,
 notificaciones, marketing, combos y referidos. Debe aplicarse con el flujo
 normal de migraciones del proyecto; no se ejecutó desde este handoff.
 
-Mercado Pago se habilita con `PAYMENT_PROVIDER=mercadopago`,
-`MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET` y opcionalmente
-`MERCADOPAGO_NOTIFICATION_URL`. Sin esa configuración se usa el proveedor
-simulado únicamente fuera de producción; en producción la API no inicia sin
-Mercado Pago y la firma del webhook configurados.
+Los proveedores habilitados se declaran separados por coma, por ejemplo
+`PAYMENT_PROVIDERS=mercadopago,payway`. Mercado Pago usa
+`MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`,
+`MERCADOPAGO_WEBHOOK_SECRET` y opcionalmente
+`MERCADOPAGO_NOTIFICATION_URL`. Payway API Payments usa `PAYWAY_SITE_ID`,
+`PAYWAY_PUBLIC_API_KEY`, `PAYWAY_PRIVATE_API_KEY`, `PAYWAY_API_BASE_URL` y
+`PAYWAY_WEBHOOK_SECRET`, además de opcionalmente `PAYWAY_NOTIFICATION_URL`. La URL de notificación Payway debe
+configurarse también en el portal como
+`/api/v1/payments/webhooks/payway`. La public key y el Site ID se entregan al
+frontend por su configuración de despliegue; la private key permanece en la
+API. El proveedor simulado solo está permitido fuera de producción.
+
+Para sandbox de Mercado Pago se debe usar la `Public Key` y el access token
+`TEST-...` de una cuenta de prueba propia y habilitarlo explícitamente con
+`PAYMENT_PROVIDERS=mercadopago,simulated`. No existe una credencial sandbox
+universal que pueda incluirse en el repositorio.
+
+El frontend tokeniza la tarjeta directamente con el SDK de Payway y envía
+`token`, `paymentMethodId`, `bin` e `installments` al confirmar el checkout. La
+API no persiste el token. Un intento rechazado devuelve `action=RETRY`; Mercado
+Pago devuelve `action=REDIRECT` y `paymentUrl`.
+
+Las operaciones de inicio de pago requieren `Idempotency-Key`. El estado
+normalizado se puede recuperar con `GET /api/v1/payments/orders/:id/status` y
+devuelve `paymentStatus`, `canRetry` y `reconciliationRequired`. Los refunds
+administrativos usan `POST /api/v1/payments/orders/:id/refund`, requieren rol
+`ADMIN`, `Idempotency-Key` y un monto opcional.
 
 ## Análisis de pricing y punto de equilibrio
 

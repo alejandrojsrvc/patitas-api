@@ -19,9 +19,11 @@ export class CheckoutExceptionFilter implements ExceptionFilter {
     const status =
       error instanceof CheckoutNotFoundError
         ? HttpStatus.NOT_FOUND
-        : error instanceof CheckoutConflictError
+        : error.code.endsWith('_CONFLICT')
           ? HttpStatus.CONFLICT
-          : HttpStatus.UNPROCESSABLE_ENTITY;
+          : error instanceof CheckoutConflictError
+            ? HttpStatus.CONFLICT
+            : HttpStatus.UNPROCESSABLE_ENTITY;
     host
       .switchToHttp()
       .getResponse<Response>()

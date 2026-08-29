@@ -1,21 +1,54 @@
-export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER');
+export const PAYMENT_PROVIDER_RESOLVER = Symbol('PAYMENT_PROVIDER_RESOLVER');
 
-export interface CreatePaymentLinkInput {
+import type {
+  NormalizedPaymentStatus,
+  PaymentProviderName,
+  PaymentWebhookReceipt,
+  TokenizedCardPayment,
+} from '../../domain/payment.types';
+
+export type {
+  NormalizedPaymentStatus,
+  PaymentProviderName,
+  PaymentWebhookReceipt,
+  TokenizedCardPayment,
+} from '../../domain/payment.types';
+
+export interface InitiatePaymentInput {
+  attemptId: string;
   orderId: string;
   title: string;
   amount: string;
   currency: string;
   payerEmail: string;
   externalReference: string;
+  idempotencyKey: string;
   notificationUrl?: string;
   expiresAt?: Date;
+  paymentMethod?: TokenizedCardPayment;
 }
 
-export interface PaymentLinkResult {
-  provider: string;
-  preferenceId?: string;
-  paymentUrl: string;
+export interface PaymentInitiationResult {
+  provider: PaymentProviderName;
+  externalId?: string;
+  paymentUrl?: string;
+  status: NormalizedPaymentStatus;
   expiresAt?: Date;
+  amount?: string;
+  currency?: string;
+  rawResponse?: unknown;
+}
+
+export interface RefundPaymentInput {
+  paymentId: string;
+  amount: string;
+  currency: string;
+  idempotencyKey: string;
+}
+
+export interface PaymentRefundResult {
+  status: 'PROCESSING' | 'REFUNDED' | 'FAILED';
+  externalOperationId?: string;
   rawResponse?: unknown;
 }
 
@@ -24,17 +57,31 @@ export interface PaymentWebhookResult {
   eventType: string;
   externalPaymentId?: string;
   externalReference?: string;
-  status:
-    'APPROVED' | 'PENDING' | 'REJECTED' | 'CANCELLED' | 'EXPIRED' | 'FAILED';
+  status: NormalizedPaymentStatus;
+  amount?: string;
+  currency?: string;
+  externalOperationId?: string;
   rawPayload: unknown;
 }
 
 export interface PaymentProvider {
-  readonly name: string;
-  createPaymentLink(input: CreatePaymentLinkInput): Promise<PaymentLinkResult>;
+  readonly name: PaymentProviderName;
+  createExternalReference(input: {
+    orderId: string;
+    attemptId: string;
+  }): string;
+  initiatePayment(
+    input: InitiatePaymentInput,
+  ): Promise<PaymentInitiationResult>;
+  refundPayment(input: RefundPaymentInput): Promise<PaymentRefundResult>;
   parseWebhook(input: {
     headers: Record<string, string | string[] | undefined>;
     body: unknown;
     dataId?: string | string[];
-  }): Promise<PaymentWebhookResult>;
+  }): Promise<PaymentWebhookReceipt>;
+  resolveWebhook(receipt: PaymentWebhookReceipt): Promise<PaymentWebhookResult>;
+}
+
+export interface PaymentProviderResolver {
+  resolve(provider: PaymentProviderName): PaymentProvider;
 }

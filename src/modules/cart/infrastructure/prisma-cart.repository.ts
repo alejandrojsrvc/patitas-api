@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../infrastructure/database/generated/prisma/client';
+import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import type { CartRepository } from '../domain/cart.repository';
 import type { Cart, CartItem, CartOwner, CartPage } from '../domain/cart.types';
@@ -46,15 +46,33 @@ export class PrismaCartRepository implements CartRepository {
   }
 
   public async create(owner: CartOwner): Promise<Cart> {
-    const record = await this.prisma.cart.create({
-      data: {
-        customerId: owner.customerId ?? null,
-        anonymousTokenHash: owner.tokenHash ?? null,
-        items: { create: [] },
-      },
-      include: cartInclude,
-    });
-    return mapCart(record);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const record = await this.prisma.cart.create({
+          data: {
+            customerId: owner.customerId ?? null,
+            anonymousTokenHash: owner.tokenHash ?? null,
+            items: { create: [] },
+          },
+          include: cartInclude,
+        });
+        return mapCart(record);
+      } catch (error) {
+        if (!isUniqueConstraintError(error) || !owner.tokenHash) throw error;
+        const existing = await this.prisma.cart.findFirst({
+          where: { anonymousTokenHash: owner.tokenHash },
+          include: cartInclude,
+          orderBy: { updatedAt: 'desc' },
+        });
+        if (existing?.status === 'ACTIVE' || existing?.status === 'ABANDONED')
+          return mapCart(existing);
+        await this.prisma.cart.updateMany({
+          where: { anonymousTokenHash: owner.tokenHash },
+          data: { anonymousTokenHash: null },
+        });
+      }
+    }
+    throw new CartValidationError('No se pudo crear el carrito.');
   }
 
   public async setItem(
@@ -243,14 +261,28 @@ const findOrCreateTransactionCart = async (
     include: { items: true },
   });
   if (current) return current;
-  return transaction.cart.create({
-    data: {
-      customerId: owner.customerId ?? null,
-      anonymousTokenHash: owner.tokenHash ?? null,
-    },
-    include: { items: true },
-  });
+  try {
+    return await transaction.cart.create({
+      data: {
+        customerId: owner.customerId ?? null,
+        anonymousTokenHash: owner.tokenHash ?? null,
+      },
+      include: { items: true },
+    });
+  } catch (error) {
+    if (!isUniqueConstraintError(error) || !owner.tokenHash) throw error;
+    const existing = await transaction.cart.findFirst({
+      where: { anonymousTokenHash: owner.tokenHash },
+      include: { items: true },
+    });
+    if (existing) return existing;
+    throw error;
+  }
 };
+
+const isUniqueConstraintError = (error: unknown): boolean =>
+  error instanceof Prisma.PrismaClientKnownRequestError &&
+  error.code === 'P2002';
 
 const mapCart = (value: CartRecord): Cart => {
   const items = value.items.map((item): CartItem => {

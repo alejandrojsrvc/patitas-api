@@ -3,6 +3,7 @@ import { PrismaModule } from '../../infrastructure/database/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { CustomersModule } from '../customers/customers.module';
 import { ShippingModule } from '../shipping/shipping.module';
+import { ShippingService } from '../shipping/application/shipping.service';
 import { StorageModule } from '../../infrastructure/storage/storage.module';
 import {
   STORAGE_PROVIDER,
@@ -44,12 +45,18 @@ import { CheckoutHandoffController } from './presentation/checkout-handoff.contr
     { provide: CHECKOUT_REPOSITORY, useClass: PrismaCheckoutRepository },
     {
       provide: CheckoutService,
-      inject: [CHECKOUT_REPOSITORY, STORAGE_PROVIDER, PaymentService],
+      inject: [
+        CHECKOUT_REPOSITORY,
+        STORAGE_PROVIDER,
+        PaymentService,
+        ShippingService,
+      ],
       useFactory: (
         repository: CheckoutRepository,
         storage: StorageProvider,
         payments: PaymentService,
-      ) => new CheckoutService(repository, storage, payments),
+        shipping: ShippingService,
+      ) => new CheckoutService(repository, storage, payments, shipping),
     },
     {
       provide: CHECKOUT_HANDOFF_REPOSITORY,

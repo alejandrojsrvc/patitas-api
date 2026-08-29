@@ -77,9 +77,12 @@ enum OrderStatus {
 enum PaymentStatus {
   UNPAID
   PENDING
+  PROCESSING
   PAID
   FAILED
+  PARTIALLY_REFUNDED
   REFUNDED
+  CHARGED_BACK
 }
 
 enum InventoryMovementType {
@@ -146,12 +149,42 @@ enum NotificationDeliveryStatus {
 
 enum PaymentAttemptStatus {
   CREATED
+  PROCESSING
   PENDING
   APPROVED
   REJECTED
   CANCELLED
   EXPIRED
   FAILED
+  PARTIALLY_REFUNDED
+  REFUNDED
+  CHARGED_BACK
+}
+
+enum OrderPaymentKind {
+  PAYMENT
+  REFUND
+  CHARGEBACK
+}
+
+enum PaymentWebhookEventStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  FAILED
+  IGNORED
+}
+
+enum PaymentRefundStatus {
+  PROCESSING
+  REFUNDED
+  FAILED
+}
+
+enum PaymentProviderConfigurationName {
+  SIMULATED
+  MERCADO_PAGO
+  PAYWAY
 }
 
 enum ShippingCoverageType {
@@ -501,9 +534,19 @@ model Order {
   paymentProvider       String?                @map("payment_provider")
   paymentExternalId     String?                @map("payment_external_id")
   paymentExpiresAt      DateTime?              @map("payment_expires_at") @db.Timestamptz(6)
+  reservationExpiresAt  DateTime?              @map("reservation_expires_at") @db.Timestamptz(6)
+  reservationReleasedAt DateTime?             @map("reservation_released_at") @db.Timestamptz(6)
+  reconciliationRequired Boolean               @default(false) @map("reconciliation_required")
+  reconciliationReason String?                 @map("reconciliation_reason")
   currency              String                 @default("ARS") @db.VarChar(3)
   subtotal              Decimal                @db.Decimal(14, 2)
   shippingCost          Decimal                @default(0) @map("shipping_cost") @db.Decimal(14, 2)
+  shippingProviderCost  Decimal                @default(0) @map("shipping_provider_cost") @db.Decimal(14, 2)
+  shippingSubsidy       Decimal                @default(0) @map("shipping_subsidy") @db.Decimal(14, 2)
+  shippingDeliveryCount Int                    @default(0) @map("shipping_delivery_count")
+  shippingVat           Decimal                @default(0) @map("shipping_vat") @db.Decimal(14, 2)
+  shippingDeliverySlot  String?               @map("shipping_delivery_slot")
+  shippingDeliveryDate  DateTime?             @map("shipping_delivery_date") @db.Date
   total                 Decimal                @db.Decimal(14, 2)
   discountTotal         Decimal                @default(0) @map("discount_total") @db.Decimal(14, 2)
   couponCode            String?                @map("coupon_code")
@@ -534,6 +577,7 @@ model Order {
   checkoutSession       CheckoutSession?
   replenishmentPlans    ReplenishmentPlan[]
   paymentAttempts       PaymentAttempt[]
+  refunds               PaymentRefund[]
   couponRedemptions     CouponRedemption[]
   convertedCart         Cart?                  @relation("CartConvertedOrder")
   shippingZone          ShippingZone?          @relation(fields: [shippingZoneId], references: [id], onDelete: SetNull)
@@ -566,18 +610,49 @@ model OrderLine {
 }
 
 model OrderPayment {
-  id        String    @id @default(uuid()) @db.Uuid
-  orderId   String    @map("order_id") @db.Uuid
-  amount    Decimal   @db.Decimal(14, 2)
-  method    String
-  reference String?
-  proofUrl  String?   @map("proof_url")
-  paidAt    DateTime? @map("paid_at") @db.Timestamptz(6)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id                  String               @id @default(uuid()) @db.Uuid
+  orderId             String               @map("order_id") @db.Uuid
+  paymentAttemptId    String?              @map("payment_attempt_id") @db.Uuid
+  amount              Decimal              @db.Decimal(14, 2)
+  currency            String               @default("ARS") @db.VarChar(3)
+  kind                OrderPaymentKind     @default(PAYMENT)
+  provider            String?
+  externalPaymentId  String?              @map("external_payment_id")
+  externalOperationId String?              @map("external_operation_id")
+  method              String
+  reference           String?
+  proofUrl            String?              @map("proof_url")
+  paidAt             DateTime?            @map("paid_at") @db.Timestamptz(6)
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  order               Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  paymentAttempt     PaymentAttempt?      @relation(fields: [paymentAttemptId], references: [id], onDelete: SetNull)
 
   @@index([orderId, createdAt], map: "idx_order_payments_order_created")
+  @@index([paymentAttemptId, createdAt], map: "idx_order_payments_attempt_created")
   @@map("order_payments")
+}
+
+model PaymentRefund {
+  id                 String             @id @default(uuid()) @db.Uuid
+  orderId            String             @map("order_id") @db.Uuid
+  paymentAttemptId   String?            @map("payment_attempt_id") @db.Uuid
+  provider           String
+  externalPaymentId String             @map("external_payment_id")
+  externalOperationId String?           @unique @map("external_operation_id")
+  amount             Decimal            @db.Decimal(14, 2)
+  currency           String             @db.VarChar(3)
+  idempotencyKey     String             @unique @map("idempotency_key")
+  status             PaymentRefundStatus @default(PROCESSING)
+  failureReason     String?             @map("failure_reason")
+  rawResponse       Json?               @map("raw_response")
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  order             Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  paymentAttempt    PaymentAttempt?     @relation(fields: [paymentAttemptId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, createdAt], map: "idx_payment_refunds_order_created")
+  @@index([status, createdAt], map: "idx_payment_refunds_status_created")
+  @@map("payment_refunds")
 }
 
 model InventoryMovement {
@@ -714,6 +789,12 @@ model CheckoutSession {
   shippingAddress  Json?                  @map("shipping_address")
   shippingOptionId String?                @map("shipping_option_id") @db.Uuid
   shippingCost     Decimal                @default(0) @map("shipping_cost") @db.Decimal(14, 2)
+  shippingProviderCost Decimal              @default(0) @map("shipping_provider_cost") @db.Decimal(14, 2)
+  shippingSubsidy   Decimal                @default(0) @map("shipping_subsidy") @db.Decimal(14, 2)
+  shippingDeliveryCount Int                @default(0) @map("shipping_delivery_count")
+  shippingVat       Decimal                @default(0) @map("shipping_vat") @db.Decimal(14, 2)
+  shippingDeliverySlot String?              @map("shipping_delivery_slot")
+  shippingDeliveryDate DateTime?            @map("shipping_delivery_date") @db.Date
   shippingZoneId   String?                @map("shipping_zone_id") @db.Uuid
   shippingEstimate String?                @map("shipping_estimate")
   paymentMethod    String?                @map("payment_method")
@@ -1013,40 +1094,61 @@ model CheckoutHandoff {
 }
 
 model PaymentAttempt {
-  id                   String               @id @default(uuid()) @db.Uuid
-  orderId              String               @map("order_id") @db.Uuid
-  provider             String
-  externalPreferenceId String?              @map("external_preference_id")
-  externalPaymentId    String?              @map("external_payment_id")
-  status               PaymentAttemptStatus @default(CREATED)
-  amount               Decimal              @db.Decimal(14, 2)
-  currency             String               @db.VarChar(3)
-  paymentUrl           String?              @map("payment_url")
-  idempotencyKey       String               @unique @map("idempotency_key")
-  expiresAt            DateTime?            @map("expires_at") @db.Timestamptz(6)
-  rawResponse          Json?                @map("raw_response")
-  createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
-  order                Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id                    String               @id @default(uuid()) @db.Uuid
+  orderId               String               @map("order_id") @db.Uuid
+  provider              String
+  externalReference     String?              @map("external_reference")
+  externalPreferenceId  String?              @map("external_preference_id")
+  externalPaymentId     String?              @map("external_payment_id")
+  status                PaymentAttemptStatus @default(CREATED)
+  amount                Decimal              @db.Decimal(14, 2)
+  currency              String               @db.VarChar(3)
+  paymentUrl            String?              @map("payment_url")
+  idempotencyKey        String               @unique @map("idempotency_key")
+  expiresAt             DateTime?            @map("expires_at") @db.Timestamptz(6)
+  processingLeaseUntil  DateTime?            @map("processing_lease_until") @db.Timestamptz(6)
+  processingLeaseToken  String?              @map("processing_lease_token")
+  attemptCount          Int                  @default(0) @map("attempt_count")
+  lastError             String?              @map("last_error")
+  requestFingerprint    String               @map("request_fingerprint")
+  rawResponse           Json?                @map("raw_response")
+  createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  order                 Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payments              OrderPayment[]
+  webhookEvents         PaymentWebhookEvent[]
+  refunds               PaymentRefund[]
 
   @@index([orderId, createdAt], map: "idx_payment_attempts_order_created")
   @@index([provider, externalPaymentId], map: "idx_payment_attempts_provider_payment")
+  @@index([provider, externalReference], map: "idx_payment_attempts_provider_reference")
+  @@index([status, processingLeaseUntil], map: "idx_payment_attempts_processing_lease")
   @@map("payment_attempts")
 }
 
 model PaymentWebhookEvent {
-  id          String    @id @default(uuid()) @db.Uuid
-  provider    String
-  externalId  String    @map("external_id")
-  eventType   String    @map("event_type")
-  payload     Json
-  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
-  status      String    @default("RECEIVED")
-  error       String?
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  id                 String                    @id @default(uuid()) @db.Uuid
+  provider           String
+  externalId         String                    @map("external_id")
+  eventType          String                    @map("event_type")
+  externalPaymentId  String?                   @map("external_payment_id")
+  externalReference  String?                   @map("external_reference")
+  paymentAttemptId   String?                   @map("payment_attempt_id") @db.Uuid
+  payload            Json
+  processedAt        DateTime?                 @map("processed_at") @db.Timestamptz(6)
+  processingStartedAt DateTime?                @map("processing_started_at") @db.Timestamptz(6)
+  attemptCount       Int                       @default(0) @map("attempt_count")
+  reconciliationRequired Boolean                @default(false) @map("reconciliation_required")
+  reconciliationReason   String?                @map("reconciliation_reason")
+  status             PaymentWebhookEventStatus @default(RECEIVED)
+  error              String?
+  createdAt          DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  paymentAttempt     PaymentAttempt?           @relation(fields: [paymentAttemptId], references: [id], onDelete: SetNull)
 
   @@unique([provider, externalId], map: "payment_webhook_events_provider_external_key")
   @@index([status, createdAt], map: "idx_payment_webhook_events_status_created")
+  @@index([status, processingStartedAt], map: "idx_payment_webhook_events_processing")
+  @@index([paymentAttemptId, createdAt], map: "idx_payment_webhook_events_attempt_created")
   @@map("payment_webhook_events")
 }
 
@@ -1247,6 +1349,18 @@ model PricingRuleSet {
 
   @@index([status], map: "idx_pricing_rule_sets_status")
   @@map("pricing_rule_sets")
+}
+
+model PaymentProviderConfiguration {
+  id        String                           @id @default(uuid()) @db.Uuid
+  provider  PaymentProviderConfigurationName @unique
+  enabled   Boolean                          @default(false)
+  priority  Int                              @default(0)
+  createdAt DateTime                         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime                         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([enabled, priority], map: "idx_payment_provider_configurations_enabled_priority")
+  @@map("payment_provider_configurations")
 }
 
 model PaymentFeeSchedule {

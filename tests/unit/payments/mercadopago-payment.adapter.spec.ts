@@ -24,13 +24,15 @@ describe('MercadoPagoPaymentAdapter', () => {
       init_point: 'https://www.mercadopago.com.ar/checkout/v1/redirect',
     });
 
-    const result = await adapter.createPaymentLink({
+    const result = await adapter.initiatePayment({
+      attemptId: 'attempt-123',
       orderId: 'order-123',
       title: 'Pedido Patitas order-123',
       amount: '1500.50',
       currency: 'ARS',
       payerEmail: 'buyer@example.com',
       externalReference: 'order-123',
+      idempotencyKey: 'mercadopago:order-123:attempt-1',
       expiresAt: new Date('2026-08-24T12:00:00.000Z'),
     });
 
@@ -51,12 +53,15 @@ describe('MercadoPagoPaymentAdapter', () => {
         expires: true,
         expiration_date_to: '2026-08-24T12:00:00.000Z',
       },
-      requestOptions: { idempotencyKey: 'order-123' },
+      requestOptions: {
+        idempotencyKey: 'mercadopago:order-123:attempt-1',
+      },
     });
     expect(result).toMatchObject({
       provider: 'mercadopago',
-      preferenceId: 'preference-123',
+      externalId: 'preference-123',
       paymentUrl: 'https://www.mercadopago.com.ar/checkout/v1/redirect',
+      status: 'PENDING',
     });
   });
 
@@ -82,7 +87,7 @@ describe('MercadoPagoPaymentAdapter', () => {
       .update(manifest)
       .digest('hex');
 
-    const result = await adapter.parseWebhook({
+    const receipt = await adapter.parseWebhook({
       headers: {
         'x-request-id': requestId,
         'x-signature': `ts=${timestamp},v1=${signature}`,
@@ -93,6 +98,8 @@ describe('MercadoPagoPaymentAdapter', () => {
         data: { id: dataId },
       },
     });
+
+    const result = await adapter.resolveWebhook(receipt);
 
     expect(payment.get).toHaveBeenCalledWith({ id: dataId });
     expect(result).toMatchObject({

@@ -15,6 +15,29 @@ export interface ShippingOptionInput {
   displayOrder?: number;
 }
 
+export interface ShippingOptionQuote extends ShippingOption {
+  cost: string;
+  providerCost: string;
+  vat: string;
+  subsidy: string;
+  deliveryCount: number;
+  zoneId: string | null;
+  zoneName: string | null;
+  estimate: string | null;
+  cutoffs: Array<{ time: string; coverage: 'AMBA' | 'CABA' }>;
+  deliverySlots: Array<{
+    id: string;
+    label: string;
+    start: string;
+    end: string;
+    date: string;
+  }>;
+  available: boolean;
+  message: string;
+}
+
+export type ShippingQuote = import('./shipping-calculator').ShippingQuote;
+
 export type ShippingCoverageType = 'POSTAL_CODE' | 'NEIGHBORHOOD' | 'POLYGON';
 
 export interface ShippingZone {
@@ -48,13 +71,4 @@ export interface ShippingZoneInput {
   estimatedDaysMin: number;
   estimatedDaysMax: number;
   deliveryWindows?: unknown;
-}
-
-export interface ShippingQuote {
-  available: boolean;
-  zoneId: string | null;
-  zoneName: string | null;
-  cost: string;
-  estimate: string | null;
-  message: string;
 }

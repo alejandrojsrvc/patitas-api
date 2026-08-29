@@ -4,12 +4,17 @@ import type { CheckoutOwner } from '../domain/checkout.types';
 import type { CheckoutRepository } from '../domain/checkout.repository';
 import type { StorageProvider } from '../../../shared/application/ports/storage-provider.interface';
 import type { PaymentService } from '../../payments/application/payment.service';
+import type { TokenizedCardPayment } from '../../../shared/domain/payment.types';
+import { PaymentValidationError } from '../../payments/application/payment.service';
+import type { ShippingService } from '../../shipping/application/shipping.service';
+import type { ShippingOptionQuote } from '../../shipping/domain/shipping.types';
 
 export class CheckoutService {
   public constructor(
     private readonly repository: CheckoutRepository,
     private readonly storage?: StorageProvider,
     private readonly payments?: PaymentService,
+    private readonly shipping?: ShippingService,
   ) {}
 
   public async create(cartId: string, owner: CheckoutOwner) {
@@ -18,6 +23,37 @@ export class CheckoutService {
   }
   public async find(id: string, owner: CheckoutOwner) {
     return this.resolveMedia(await this.repository.find(id, owner));
+  }
+  public async shippingOptions(
+    id: string,
+    owner: CheckoutOwner,
+  ): Promise<ShippingOptionQuote[]> {
+    const session = await this.repository.find(id, owner);
+    if (!this.shipping) return [];
+    const address = session.shippingAddress ?? {};
+    const weightGrams = session.items.reduce<number | undefined>(
+      (total, item) =>
+        total === undefined ||
+        item.weightGrams === null ||
+        item.weightGrams === undefined
+          ? undefined
+          : total + item.weightGrams * item.quantity,
+      0,
+    );
+    return this.shipping.quoteOptions({
+      postalCode: address.postalCode,
+      neighborhood: address.neighborhood,
+      city: address.city,
+      province: address.province,
+      subtotal: Math.max(
+        0,
+        Number(session.subtotal) - Number(session.discountTotal),
+      ).toFixed(2),
+      weightGrams,
+      stockAvailable: session.items.every(
+        (item) => item.availableQuantity >= item.quantity,
+      ),
+    });
   }
   public setContact(
     id: string,
@@ -68,9 +104,10 @@ export class CheckoutService {
     id: string,
     owner: CheckoutOwner,
     shippingOptionId: string,
+    deliverySlotId?: string,
   ) {
     return this.repository
-      .setShippingOption(id, owner, shippingOptionId)
+      .setShippingOption(id, owner, shippingOptionId, deliverySlotId)
       .then((session) => this.resolveMedia(session));
   }
   public setPaymentMethod(
@@ -84,6 +121,7 @@ export class CheckoutService {
         'SIMULATED_TRANSFER',
         'SIMULATED_CASH',
         'MERCADO_PAGO',
+        'PAYWAY',
       ].includes(paymentMethod)
     )
       throw new CheckoutValidationError('El método de pago no es válido.');
@@ -103,16 +141,53 @@ export class CheckoutService {
       .clearCoupon(id, owner)
       .then((session) => this.resolveMedia(session));
   }
-  public async confirm(id: string, owner: CheckoutOwner) {
+  public async confirm(
+    id: string,
+    owner: CheckoutOwner,
+    paymentMethod?: TokenizedCardPayment,
+    idempotencyKey?: string,
+  ) {
+    const session = await this.repository.find(id, owner);
+    if (session.status !== 'COMPLETED' && this.payments)
+      await this.payments.assertMethodAvailable(session.paymentMethod);
+    if (
+      session.status !== 'COMPLETED' &&
+      ['MERCADO_PAGO', 'PAYWAY'].includes(session.paymentMethod ?? '') &&
+      !idempotencyKey?.trim()
+    )
+      throw new PaymentValidationError(
+        'Idempotency-Key es obligatorio para iniciar un pago externo.',
+      );
+    if (
+      session.status !== 'COMPLETED' &&
+      session.paymentMethod === 'PAYWAY' &&
+      !paymentMethod
+    )
+      throw new CheckoutValidationError(
+        'Payway requiere el token de tarjeta generado por el frontend.',
+      );
     const result = await this.repository.confirm(id, owner);
     if (!result.paymentRequired || !this.payments) return result;
-    const link = await this.payments.createLink(
+    const payment = await this.payments.initiate(
       result.order.id,
       owner.customerId
         ? { customerId: owner.customerId }
         : { publicTokenHash: hashAnonymousToken(result.publicToken) },
+      paymentMethod,
+      idempotencyKey,
     );
-    return { ...result, payment: link };
+    return {
+      ...result,
+      order:
+        payment.status === 'APPROVED' && payment.paymentStatus === 'PAID'
+          ? { ...result.order, status: 'PAID', paymentStatus: 'PAID' }
+          : {
+              ...result.order,
+              paymentStatus: payment.status,
+              canRetry: payment.canRetry,
+            },
+      payment,
+    };
   }
   public publicOrder(id: string, token: string) {
     return this.repository.findPublicOrder(id, hashAnonymousToken(token));

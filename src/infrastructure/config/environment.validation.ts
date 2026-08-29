@@ -8,10 +8,17 @@ export interface EnvironmentVariables {
   NODE_ENV: ApplicationEnvironment;
   PORT: number;
   CORS_ORIGINS: string;
-  PAYMENT_PROVIDER: 'simulated' | 'mercadopago';
+  PAYMENT_PROVIDERS: string;
   MERCADOPAGO_ACCESS_TOKEN?: string;
+  MERCADOPAGO_PUBLIC_KEY?: string;
   MERCADOPAGO_WEBHOOK_SECRET?: string;
   MERCADOPAGO_NOTIFICATION_URL?: string;
+  PAYWAY_SITE_ID?: string;
+  PAYWAY_PUBLIC_API_KEY?: string;
+  PAYWAY_PRIVATE_API_KEY?: string;
+  PAYWAY_API_BASE_URL?: string;
+  PAYWAY_NOTIFICATION_URL?: string;
+  PAYWAY_WEBHOOK_SECRET?: string;
   PUBLIC_WEB_URL?: string;
 }
 
@@ -65,20 +72,36 @@ export const validateEnvironment = (
     typeof rawCorsOrigins === 'string' && rawCorsOrigins.trim()
       ? rawCorsOrigins.trim()
       : 'http://localhost:3000';
-  const rawPaymentProvider = environment['PAYMENT_PROVIDER'];
-  const paymentProvider =
-    typeof rawPaymentProvider === 'string'
-      ? rawPaymentProvider.trim().toLowerCase()
-      : 'simulated';
-  if (!['simulated', 'mercadopago'].includes(paymentProvider)) {
-    throw new Error('PAYMENT_PROVIDER debe ser simulated o mercadopago.');
-  }
-  if (nodeEnv === 'production' && paymentProvider !== 'mercadopago')
+  const paymentProviders = [
+    optionalValue(environment['PAYMENT_PROVIDERS']),
+    optionalValue(environment['PAYMENT_PROVIDER']),
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(',');
+  const enabledProviders = Array.from(
+    new Set(
+      (paymentProviders || 'simulated')
+        .split(',')
+        .map((provider) => provider.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  );
+  if (
+    enabledProviders.length === 0 ||
+    enabledProviders.some(
+      (provider) => !['simulated', 'mercadopago', 'payway'].includes(provider),
+    )
+  )
     throw new Error(
-      'En producción PAYMENT_PROVIDER debe ser mercadopago; el proveedor simulado solo está permitido fuera de producción.',
+      'PAYMENT_PROVIDERS solo admite simulated, mercadopago y payway.',
     );
+  if (nodeEnv === 'production' && enabledProviders.includes('simulated'))
+    throw new Error('El proveedor simulado no está permitido en producción.');
   const mercadoPagoAccessToken = optionalValue(
     environment['MERCADOPAGO_ACCESS_TOKEN'],
+  );
+  const mercadoPagoPublicKey = optionalValue(
+    environment['MERCADOPAGO_PUBLIC_KEY'],
   );
   const mercadoPagoWebhookSecret = optionalValue(
     environment['MERCADOPAGO_WEBHOOK_SECRET'],
@@ -87,20 +110,56 @@ export const validateEnvironment = (
     environment['MERCADOPAGO_NOTIFICATION_URL'],
   );
   const publicWebUrl = optionalValue(environment['PUBLIC_WEB_URL']);
+  const paywaySiteId = optionalValue(environment['PAYWAY_SITE_ID']);
+  const paywayPublicApiKey = optionalValue(
+    environment['PAYWAY_PUBLIC_API_KEY'],
+  );
+  const paywayPrivateApiKey = optionalValue(
+    environment['PAYWAY_PRIVATE_API_KEY'],
+  );
+  const paywayApiBaseUrl = optionalValue(environment['PAYWAY_API_BASE_URL']);
+  const paywayNotificationUrl = optionalValue(
+    environment['PAYWAY_NOTIFICATION_URL'],
+  );
+  const paywayWebhookSecret = optionalValue(
+    environment['PAYWAY_WEBHOOK_SECRET'],
+  );
   if (publicWebUrl)
     validateUrl(publicWebUrl, 'PUBLIC_WEB_URL', ['http:', 'https:']);
-  if (paymentProvider === 'mercadopago') {
+  if (enabledProviders.includes('mercadopago')) {
     if (!mercadoPagoAccessToken)
       throw new Error(
-        'MERCADOPAGO_ACCESS_TOKEN es obligatoria cuando PAYMENT_PROVIDER=mercadopago.',
+        'MERCADOPAGO_ACCESS_TOKEN es obligatoria cuando Mercado Pago está habilitado.',
       );
-    if (!mercadoPagoWebhookSecret)
+    if (nodeEnv === 'production' && !mercadoPagoWebhookSecret)
       throw new Error(
-        'MERCADOPAGO_WEBHOOK_SECRET es obligatoria cuando PAYMENT_PROVIDER=mercadopago.',
+        'MERCADOPAGO_WEBHOOK_SECRET es obligatoria cuando Mercado Pago está habilitado.',
+      );
+  }
+  if (enabledProviders.includes('payway')) {
+    if (
+      !paywaySiteId ||
+      !paywayPublicApiKey ||
+      !paywayPrivateApiKey ||
+      !paywayWebhookSecret
+    )
+      throw new Error(
+        'PAYWAY_SITE_ID, PAYWAY_PUBLIC_API_KEY, PAYWAY_PRIVATE_API_KEY y PAYWAY_WEBHOOK_SECRET son obligatorias cuando Payway está habilitado.',
+      );
+    if (!paywayApiBaseUrl)
+      throw new Error(
+        'PAYWAY_API_BASE_URL es obligatoria cuando Payway está habilitado.',
       );
   }
   if (mercadoPagoNotificationUrl)
     validateUrl(mercadoPagoNotificationUrl, 'MERCADOPAGO_NOTIFICATION_URL', [
+      'http:',
+      'https:',
+    ]);
+  if (paywayApiBaseUrl)
+    validateUrl(paywayApiBaseUrl, 'PAYWAY_API_BASE_URL', ['https:']);
+  if (paywayNotificationUrl)
+    validateUrl(paywayNotificationUrl, 'PAYWAY_NOTIFICATION_URL', [
       'http:',
       'https:',
     ]);
@@ -124,15 +183,32 @@ export const validateEnvironment = (
     NODE_ENV: nodeEnv as ApplicationEnvironment,
     PORT: port,
     CORS_ORIGINS: corsOrigins,
-    PAYMENT_PROVIDER: paymentProvider as 'simulated' | 'mercadopago',
+    PAYMENT_PROVIDERS: enabledProviders.join(','),
     ...(mercadoPagoAccessToken
       ? { MERCADOPAGO_ACCESS_TOKEN: mercadoPagoAccessToken }
+      : {}),
+    ...(mercadoPagoPublicKey
+      ? { MERCADOPAGO_PUBLIC_KEY: mercadoPagoPublicKey }
       : {}),
     ...(mercadoPagoWebhookSecret
       ? { MERCADOPAGO_WEBHOOK_SECRET: mercadoPagoWebhookSecret }
       : {}),
     ...(mercadoPagoNotificationUrl
       ? { MERCADOPAGO_NOTIFICATION_URL: mercadoPagoNotificationUrl }
+      : {}),
+    ...(paywaySiteId ? { PAYWAY_SITE_ID: paywaySiteId } : {}),
+    ...(paywayPublicApiKey
+      ? { PAYWAY_PUBLIC_API_KEY: paywayPublicApiKey }
+      : {}),
+    ...(paywayPrivateApiKey
+      ? { PAYWAY_PRIVATE_API_KEY: paywayPrivateApiKey }
+      : {}),
+    ...(paywayApiBaseUrl ? { PAYWAY_API_BASE_URL: paywayApiBaseUrl } : {}),
+    ...(paywayNotificationUrl
+      ? { PAYWAY_NOTIFICATION_URL: paywayNotificationUrl }
+      : {}),
+    ...(paywayWebhookSecret
+      ? { PAYWAY_WEBHOOK_SECRET: paywayWebhookSecret }
       : {}),
     ...(publicWebUrl ? { PUBLIC_WEB_URL: publicWebUrl } : {}),
   };

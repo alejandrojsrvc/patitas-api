@@ -17,6 +17,7 @@ export interface OrderRepository {
   update(id: string, input: UpdateOrderInput): Promise<Order>;
   registerPayment(id: string, input: RegisterPaymentInput): Promise<Order>;
   transition(id: string, status: Order['status']): Promise<Order>;
+  expirePaymentReservations(): Promise<{ expired: number }>;
   uploadPaymentProof(
     id: string,
     input: UploadPaymentProofInput,

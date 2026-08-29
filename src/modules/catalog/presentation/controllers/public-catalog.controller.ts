@@ -85,20 +85,6 @@ export class PublicCatalogController {
     return this.catalog.getPublicBrand(slug).then(toPublicReference);
   }
 
-  @Get('offers')
-  public async offers() {
-    return (await this.activePromotions()).map((promotion) => ({
-      id: promotion.id,
-      name: promotion.name,
-      type: promotion.type,
-      value: promotion.value,
-      startsAt: promotion.startsAt,
-      endsAt: promotion.endsAt,
-      priority: promotion.priority,
-      targets: promotion.targets,
-    }));
-  }
-
   private async activePromotions() {
     return (await this.promotions.list(true)).filter(
       (promotion) =>
@@ -270,7 +256,7 @@ const toFulfillment = (
   ) {
     return {
       status: 'ON_REQUEST' as const,
-      purchasable: true,
+      purchasable: false,
       leadTimeHours: variant.supplierLeadTimeHours,
     };
   }
