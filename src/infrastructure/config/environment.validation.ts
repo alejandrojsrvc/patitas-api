@@ -8,7 +8,6 @@ export interface EnvironmentVariables {
   NODE_ENV: ApplicationEnvironment;
   PORT: number;
   CORS_ORIGINS: string;
-  PAYMENT_PROVIDERS: string;
   MERCADOPAGO_ACCESS_TOKEN?: string;
   MERCADOPAGO_PUBLIC_KEY?: string;
   MERCADOPAGO_WEBHOOK_SECRET?: string;
@@ -72,31 +71,6 @@ export const validateEnvironment = (
     typeof rawCorsOrigins === 'string' && rawCorsOrigins.trim()
       ? rawCorsOrigins.trim()
       : 'http://localhost:3000';
-  const paymentProviders = [
-    optionalValue(environment['PAYMENT_PROVIDERS']),
-    optionalValue(environment['PAYMENT_PROVIDER']),
-  ]
-    .filter((value): value is string => Boolean(value))
-    .join(',');
-  const enabledProviders = Array.from(
-    new Set(
-      (paymentProviders || 'simulated')
-        .split(',')
-        .map((provider) => provider.trim().toLowerCase())
-        .filter(Boolean),
-    ),
-  );
-  if (
-    enabledProviders.length === 0 ||
-    enabledProviders.some(
-      (provider) => !['simulated', 'mercadopago', 'payway'].includes(provider),
-    )
-  )
-    throw new Error(
-      'PAYMENT_PROVIDERS solo admite simulated, mercadopago y payway.',
-    );
-  if (nodeEnv === 'production' && enabledProviders.includes('simulated'))
-    throw new Error('El proveedor simulado no está permitido en producción.');
   const mercadoPagoAccessToken = optionalValue(
     environment['MERCADOPAGO_ACCESS_TOKEN'],
   );
@@ -126,31 +100,6 @@ export const validateEnvironment = (
   );
   if (publicWebUrl)
     validateUrl(publicWebUrl, 'PUBLIC_WEB_URL', ['http:', 'https:']);
-  if (enabledProviders.includes('mercadopago')) {
-    if (!mercadoPagoAccessToken)
-      throw new Error(
-        'MERCADOPAGO_ACCESS_TOKEN es obligatoria cuando Mercado Pago está habilitado.',
-      );
-    if (nodeEnv === 'production' && !mercadoPagoWebhookSecret)
-      throw new Error(
-        'MERCADOPAGO_WEBHOOK_SECRET es obligatoria cuando Mercado Pago está habilitado.',
-      );
-  }
-  if (enabledProviders.includes('payway')) {
-    if (
-      !paywaySiteId ||
-      !paywayPublicApiKey ||
-      !paywayPrivateApiKey ||
-      !paywayWebhookSecret
-    )
-      throw new Error(
-        'PAYWAY_SITE_ID, PAYWAY_PUBLIC_API_KEY, PAYWAY_PRIVATE_API_KEY y PAYWAY_WEBHOOK_SECRET son obligatorias cuando Payway está habilitado.',
-      );
-    if (!paywayApiBaseUrl)
-      throw new Error(
-        'PAYWAY_API_BASE_URL es obligatoria cuando Payway está habilitado.',
-      );
-  }
   if (mercadoPagoNotificationUrl)
     validateUrl(mercadoPagoNotificationUrl, 'MERCADOPAGO_NOTIFICATION_URL', [
       'http:',
@@ -183,7 +132,6 @@ export const validateEnvironment = (
     NODE_ENV: nodeEnv as ApplicationEnvironment,
     PORT: port,
     CORS_ORIGINS: corsOrigins,
-    PAYMENT_PROVIDERS: enabledProviders.join(','),
     ...(mercadoPagoAccessToken
       ? { MERCADOPAGO_ACCESS_TOKEN: mercadoPagoAccessToken }
       : {}),

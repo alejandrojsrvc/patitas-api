@@ -69,7 +69,7 @@ export class PaymentService {
       this.providers?.resolve(provider);
     } catch {
       throw new PaymentValidationError(
-        `La pasarela ${provider} no está habilitada. Configura PAYMENT_PROVIDERS=${provider} y sus credenciales en el entorno.`,
+        `La pasarela ${provider} no está disponible. Verifica sus credenciales y la configuración del proveedor.`,
       );
     }
   }

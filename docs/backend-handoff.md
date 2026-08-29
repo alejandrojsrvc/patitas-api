@@ -107,8 +107,8 @@ estas tablas: planes, intentos/webhooks de pago, zonas, consentimientos,
 notificaciones, marketing, combos y referidos. Debe aplicarse con el flujo
 normal de migraciones del proyecto; no se ejecutó desde este handoff.
 
-Los proveedores habilitados se declaran separados por coma, por ejemplo
-`PAYMENT_PROVIDERS=mercadopago,payway`. Mercado Pago usa
+Los proveedores habilitados y su prioridad se administran en la tabla
+`payment_provider_configurations`. Mercado Pago usa
 `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`,
 `MERCADOPAGO_WEBHOOK_SECRET` y opcionalmente
 `MERCADOPAGO_NOTIFICATION_URL`. Payway API Payments usa `PAYWAY_SITE_ID`,
@@ -117,12 +117,12 @@ Los proveedores habilitados se declaran separados por coma, por ejemplo
 configurarse también en el portal como
 `/api/v1/payments/webhooks/payway`. La public key y el Site ID se entregan al
 frontend por su configuración de despliegue; la private key permanece en la
-API. El proveedor simulado solo está permitido fuera de producción.
+API. La activación del proveedor simulado también se administra desde la BD.
 
 Para sandbox de Mercado Pago se debe usar la `Public Key` y el access token
-`TEST-...` de una cuenta de prueba propia y habilitarlo explícitamente con
-`PAYMENT_PROVIDERS=mercadopago,simulated`. No existe una credencial sandbox
-universal que pueda incluirse en el repositorio.
+`TEST-...` de una cuenta de prueba propia y habilitarlo explícitamente en
+`payment_provider_configurations`. No existe una credencial sandbox universal
+que pueda incluirse en el repositorio.
 
 El frontend tokeniza la tarjeta directamente con el SDK de Payway y envía
 `token`, `paymentMethodId`, `bin` e `installments` al confirmar el checkout. La
