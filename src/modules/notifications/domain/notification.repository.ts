@@ -1,10 +1,51 @@
+import { DomainError } from '../../../shared/domain/domain-error';
+
 export const NOTIFICATION_REPOSITORY = Symbol('NOTIFICATION_REPOSITORY');
 export type NotificationChannel = 'EMAIL' | 'WHATSAPP' | 'PUSH';
+
+export class NotificationQueryError extends DomainError {
+  public constructor(message: string) {
+    super(message, 'NOTIFICATION_QUERY_INVALID');
+  }
+}
 
 export interface NotificationPreferences {
   push: boolean;
   email: boolean;
   whatsapp: boolean;
+}
+
+export interface MobileNotificationPreferences extends NotificationPreferences {
+  orderUpdates: boolean;
+  replenishmentReminders: boolean;
+}
+
+export interface DeviceTokenRecord {
+  id: string;
+  platform: string;
+  provider: string;
+  appVersion: string | null;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  lastSeenAt: Date;
+}
+
+export interface InAppNotificationRecord {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  targetType: string | null;
+  targetId: string | null;
+  readAt: Date | null;
+  createdAt: Date;
+}
+
+export interface InAppNotificationList {
+  items: InAppNotificationRecord[];
+  unreadCount: number;
+  nextCursor: string | null;
 }
 
 export interface NotificationConsentRecord {
@@ -34,12 +75,45 @@ export interface NotificationRepository {
     customerId: string,
     input: NotificationPreferences,
   ): Promise<NotificationPreferences>;
+  getMobilePreferences(
+    customerId: string,
+  ): Promise<MobileNotificationPreferences>;
+  updateMobilePreferences(
+    customerId: string,
+    input: Partial<MobileNotificationPreferences>,
+  ): Promise<MobileNotificationPreferences>;
   registerDeviceToken(input: {
     customerId: string;
     token: string;
     platform: string;
     appVersion?: string | null;
   }): Promise<void>;
+  registerMobileDeviceToken(input: {
+    customerId: string;
+    token: string;
+    platform: string;
+    provider: string;
+    deviceIdHash: string;
+    appVersion?: string | null;
+  }): Promise<DeviceTokenRecord>;
+  deactivateDeviceToken(customerId: string, id: string): Promise<void>;
+  listInAppNotifications(
+    customerId: string,
+    input?: { unreadOnly?: boolean; cursor?: string; limit?: number },
+  ): Promise<InAppNotificationList>;
+  markInAppNotificationRead(
+    customerId: string,
+    id: string,
+  ): Promise<InAppNotificationRecord | null>;
+  markAllInAppNotificationsRead(customerId: string): Promise<number>;
+  createInAppNotification(input: {
+    customerId: string;
+    type: string;
+    title: string;
+    body: string;
+    targetType?: string | null;
+    targetId?: string | null;
+  }): Promise<InAppNotificationRecord>;
   upsertConsent(input: {
     customerId?: string;
     guestTokenHash?: string;

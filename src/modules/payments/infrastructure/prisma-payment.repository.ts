@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import type {
   OrderPaymentKind,
+  OrderStatus,
   PaymentAttemptStatus,
   PaymentStatus,
 } from '../../../infrastructure/database/generated/prisma/client';
@@ -772,6 +773,12 @@ const applyInitiationToOrder = async (
   )
     data.status = 'PAID';
   await transaction.order.update({ where: { id: attempt.orderId }, data });
+  if (data.status && data.status !== order.status)
+    await recordStatusEvent(
+      transaction,
+      attempt.orderId,
+      data.status as OrderStatus,
+    );
   if (status === 'APPROVED' && !alreadyPaid) {
     const existingPayment = await transaction.orderPayment.findFirst({
       where: {
@@ -1018,6 +1025,12 @@ export const applyWebhookResult = async (
     where: { id: order.id },
     data: orderUpdate,
   });
+  if (orderUpdate.status && orderUpdate.status !== order.status)
+    await recordStatusEvent(
+      transaction,
+      order.id,
+      orderUpdate.status as OrderStatus,
+    );
   return {
     reconciliationRequired: reconciliation.required,
     reconciliationReason: reconciliation.reason,
@@ -1028,6 +1041,21 @@ const providerForMethod = (method: string | null): PaymentProviderName => {
   if (method === 'MERCADO_PAGO') return 'mercadopago';
   if (method === 'PAYWAY') return 'payway';
   throw new PaymentValidationError('El pedido no usa una pasarela externa.');
+};
+
+const recordStatusEvent = async (
+  transaction: Prisma.TransactionClient,
+  orderId: string,
+  status: OrderStatus,
+): Promise<void> => {
+  const events = transaction.orderStatusEvent;
+  if (!events) return;
+  const existing = await events.findFirst({
+    where: { orderId, status },
+    select: { id: true },
+  });
+  if (existing) return;
+  await events.create({ data: { id: randomUUID(), orderId, status } });
 };
 
 const paymentOwnerWhere = (owner: PaymentOwner): Prisma.OrderWhereInput => {

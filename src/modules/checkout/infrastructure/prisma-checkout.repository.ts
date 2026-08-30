@@ -156,6 +156,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
     id: string,
     owner: CheckoutOwner,
     address: Record<string, string>,
+    deliveryInstructions?: string | null,
   ) {
     await this.authorizedSession(id, owner, true);
     return this.toSession(
@@ -171,6 +172,9 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
           shippingVat: 0,
           shippingZoneId: null,
           shippingEstimate: null,
+          ...(deliveryInstructions !== undefined
+            ? { deliveryInstructions: deliveryInstructions ?? null }
+            : {}),
           stage: 'SHIPPING',
         },
         include: sessionInclude,
@@ -278,12 +282,19 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
     id: string,
     owner: CheckoutOwner,
     paymentMethod: string,
+    savedPaymentMethodId?: string | null,
   ) {
     await this.authorizedSession(id, owner, true);
     return this.toSession(
       await this.prisma.checkoutSession.update({
         where: { id },
-        data: { paymentMethod, stage: 'CONFIRMATION' },
+        data: {
+          paymentMethod,
+          ...(savedPaymentMethodId !== undefined
+            ? { savedPaymentMethodId }
+            : {}),
+          stage: 'CONFIRMATION',
+        },
         include: sessionInclude,
       }),
     );
@@ -423,7 +434,13 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
             active: true,
           },
           include: {
-            product: { include: { brand: true, category: true } },
+            product: {
+              include: {
+                brand: true,
+                category: true,
+                media: { orderBy: { displayOrder: 'asc' as const } },
+              },
+            },
             inventory: true,
           },
         });
@@ -511,6 +528,8 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
           data: {
             id: randomUUID(),
             customerId: session.customerId,
+            number: createOrderNumber(),
+            source: owner.source ?? 'STORE',
             status: externalPayment ? 'PENDING_PAYMENT' : 'PAID',
             paymentStatus: externalPayment ? 'PENDING' : 'PAID',
             paymentMethod: session.paymentMethod,
@@ -538,6 +557,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
             contactEmail: session.contactEmail!,
             contactPhone: session.contactPhone,
             shippingAddress: session.shippingAddress as Prisma.InputJsonObject,
+            deliveryInstructions: session.deliveryInstructions,
             publicAccessTokenHash: hashAnonymousToken(publicToken),
             lines: {
               create: promotionLines.map((line) => {
@@ -557,6 +577,16 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
                   lineTotal: (Number(line.unitPrice) * line.quantity).toFixed(
                     2,
                   ),
+                  role:
+                    lines.find((item) => item.variantId === line.variantId)
+                      ?.role ?? 'EXTRA',
+                  petId:
+                    lines.find((item) => item.variantId === line.variantId)
+                      ?.petId ?? null,
+                  planId:
+                    lines.find((item) => item.variantId === line.variantId)
+                      ?.planId ?? null,
+                  imageUrl: variant.product.media?.[0]?.url ?? null,
                 };
               }),
             },
@@ -642,6 +672,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
             orderId: created.id,
           },
         });
+        await recordStatusEvent(transaction, created.id, created.status);
         return created;
       },
       { isolationLevel: 'Serializable' },
@@ -781,6 +812,33 @@ const validateReady = (session: SessionRecord) => {
       'Completa datos, dirección, envío y pago antes de confirmar.',
     );
 };
+
+const createOrderNumber = (): string =>
+  `PAT-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${randomUUID()
+    .slice(0, 8)
+    .toUpperCase()}`;
+
+const recordStatusEvent = async (
+  transaction: Prisma.TransactionClient,
+  orderId: string,
+  status:
+    | 'DRAFT'
+    | 'PENDING_PAYMENT'
+    | 'PAID'
+    | 'PROCESSING'
+    | 'SHIPPED'
+    | 'DELIVERED'
+    | 'CANCELLED',
+): Promise<void> => {
+  const events = transaction.orderStatusEvent;
+  if (!events) return;
+  const existing = await events.findFirst({
+    where: { orderId, status },
+    select: { id: true },
+  });
+  if (existing) return;
+  await events.create({ data: { id: randomUUID(), orderId, status } });
+};
 const toPromotionLines = (session: SessionRecord): PromotionLine[] =>
   session.cart.items.map((item) => ({
     variantId: item.variantId,
@@ -839,6 +897,9 @@ const mapSession = (
     sku: item.variant.sku,
     presentation: item.variant.presentation,
     imageUrl: item.variant.product.media?.[0]?.url ?? null,
+    role: item.role === 'MAIN' ? 'MAIN' : 'EXTRA',
+    petId: item.petId,
+    planId: item.planId,
     weightGrams: item.variant.weightGrams,
     unitPrice: item.variant.salePrice?.toString() ?? '0.00',
     quantity: item.quantity,
@@ -869,6 +930,7 @@ const mapSession = (
     contactEmail: value.contactEmail,
     contactPhone: value.contactPhone,
     shippingAddress: value.shippingAddress as Record<string, string> | null,
+    deliveryInstructions: value.deliveryInstructions,
     shippingOptionId: value.shippingOptionId,
     shippingZoneId: value.shippingZoneId ?? null,
     shippingEstimate: value.shippingEstimate ?? null,
@@ -876,6 +938,7 @@ const mapSession = (
     shippingDeliveryDate: value.shippingDeliveryDate ?? null,
     shippingCost: shipping.toFixed(2),
     paymentMethod: value.paymentMethod,
+    savedPaymentMethodId: value.savedPaymentMethodId,
     couponCode: discount.couponCode,
     orderId: value.orderId ?? null,
     subtotal: subtotal.toFixed(2),

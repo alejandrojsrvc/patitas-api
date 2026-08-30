@@ -3,7 +3,7 @@ import {
   hashAnonymousToken,
 } from '../../../shared/application/anonymous-token';
 import type { CartRepository } from '../domain/cart.repository';
-import type { Cart, CartOwner } from '../domain/cart.types';
+import type { Cart, CartItemContext, CartOwner } from '../domain/cart.types';
 import { CartValidationError } from '../domain/cart.error';
 import type { StorageProvider } from '../../../shared/application/ports/storage-provider.interface';
 
@@ -12,6 +12,11 @@ export class CartService {
     private readonly repository: CartRepository,
     private readonly storage?: StorageProvider,
   ) {}
+
+  public async findActive(owner: CartOwner): Promise<Cart | null> {
+    const cart = await this.repository.findActive(owner);
+    return cart ? this.resolveMedia(cart) : null;
+  }
 
   public async getOrCreate(
     owner: CartOwner,
@@ -31,7 +36,12 @@ export class CartService {
     return { cart: await this.resolveMedia(cart), ...(token ? { token } : {}) };
   }
 
-  public async setItem(owner: CartOwner, variantId: string, quantity: number) {
+  public async setItem(
+    owner: CartOwner,
+    variantId: string,
+    quantity: number,
+    context?: CartItemContext,
+  ) {
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
       throw new CartValidationError('La cantidad debe estar entre 1 y 99.');
     }
@@ -41,7 +51,36 @@ export class CartService {
         ? owner
         : { tokenHash: hashAnonymousToken(current.token!) };
     const cart = await this.resolveMedia(
-      await this.repository.setItem(resolvedOwner, variantId, quantity),
+      await this.repository.setItem(
+        resolvedOwner,
+        variantId,
+        quantity,
+        context,
+      ),
+    );
+    return { ...cart, ...(current.token ? { cartToken: current.token } : {}) };
+  }
+
+  public async reorder(
+    owner: CartOwner,
+    variantId: string,
+    context: CartItemContext,
+    quantity = 1,
+  ) {
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99)
+      throw new CartValidationError('La cantidad debe estar entre 1 y 99.');
+    const current = await this.getOrCreate(owner);
+    const resolvedOwner =
+      owner.customerId || owner.tokenHash
+        ? owner
+        : { ...owner, tokenHash: hashAnonymousToken(current.token!) };
+    const cart = await this.resolveMedia(
+      await this.repository.reorderItem(
+        resolvedOwner,
+        variantId,
+        quantity,
+        context,
+      ),
     );
     return { ...cart, ...(current.token ? { cartToken: current.token } : {}) };
   }
@@ -58,8 +97,12 @@ export class CartService {
     return { ...cart, ...(current.token ? { cartToken: current.token } : {}) };
   }
 
-  public merge(token: string, customerId: string) {
-    return this.repository.merge(hashAnonymousToken(token), customerId);
+  public merge(
+    token: string,
+    customerId: string,
+    source: CartOwner['source'] = 'STORE',
+  ) {
+    return this.repository.merge(hashAnonymousToken(token), customerId, source);
   }
 
   public listAbandoned(page: number, perPage: number) {

@@ -3,14 +3,18 @@ import {
   Controller,
   Get,
   Headers,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '../../auth/presentation/guards/auth.guard';
+import { RolesGuard } from '../../auth/presentation/guards/roles.guard';
+import { Roles } from '../../auth/presentation/decorators/roles.decorator';
+import { UserRole } from '../../users/domain/entities/user.entity';
 import { CurrentUser } from '../../auth/presentation/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../auth/presentation/authenticated-user';
 import { CustomerService } from '../../customers/application/customer.service';
@@ -20,33 +24,35 @@ import {
   ReplenishmentService,
   ReplenishmentValidationError,
 } from '../application/replenishment.service';
-import { CheckoutHandoffService } from '../../checkout/application/checkout-handoff.service';
-import type {
-  ReplenishmentPlan,
-  NotificationChannel,
-} from '../domain/replenishment.types';
+import { CartService } from '../../cart/application/cart.service';
+import type { NotificationChannel } from '../domain/replenishment.types';
+import { toMobileCart } from '../../cart/presentation/mobile-cart.mapper';
 import {
   CreateMobileReplenishmentPlanDto,
   RecalibrateMobileReplenishmentPlanDto,
+  ChangeMobileReplenishmentProductDto,
+  ReorderMobileCartDto,
+  StartMobileReplenishmentBagDto,
   UpdateMobileReplenishmentPlanDto,
 } from './mobile-replenishment.dto';
+import { toMobilePlan } from './mobile-replenishment.mapper';
 
 @ApiTags('Customer mobile replenishment')
 @ApiBearerAuth()
 @ApiHeader({ name: 'Idempotency-Key', required: false })
-@UseGuards(AuthGuard)
-@Controller('me/replenishment-plans')
+@Roles(UserRole.CUSTOMER)
+@UseGuards(AuthGuard, RolesGuard)
+@Controller('mobile')
 export class MobileReplenishmentController {
   public constructor(
     private readonly plans: ReplenishmentService,
     private readonly estimates: EstimateService,
     private readonly pets: PetService,
     private readonly customers: CustomerService,
-    private readonly handoffs: CheckoutHandoffService,
-    private readonly config: ConfigService,
+    private readonly carts: CartService,
   ) {}
 
-  @Get()
+  @Get('me/replenishment-plans')
   public async list(@CurrentUser() user: AuthenticatedUser) {
     const customer = await this.customers.findByUserId(user.userId);
     return (await this.plans.list({ customerId: customer.id })).map(
@@ -54,7 +60,8 @@ export class MobileReplenishmentController {
     );
   }
 
-  @Post()
+  @Post('me/replenishment-plans')
+  @HttpCode(HttpStatus.CREATED)
   public async create(
     @CurrentUser() user: AuthenticatedUser,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
@@ -70,8 +77,17 @@ export class MobileReplenishmentController {
       throw new ReplenishmentValidationError(
         'Un alimento personalizado todavía no puede crear un plan de reposición.',
       );
+    if (
+      (input.productId && input.productId !== estimate.productId) ||
+      (input.variantId && input.variantId !== estimate.variantId)
+    )
+      throw new ReplenishmentValidationError(
+        'El producto no coincide con la estimación seleccionada.',
+      );
     const channels = [
-      ...new Set(input.reminderChannels),
+      ...new Set(
+        input.reminderChannels.map((channel) => channel.toUpperCase()),
+      ),
     ] as NotificationChannel[];
     if (!channels.length)
       throw new Error('Selecciona al menos un canal de recordatorio.');
@@ -100,116 +116,159 @@ export class MobileReplenishmentController {
         estimatedDepletionDate: estimate.estimatedDepletionDate,
         channel: channels.find((channel) => channel !== 'PUSH') ?? 'EMAIL',
         reminderChannels: channels,
+        remindersEnabled: input.remindersEnabled,
+        leadDays: input.leadDays,
+        bagStartedAt: input.bagStartedAt ? new Date(input.bagStartedAt) : null,
+        remainingBucket: input.remainingBucket ?? null,
         consentVersion: 'mobile-v1',
         destination: customer.email,
       },
       { customerId: customer.id },
     );
-    const reminderAt = new Date(estimate.estimatedDepletionDate);
-    reminderAt.setUTCDate(reminderAt.getUTCDate() - input.leadDays);
-    const scheduled = await this.plans.updateSchedule(
+    const scheduled = await this.plans.updateMobileState(
       plan.id,
       { customerId: customer.id },
-      reminderAt,
+      { remindersEnabled: input.remindersEnabled, leadDays: input.leadDays },
     );
     return toMobilePlan(scheduled);
   }
 
-  @Patch(':planId')
+  @Patch('me/replenishment-plans/:planId')
   public async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('planId') id: string,
     @Body() input: UpdateMobileReplenishmentPlanDto,
   ) {
     const customerId = (await this.customers.findByUserId(user.userId)).id;
-    let plan = await this.plans.find(id, { customerId });
-    if (input.status)
-      plan = await this.plans.setStatus(id, { customerId }, input.status);
-    if (input.nextReminderAt)
-      plan = await this.plans.updateSchedule(
-        id,
-        { customerId },
-        new Date(input.nextReminderAt),
-      );
+    const plan = await this.plans.updateMobileState(
+      id,
+      { customerId },
+      {
+        status: input.status,
+        nextReminderAt:
+          input.nextReminderAt === undefined
+            ? undefined
+            : new Date(input.nextReminderAt),
+        remindersEnabled: input.remindersEnabled,
+        leadDays: input.leadDays,
+      },
+    );
     return toMobilePlan(plan);
   }
 
-  @Post(':planId/recalibrate')
+  @Post('me/replenishment-plans/:planId/recalibrate')
   public async recalibrate(
     @CurrentUser() user: AuthenticatedUser,
     @Param('planId') id: string,
     @Body() input: RecalibrateMobileReplenishmentPlanDto,
   ) {
     const customerId = (await this.customers.findByUserId(user.userId)).id;
-    const days =
-      input.bucket === 'FEW_DAYS' ? 3 : input.bucket === 'ABOUT_WEEK' ? 7 : 14;
-    return toMobilePlan(await this.plans.recalibrate(id, { customerId }, days));
+    const plan = await this.plans.find(id, { customerId });
+    const remainingBucket = input.remainingBucket ?? input.bucket;
+    if (!remainingBucket)
+      throw new ReplenishmentValidationError(
+        'Se requiere indicar cuánto alimento queda.',
+      );
+    const days = daysForBucket(remainingBucket, plan.durationDaysMax);
+    return toMobilePlan(
+      await this.plans.recalibrate(
+        id,
+        { customerId },
+        days,
+        remainingBucket,
+        input.observedAt ? new Date(input.observedAt) : undefined,
+      ),
+    );
   }
 
-  @Post(':planId/reorder')
-  public async reorder(
+  @Post('me/replenishment-plans/:planId/change-product')
+  public async changeProduct(
     @CurrentUser() user: AuthenticatedUser,
     @Param('planId') id: string,
+    @Body() input: ChangeMobileReplenishmentProductDto,
   ) {
     const customerId = (await this.customers.findByUserId(user.userId)).id;
-    const plan = await this.plans.find(id, { customerId });
-    const cart = await this.plans.reorder(
+    return toMobilePlan(
+      await this.plans.changeProduct(
+        id,
+        { customerId },
+        input.productId,
+        input.variantId,
+        {
+          bagStartedAt: input.bagStartedAt
+            ? new Date(input.bagStartedAt)
+            : undefined,
+          remainingBucket: input.remainingBucket,
+        },
+      ),
+    );
+  }
+
+  @Post('me/replenishment-plans/:planId/start-bag')
+  public async startBag(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('planId') id: string,
+    @Body() input: StartMobileReplenishmentBagDto,
+  ) {
+    const customerId = (await this.customers.findByUserId(user.userId)).id;
+    const plan = await this.plans.startBag(
       id,
       { customerId },
-      { anonymousToken: true },
+      {
+        orderId: input.orderId,
+        orderLineId: input.orderLineId,
+        startedAt: new Date(input.startedAt),
+      },
     );
-    const handoff = await this.handoffs.create(cart.cartId);
-    const baseUrl = this.config
-      .get<string>('PUBLIC_WEB_URL', 'http://localhost:3000')
-      .replace(/\/$/, '');
     return {
-      checkoutUrl: `${baseUrl}/checkout/handoff/${handoff.token}`,
-      expiresAt: handoff.expiresAt.toISOString(),
-      total: plan.salePrice,
-      currency: 'ARS',
-      lines: [
-        {
-          name: plan.productName ?? 'Alimento',
-          presentation: plan.presentation,
-          quantity: 1,
-          unitPrice: plan.salePrice,
-        },
-      ],
+      plan: toMobilePlan(plan),
+      order: plan.activeOrder
+        ? {
+            id: plan.activeOrder.id,
+            number: plan.activeOrder.number,
+            bagStartPending: false,
+            bagStartedAt: plan.bagStartedAt?.toISOString() ?? null,
+          }
+        : null,
+    };
+  }
+
+  @Post('replenishment-plans/:id/reorder-cart')
+  public async reorder(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() input: ReorderMobileCartDto,
+  ) {
+    const customerId = (await this.customers.findByUserId(user.userId)).id;
+    const plan = this.plans.assertReorderable(
+      await this.plans.find(id, { customerId }),
+    );
+    const cart = await this.carts.reorder(
+      { customerId, source: 'MOBILE' },
+      plan.variantId,
+      { role: 'MAIN', petId: plan.petId, planId: plan.id },
+      input.quantity,
+    );
+    return {
+      ...toMobileCart(cart),
+      ...('cartToken' in cart && cart.cartToken
+        ? { cartToken: cart.cartToken }
+        : {}),
     };
   }
 }
 
-const toMobilePlan = (plan: ReplenishmentPlan) => ({
-  id: plan.id,
-  pet: {
-    id: plan.petId,
-    name: plan.petName,
-    species: plan.petSpecies,
-    weightKg: Number(plan.petWeightKg),
-    lifeStage: plan.petLifeStage,
-    breed: plan.petBreed,
-  },
-  food: {
-    productId: plan.productId,
-    variantId: plan.variantId,
-    sku: plan.sku,
-    name: plan.productName ?? plan.presentation ?? 'Alimento',
-    presentation: plan.presentation,
-    weightGrams: plan.weightGrams,
-    custom: false,
-    purchasable: true,
-  },
-  dailyGrams: {
-    min: plan.dailyGramsMin ?? Number(plan.dailyConsumption),
-    max: plan.dailyGramsMax ?? Number(plan.dailyConsumption),
-  },
-  durationDays: { min: plan.durationDaysMin, max: plan.durationDaysMax },
-  source: plan.calculationSource,
-  sourceLabel: plan.calculationSource,
-  estimatedDepletionDate: plan.estimatedDepletionDate.toISOString(),
-  nextReminderAt: plan.nextReminderAt?.toISOString() ?? null,
-  status: plan.needsReview ? 'NEEDS_REVIEW' : plan.status,
-  orderId: plan.orderId,
-  reminderChannels: plan.reminderChannels,
-  createdAt: plan.createdAt.toISOString(),
-});
+const daysForBucket = (bucket: string, durationDays: number): number => {
+  if (bucket === 'FEW_DAYS') return 3;
+  if (bucket === 'ABOUT_WEEK') return 7;
+  if (bucket === 'MORE_THAN_WEEK') return 14;
+  const fractions: Record<string, number> = {
+    ALMOST_FULL: 0.9,
+    MORE_THAN_HALF: 0.7,
+    ABOUT_HALF: 0.5,
+    ALMOST_EMPTY: 0.15,
+    FINISHED: 0,
+  };
+  const fraction = fractions[bucket] ?? 0;
+  return Math.max(0, Math.round(durationDays * fraction));
+};

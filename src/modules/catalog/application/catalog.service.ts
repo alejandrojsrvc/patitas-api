@@ -62,6 +62,22 @@ export class CatalogService {
     return this.resolveProductMedia(product);
   }
 
+  public async getPublicProductByVariantId(variantId: string) {
+    const product = await this.repository.findProductByVariantId(variantId);
+    if (
+      !product ||
+      product.status !== 'ACTIVE' ||
+      !product.variants.some((variant) => variant.id === variantId)
+    ) {
+      throw new CatalogNotFoundError('La variante');
+    }
+    return this.resolveProductMedia(product);
+  }
+
+  public resolvePublicProduct(product: Product) {
+    return this.resolveProductMedia(product);
+  }
+
   public async getPublicProductDetail(
     slug: string,
   ): Promise<PublicProductDetail> {

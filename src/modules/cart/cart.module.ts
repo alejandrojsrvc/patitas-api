@@ -12,10 +12,11 @@ import { CART_REPOSITORY, type CartRepository } from './domain/cart.repository';
 import { PrismaCartRepository } from './infrastructure/prisma-cart.repository';
 import { AdminCartController } from './presentation/admin-cart.controller';
 import { CartController } from './presentation/cart.controller';
+import { MobileCartController } from './presentation/mobile-cart.controller';
 
 @Module({
   imports: [PrismaModule, AuthModule, CustomersModule, StorageModule],
-  controllers: [CartController, AdminCartController],
+  controllers: [CartController, MobileCartController, AdminCartController],
   providers: [
     { provide: CART_REPOSITORY, useClass: PrismaCartRepository },
     {

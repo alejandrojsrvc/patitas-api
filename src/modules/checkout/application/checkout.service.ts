@@ -83,6 +83,7 @@ export class CheckoutService {
     id: string,
     owner: CheckoutOwner,
     address: Record<string, string>,
+    deliveryInstructions?: string | null,
   ) {
     const required = [
       'recipientName',
@@ -97,7 +98,7 @@ export class CheckoutService {
         'La dirección de envío está incompleta.',
       );
     return this.repository
-      .setAddress(id, owner, address)
+      .setAddress(id, owner, address, deliveryInstructions)
       .then((session) => this.resolveMedia(session));
   }
   public setShippingOption(
@@ -114,6 +115,7 @@ export class CheckoutService {
     id: string,
     owner: CheckoutOwner,
     paymentMethod: string,
+    savedPaymentMethodId?: string | null,
   ) {
     if (
       ![
@@ -126,7 +128,7 @@ export class CheckoutService {
     )
       throw new CheckoutValidationError('El método de pago no es válido.');
     return this.repository
-      .setPaymentMethod(id, owner, paymentMethod)
+      .setPaymentMethod(id, owner, paymentMethod, savedPaymentMethodId)
       .then((session) => this.resolveMedia(session));
   }
   public applyCoupon(id: string, owner: CheckoutOwner, code: string) {

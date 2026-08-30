@@ -11,6 +11,7 @@ import type {
   AdminProductFilter,
   Brand,
   Category,
+  CursorPage,
   CreateProductInput,
   CreateProductMediaInput,
   CreateReferenceInput,
@@ -22,6 +23,7 @@ import type {
   Product,
   ProductMedia,
   ProductVariant,
+  MobileProductFilter,
   PublicProductFilter,
   ReplaceFeedingGuideInput,
   SetInventoryInput,
@@ -239,6 +241,91 @@ export class PrismaCatalogRepository implements CatalogRepository {
       include: productInclude,
     });
     return product ? onlySellableVariants(mapProduct(product)) : null;
+  }
+
+  public async listMobileProducts(
+    filter: MobileProductFilter,
+  ): Promise<CursorPage<Product>> {
+    const categoryIds = filter.category
+      ? await this.resolveCategoryIds(filter.category)
+      : undefined;
+    const query = filter.query?.trim();
+    const priceCondition = {
+      active: true,
+      sku: { not: null },
+      salePrice: { gt: 0 },
+    };
+    const purchasedCondition = filter.purchasedVariantIds
+      ? { id: { in: filter.purchasedVariantIds } }
+      : {};
+    const where: Prisma.ProductWhereInput = {
+      status: 'ACTIVE',
+      ...(query
+        ? {
+            OR: [
+              { name: { contains: query, mode: 'insensitive' as const } },
+              { line: { contains: query, mode: 'insensitive' as const } },
+              {
+                brand: {
+                  name: { contains: query, mode: 'insensitive' as const },
+                },
+              },
+            ],
+          }
+        : {}),
+      ...(filter.species
+        ? {
+            species: {
+              in: filter.species === 'dog' ? ['dog', 'perro'] : ['cat', 'gato'],
+              mode: 'insensitive' as const,
+            },
+          }
+        : {}),
+      ...(filter.featured ? { featuredRank: { not: null } } : {}),
+      brand: { active: true, ...(filter.brand ? { slug: filter.brand } : {}) },
+      category: {
+        is: {
+          active: true,
+          ...(categoryIds ? { id: { in: categoryIds } } : {}),
+        },
+      },
+      variants: {
+        some: {
+          ...priceCondition,
+          ...purchasedCondition,
+        },
+      },
+    };
+    const offset = decodeMobileCursor(filter.cursor);
+    const records = await this.prisma.product.findMany({
+      where,
+      include: productInclude,
+      orderBy: [{ featuredRank: 'asc' }, { name: 'asc' }, { id: 'asc' }],
+      skip: offset,
+      take: filter.limit + 1,
+    });
+    const hasNext = records.length > filter.limit;
+    return {
+      items: records
+        .slice(0, filter.limit)
+        .map(mapProduct)
+        .map((product) => onlySellableVariants(product)),
+      nextCursor: hasNext ? encodeMobileCursor(offset + filter.limit) : null,
+    };
+  }
+
+  public async listPurchasedVariantIds(customerId: string): Promise<string[]> {
+    const lines = await this.prisma.orderLine.findMany({
+      where: {
+        order: {
+          customerId,
+          status: { in: ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED'] },
+        },
+      },
+      select: { variantId: true },
+      distinct: ['variantId'],
+    });
+    return lines.map((line) => line.variantId);
   }
 
   public async listRelatedPublicProducts(
@@ -962,6 +1049,23 @@ const asObjectRecord = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+
+const encodeMobileCursor = (offset: number): string =>
+  Buffer.from(JSON.stringify({ offset }), 'utf8').toString('base64url');
+
+const decodeMobileCursor = (cursor?: string): number => {
+  if (!cursor) return 0;
+  try {
+    const value = JSON.parse(
+      Buffer.from(cursor, 'base64url').toString('utf8'),
+    ) as { offset?: unknown };
+    return Number.isInteger(value.offset) && Number(value.offset) >= 0
+      ? Number(value.offset)
+      : 0;
+  } catch {
+    return 0;
+  }
+};
 
 const mapMedia = (media: {
   id: string;

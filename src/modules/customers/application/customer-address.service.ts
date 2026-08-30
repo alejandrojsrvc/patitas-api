@@ -16,6 +16,10 @@ export class CustomerAddressService {
     return this.repository.list((await this.customers.findByUserId(userId)).id);
   }
 
+  public listForUserByCustomerId(customerId: string) {
+    return this.repository.list(customerId);
+  }
+
   public async createForUser(
     userId: string,
     input: CreateCustomerAddressInput,

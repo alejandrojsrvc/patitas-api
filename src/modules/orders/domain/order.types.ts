@@ -28,6 +28,10 @@ export interface OrderLine {
   unitPrice: string;
   quantity: number;
   lineTotal: string;
+  role: string;
+  petId: string | null;
+  planId: string | null;
+  imageUrl: string | null;
 }
 
 export interface OrderPayment {
@@ -49,6 +53,8 @@ export interface OrderPayment {
 export interface Order {
   id: string;
   customerId: string | null;
+  number: string | null;
+  source: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   canRetry: boolean;
@@ -71,11 +77,13 @@ export interface Order {
   contactEmail: string;
   contactPhone: string | null;
   shippingAddress: Record<string, string>;
+  deliveryInstructions: string | null;
   notes: string | null;
   trackingNumber: string | null;
   createdAt: Date;
   updatedAt: Date;
   availableTransitions: OrderStatus[];
+  statusEvents: Array<{ id: string; status: OrderStatus; occurredAt: Date }>;
   lines: OrderLine[];
   payments: OrderPayment[];
 }
@@ -103,12 +111,14 @@ export interface CreateOrderLineInput {
 
 export interface CreateOrderInput {
   customerId?: string;
+  source?: string;
   contactName: string;
   contactEmail: string;
   contactPhone?: string | null;
   shippingAddress: Record<string, string>;
   shippingCost?: string;
   notes?: string | null;
+  deliveryInstructions?: string | null;
   lines: CreateOrderLineInput[];
 }
 

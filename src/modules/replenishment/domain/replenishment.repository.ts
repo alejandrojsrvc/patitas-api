@@ -1,5 +1,6 @@
 import type {
   CreateReplenishmentPlanInput,
+  MobileReplenishmentPlanUpdate,
   ReplenishmentOwner,
   ReplenishmentPlan,
   ReplenishmentPlanStatus,
@@ -21,6 +22,25 @@ export interface ReplenishmentRepository {
     id: string,
     owner: ReplenishmentOwner,
     days: number,
+    remainingBucket?: string,
+    observedAt?: Date,
+  ): Promise<ReplenishmentPlan>;
+  updateMobileState(
+    id: string,
+    owner: ReplenishmentOwner,
+    input: MobileReplenishmentPlanUpdate,
+  ): Promise<ReplenishmentPlan>;
+  changeProduct(
+    id: string,
+    owner: ReplenishmentOwner,
+    productId: string,
+    variantId: string,
+    input?: { bagStartedAt?: Date; remainingBucket?: string },
+  ): Promise<ReplenishmentPlan>;
+  startBag(
+    id: string,
+    owner: ReplenishmentOwner,
+    input?: { orderId?: string; orderLineId?: string; startedAt?: Date },
   ): Promise<ReplenishmentPlan>;
   list(owner: ReplenishmentOwner): Promise<ReplenishmentPlan[]>;
   find(id: string, owner: ReplenishmentOwner): Promise<ReplenishmentPlan>;

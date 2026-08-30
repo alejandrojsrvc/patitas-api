@@ -65,6 +65,9 @@ import { OptionalAuthGuard } from './presentation/guards/optional-auth.guard';
     AuthGuard,
     OptionalAuthGuard,
     RolesGuard,
+    RegisterUseCase,
+    LoginUseCase,
+    RefreshSessionUseCase,
     ResolveAccessTokenUseCase,
   ],
 })

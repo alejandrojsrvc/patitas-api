@@ -4,7 +4,7 @@ import { AuthModule } from '../auth/auth.module';
 import { CatalogModule } from '../catalog/catalog.module';
 import { CatalogService } from '../catalog/application/catalog.service';
 import { CustomersModule } from '../customers/customers.module';
-import { CheckoutModule } from '../checkout/checkout.module';
+import { CartModule } from '../cart/cart.module';
 import { PetsModule } from '../pets/pets.module';
 import { EstimateService } from './application/estimate.service';
 import {
@@ -13,6 +13,7 @@ import {
 } from './domain/estimate.repository';
 import { PrismaEstimateRepository } from './infrastructure/prisma-estimate.repository';
 import { EstimateController } from './presentation/estimate.controller';
+import { MobileEstimateController } from './presentation/mobile-estimate.controller';
 import { MobileReplenishmentController } from './presentation/mobile-replenishment.controller';
 import { ReplenishmentService } from './application/replenishment.service';
 import {
@@ -28,12 +29,13 @@ import { ReplenishmentController } from './presentation/replenishment.controller
     AuthModule,
     CustomersModule,
     CatalogModule,
-    CheckoutModule,
+    CartModule,
     PetsModule,
   ],
   controllers: [
     ReplenishmentController,
     EstimateController,
+    MobileEstimateController,
     MobileReplenishmentController,
   ],
   providers: [

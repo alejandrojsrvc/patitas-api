@@ -6,6 +6,7 @@ export type CheckoutStatus = 'DRAFT' | 'COMPLETED' | 'EXPIRED' | 'CANCELLED';
 export interface CheckoutOwner {
   customerId?: string;
   tokenHash?: string;
+  source?: 'STORE' | 'MOBILE';
 }
 
 export interface CheckoutSession {
@@ -18,6 +19,7 @@ export interface CheckoutSession {
   contactEmail: string | null;
   contactPhone: string | null;
   shippingAddress: Record<string, string> | null;
+  deliveryInstructions: string | null;
   shippingOptionId: string | null;
   shippingCost: string;
   shippingZoneId: string | null;
@@ -25,6 +27,7 @@ export interface CheckoutSession {
   shippingDeliverySlot: string | null;
   shippingDeliveryDate: Date | null;
   paymentMethod: string | null;
+  savedPaymentMethodId: string | null;
   couponCode: string | null;
   orderId: string | null;
   subtotal: string;

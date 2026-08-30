@@ -9,7 +9,13 @@ import { AuthModule } from '../auth/auth.module';
 import { SuppliersModule } from '../suppliers/suppliers.module';
 import { SupplierService } from '../suppliers/application/supplier.service';
 import { PromotionsModule } from '../promotions/promotions.module';
+import { PromotionService } from '../promotions/application/promotion.service';
+import { ShippingModule } from '../shipping/shipping.module';
+import { CustomersModule } from '../customers/customers.module';
+import { ShippingService } from '../shipping/application/shipping.service';
+import { CustomerService } from '../customers/application/customer.service';
 import { CatalogService } from './application/catalog.service';
+import { MobileCatalogService } from './application/mobile-catalog.service';
 import {
   CATALOG_REPOSITORY,
   type CatalogRepository,
@@ -25,6 +31,8 @@ import { PublicCatalogController } from './presentation/controllers/public-catal
     StorageModule,
     PromotionsModule,
     SuppliersModule,
+    ShippingModule,
+    CustomersModule,
   ],
   controllers: [PublicCatalogController, AdminCatalogController],
   providers: [
@@ -38,7 +46,31 @@ import { PublicCatalogController } from './presentation/controllers/public-catal
         supplierOffers: SupplierService,
       ) => new CatalogService(repository, storage, supplierOffers),
     },
+    {
+      provide: MobileCatalogService,
+      inject: [
+        CATALOG_REPOSITORY,
+        CatalogService,
+        PromotionService,
+        ShippingService,
+        CustomerService,
+      ],
+      useFactory: (
+        repository: CatalogRepository,
+        catalog: CatalogService,
+        promotions: PromotionService,
+        shipping: ShippingService,
+        customers: CustomerService,
+      ) =>
+        new MobileCatalogService(
+          repository,
+          catalog,
+          promotions,
+          shipping,
+          customers,
+        ),
+    },
   ],
-  exports: [CATALOG_REPOSITORY, CatalogService],
+  exports: [CATALOG_REPOSITORY, CatalogService, MobileCatalogService],
 })
 export class CatalogModule {}

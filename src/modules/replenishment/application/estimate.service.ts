@@ -30,9 +30,11 @@ export class EstimateService {
           petWeightKg: input.pet.weightKg,
           lifeStage: input.pet.lifeStage,
         });
-    const estimatedDepletionDate = new Date();
+    const estimatedDepletionDate = new Date(input.bagStartedAt ?? new Date());
+    const remainingFraction = remainingFractionFor(input.remainingBucket);
     estimatedDepletionDate.setUTCDate(
-      estimatedDepletionDate.getUTCDate() + Math.ceil(result.durationDays.max),
+      estimatedDepletionDate.getUTCDate() +
+        Math.ceil(result.durationDays.max * remainingFraction),
     );
     return this.repository.create({
       customerId,
@@ -81,3 +83,14 @@ const validate = (input: CreateEstimateInput): void => {
       'Los datos del alimento personalizado no son válidos.',
     );
 };
+
+const remainingFractionFor = (
+  bucket: CreateEstimateInput['remainingBucket'],
+): number =>
+  ({
+    ALMOST_FULL: 0.9,
+    MORE_THAN_HALF: 0.7,
+    ABOUT_HALF: 0.5,
+    ALMOST_EMPTY: 0.15,
+    FINISHED: 0,
+  })[bucket ?? 'ALMOST_FULL'];

@@ -25,6 +25,7 @@ export interface CheckoutRepository {
     id: string,
     owner: CheckoutOwner,
     address: Record<string, string>,
+    deliveryInstructions?: string | null,
   ): Promise<CheckoutSession>;
   setShippingOption(
     id: string,
@@ -36,6 +37,7 @@ export interface CheckoutRepository {
     id: string,
     owner: CheckoutOwner,
     paymentMethod: string,
+    savedPaymentMethodId?: string | null,
   ): Promise<CheckoutSession>;
   applyCoupon(
     id: string,

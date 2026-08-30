@@ -21,6 +21,7 @@ import type {
 const orderInclude = {
   lines: { orderBy: { id: 'asc' as const } },
   payments: { orderBy: { createdAt: 'desc' as const } },
+  statusEvents: { orderBy: { occurredAt: 'asc' as const } },
 } as const;
 
 type OrderRecord = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
@@ -120,6 +121,8 @@ export class PrismaOrderRepository implements OrderRepository {
         data: {
           id: randomUUID(),
           customerId: input.customerId ?? null,
+          number: createOrderNumber(),
+          source: input.source ?? 'STORE',
           status: 'DRAFT',
           paymentStatus: 'UNPAID',
           subtotal: subtotal.toFixed(2),
@@ -130,6 +133,7 @@ export class PrismaOrderRepository implements OrderRepository {
           contactPhone: input.contactPhone ?? null,
           shippingAddress: input.shippingAddress,
           notes: input.notes ?? null,
+          deliveryInstructions: input.deliveryInstructions ?? null,
           lines: {
             create: lines.map((line) => ({ id: randomUUID(), ...line })),
           },
@@ -137,6 +141,7 @@ export class PrismaOrderRepository implements OrderRepository {
         include: { lines: true },
       });
       await reserve(transaction, created.lines, created.id);
+      await recordStatusEvent(transaction, created.id, 'DRAFT');
       return mapOrder(
         await transaction.order.findUniqueOrThrow({
           where: { id: created.id },
@@ -264,6 +269,7 @@ export class PrismaOrderRepository implements OrderRepository {
           await reverseCouponRedemptions(transaction, id);
       }
       await transaction.order.update({ where: { id }, data: { status } });
+      await recordStatusEvent(transaction, id, status);
       return mapOrder(
         await transaction.order.findUniqueOrThrow({
           where: { id },
@@ -330,6 +336,7 @@ export class PrismaOrderRepository implements OrderRepository {
             reservationReleasedAt: new Date(),
           },
         });
+        await recordStatusEvent(transaction, order.id, 'CANCELLED');
         return true;
       });
       if (changed) expired += 1;
@@ -375,6 +382,28 @@ const allowedTransitions: Record<Order['status'], Order['status'][]> = {
   SHIPPED: ['DELIVERED'],
   DELIVERED: [],
   CANCELLED: [],
+};
+
+const createOrderNumber = (): string =>
+  `PAT-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${randomUUID()
+    .slice(0, 8)
+    .toUpperCase()}`;
+
+const recordStatusEvent = async (
+  transaction: Prisma.TransactionClient,
+  orderId: string,
+  status: Order['status'],
+): Promise<void> => {
+  const events = transaction.orderStatusEvent;
+  if (!events) return;
+  const existing = await events.findFirst({
+    where: { orderId, status },
+    select: { id: true },
+  });
+  if (existing) return;
+  await events.create({
+    data: { id: randomUUID(), orderId, status },
+  });
 };
 
 const reserve = async (
@@ -534,6 +563,8 @@ const reverseCouponRedemptions = async (
 const mapOrder = (value: OrderRecord): Order => ({
   id: value.id,
   customerId: value.customerId,
+  number: value.number,
+  source: value.source,
   status: value.status,
   paymentStatus: value.paymentStatus,
   canRetry:
@@ -560,11 +591,17 @@ const mapOrder = (value: OrderRecord): Order => ({
   contactEmail: value.contactEmail,
   contactPhone: value.contactPhone,
   shippingAddress: toStringRecord(value.shippingAddress),
+  deliveryInstructions: value.deliveryInstructions,
   notes: value.notes,
   trackingNumber: value.trackingNumber,
   createdAt: value.createdAt,
   updatedAt: value.updatedAt,
   availableTransitions: allowedTransitions[value.status] ?? [],
+  statusEvents: value.statusEvents.map((event) => ({
+    id: event.id,
+    status: event.status,
+    occurredAt: event.occurredAt,
+  })),
   lines: value.lines.map((line) => ({
     id: line.id,
     variantId: line.variantId,
@@ -574,6 +611,10 @@ const mapOrder = (value: OrderRecord): Order => ({
     unitPrice: line.unitPrice.toString(),
     quantity: line.quantity,
     lineTotal: line.lineTotal.toString(),
+    role: line.role,
+    petId: line.petId,
+    planId: line.planId,
+    imageUrl: line.imageUrl,
   })),
   payments: value.payments.map((payment) => ({
     id: payment.id,

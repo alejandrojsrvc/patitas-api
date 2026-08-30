@@ -23,6 +23,7 @@ import { ReferralsModule } from './modules/referrals/referrals.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { PetsModule } from './modules/pets/pets.module';
+import { MobileModule } from './modules/mobile/mobile.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { PetsModule } from './modules/pets/pets.module';
     DashboardModule,
     AnalyticsModule,
     PetsModule,
+    MobileModule,
   ],
 })
 export class AppModule {}

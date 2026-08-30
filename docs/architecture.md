@@ -1,6 +1,6 @@
 # Arquitectura de Patitas API
 
-Patitas API es un monolito modular NestJS con tres superficies HTTP. Las
+Patitas API es un monolito modular NestJS con cuatro superficies HTTP. Las
 superficies no son aplicaciones distintas: reutilizan los mismos módulos de
 dominio y casos de uso, y cambian únicamente sus controllers, DTOs y permisos.
 
@@ -23,6 +23,15 @@ Patitas API
 │   ├── /api/v1/me/orders
 │   ├── /api/v1/cart
 │   └── /api/v1/checkout
+│
+├── Mobile API
+│   ├── /api/v1/mobile/auth
+│   ├── /api/v1/mobile/me
+│   ├── /api/v1/mobile/products
+│   ├── /api/v1/mobile/cart
+│   ├── /api/v1/mobile/checkout
+│   ├── /api/v1/mobile/payments
+│   └── /api/v1/mobile/communications
 │
 └── Admin API
     ├── /api/v1/admin/products
@@ -47,11 +56,15 @@ Los clientes viven en repositorios independientes y consumen el mismo contrato:
 ```text
 Web pública Next.js ───────┐
 Backoffice React/Next ─────┼──> Patitas API
-App futura ────────────────┘
+App móvil Expo ────────────┘
 ```
 
 Todas las rutas HTTP, incluida la documentación OpenAPI, viven bajo el prefijo
 versionado `/api/v1`. No se exponen aliases sin versión.
+
+La superficie Mobile vive exclusivamente bajo `/api/v1/mobile`. Reutiliza el
+dominio y los casos de uso de Customer/Public, pero mantiene controllers, DTOs
+y mappers propios para no modificar el contrato consumido por Web.
 
 ## Dirección de dependencias
 

@@ -2,6 +2,7 @@ import type {
   AdminProductFilter,
   Brand,
   Category,
+  CursorPage,
   CreateProductInput,
   CreateReferenceInput,
   CreateVariantInput,
@@ -14,6 +15,7 @@ import type {
   Product,
   ProductMedia,
   ProductVariant,
+  MobileProductFilter,
   PublicProductFilter,
   SupplierStockStatus,
   UpdateProductInput,
@@ -34,6 +36,8 @@ export interface CatalogRepository {
   ): Promise<Product[]>;
   findPublicCategoryBySlug(slug: string): Promise<Category | null>;
   findPublicBrandBySlug(slug: string): Promise<Brand | null>;
+  listMobileProducts(filter: MobileProductFilter): Promise<CursorPage<Product>>;
+  listPurchasedVariantIds(customerId: string): Promise<string[]>;
   findActiveFeedingGuide(productId: string): Promise<FeedingGuide | null>;
   listAdminProducts(filter: AdminProductFilter): Promise<Page<Product>>;
   findProductById(id: string): Promise<Product | null>;

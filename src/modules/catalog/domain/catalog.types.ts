@@ -191,6 +191,22 @@ export interface PublicProductFilter {
   perPage: number;
 }
 
+export interface MobileProductFilter {
+  query?: string;
+  category?: string;
+  species?: 'dog' | 'cat';
+  brand?: string;
+  featured?: boolean;
+  purchasedVariantIds?: string[];
+  cursor?: string;
+  limit: number;
+}
+
+export interface CursorPage<T> {
+  items: T[];
+  nextCursor: string | null;
+}
+
 export interface AdminProductFilter {
   status?: ProductStatus;
   q?: string;

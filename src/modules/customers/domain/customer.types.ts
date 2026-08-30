@@ -9,6 +9,10 @@ export interface Customer {
   updatedAt: Date;
 }
 
+export interface CustomerProfile extends Customer {
+  avatarUrl: string | null;
+}
+
 export interface CustomerFilter {
   q?: string;
   active?: boolean;
@@ -36,6 +40,12 @@ export interface UpdateCustomerInput {
   email?: string;
   phone?: string | null;
   active?: boolean;
+}
+
+export interface UpdateCustomerProfileInput {
+  fullName?: string;
+  phone?: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface CustomerAddress {

@@ -2,6 +2,10 @@ import { createHash } from 'node:crypto';
 import type { NotificationProvider } from '../../../shared/application/ports/notification-provider.interface';
 import { DomainError } from '../../../shared/domain/domain-error';
 import type {
+  DeviceTokenRecord,
+  InAppNotificationList,
+  InAppNotificationRecord,
+  MobileNotificationPreferences,
   NotificationPreferences,
   NotificationRepository,
 } from '../domain/notification.repository';
@@ -26,6 +30,17 @@ export class NotificationService {
     return this.repository.updatePreferences(customerId, input);
   }
 
+  public getMobilePreferences(customerId: string) {
+    return this.repository.getMobilePreferences(customerId);
+  }
+
+  public updateMobilePreferences(
+    customerId: string,
+    input: Partial<MobileNotificationPreferences>,
+  ) {
+    return this.repository.updateMobilePreferences(customerId, input);
+  }
+
   public registerDeviceToken(input: {
     customerId: string;
     token: string;
@@ -44,6 +59,110 @@ export class NotificationService {
       ...input,
       token: input.token.trim(),
       platform: input.platform.toLowerCase(),
+    });
+  }
+
+  public async registerMobileDeviceToken(input: {
+    customerId: string;
+    token: string;
+    platform: string;
+    provider?: string;
+    deviceId: string;
+    appVersion?: string | null;
+  }): Promise<DeviceTokenRecord> {
+    const token = input.token.trim();
+    const deviceId = input.deviceId.trim();
+    const provider = (input.provider ?? 'EXPO').trim().toUpperCase();
+    const platform = input.platform.trim().toLowerCase();
+    if (!token) {
+      throw new NotificationValidationError(
+        'El token del dispositivo es obligatorio.',
+      );
+    }
+    if (!deviceId) {
+      throw new NotificationValidationError(
+        'El identificador del dispositivo es obligatorio.',
+      );
+    }
+    if (!['ios', 'android'].includes(platform)) {
+      throw new NotificationValidationError(
+        'La plataforma del dispositivo no es válida.',
+      );
+    }
+    if (!provider) {
+      throw new NotificationValidationError(
+        'El proveedor del dispositivo es obligatorio.',
+      );
+    }
+    return this.repository.registerMobileDeviceToken({
+      customerId: input.customerId,
+      token,
+      platform,
+      provider,
+      deviceIdHash: hashDeviceId(deviceId),
+      appVersion: input.appVersion?.trim() || null,
+    });
+  }
+
+  public deactivateDeviceToken(customerId: string, id: string) {
+    return this.repository.deactivateDeviceToken(customerId, id);
+  }
+
+  public listInAppNotifications(
+    customerId: string,
+    input?: { unreadOnly?: boolean; cursor?: string; limit?: number },
+  ): Promise<InAppNotificationList> {
+    return this.repository.listInAppNotifications(customerId, input);
+  }
+
+  public async readInAppNotification(
+    customerId: string,
+    id: string,
+  ): Promise<InAppNotificationRecord> {
+    const notification = await this.repository.markInAppNotificationRead(
+      customerId,
+      id,
+    );
+    if (!notification)
+      throw new NotificationNotFoundError(
+        'La notificación no existe para este cliente.',
+      );
+    return notification;
+  }
+
+  public async readAllInAppNotifications(customerId: string) {
+    const updated =
+      await this.repository.markAllInAppNotificationsRead(customerId);
+    return {
+      updated,
+      unreadCount: 0,
+    };
+  }
+
+  public async emitInAppNotification(input: {
+    customerId: string;
+    type: string;
+    title: string;
+    body: string;
+    targetType?: string | null;
+    targetId?: string | null;
+    preference?: 'orderUpdates' | 'replenishmentReminders';
+  }): Promise<InAppNotificationRecord | null> {
+    if (input.preference) {
+      const preferences = await this.getMobilePreferences(input.customerId);
+      if (!preferences[input.preference]) return null;
+    }
+    if (!input.type.trim() || !input.title.trim() || !input.body.trim())
+      throw new NotificationValidationError(
+        'Una notificación requiere tipo, título y contenido.',
+      );
+    return this.repository.createInAppNotification({
+      customerId: input.customerId,
+      type: input.type.trim(),
+      title: input.title.trim(),
+      body: input.body.trim(),
+      targetType: input.targetType?.trim() || null,
+      targetId: input.targetId?.trim() || null,
     });
   }
 
@@ -174,5 +293,14 @@ export class NotificationService {
   }
 }
 
+export class NotificationNotFoundError extends DomainError {
+  public constructor(message: string) {
+    super(message, 'NOTIFICATION_NOT_FOUND');
+  }
+}
+
 const hash = (value: string) =>
   createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
+
+const hashDeviceId = (value: string) =>
+  createHash('sha256').update(value.trim()).digest('hex');

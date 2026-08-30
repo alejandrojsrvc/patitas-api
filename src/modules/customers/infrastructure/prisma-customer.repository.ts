@@ -11,7 +11,9 @@ import type {
   Customer,
   CustomerFilter,
   CustomerPage,
+  CustomerProfile,
   UpdateCustomerInput,
+  UpdateCustomerProfileInput,
 } from '../domain/customer.types';
 
 @Injectable()
@@ -60,6 +62,15 @@ export class PrismaCustomerRepository implements CustomerRepository {
     return customer ? mapCustomer(customer) : null;
   }
 
+  public async findProfileByUserId(
+    userId: string,
+  ): Promise<CustomerProfile | null> {
+    const customer = await this.prisma.customer.findUnique({
+      where: { userId },
+    });
+    return customer ? mapCustomerProfile(customer) : null;
+  }
+
   public async create(input: CreateCustomerInput): Promise<Customer> {
     try {
       return mapCustomer(await this.prisma.customer.create({ data: input }));
@@ -94,6 +105,25 @@ export class PrismaCustomerRepository implements CustomerRepository {
       throw error;
     }
   }
+
+  public async updateProfile(
+    id: string,
+    input: UpdateCustomerProfileInput,
+  ): Promise<CustomerProfile> {
+    try {
+      return mapCustomerProfile(
+        await this.prisma.customer.update({ where: { id }, data: input }),
+      );
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new CustomerNotFoundError();
+      }
+      throw error;
+    }
+  }
 }
 
 const mapCustomer = (value: {
@@ -106,3 +136,15 @@ const mapCustomer = (value: {
   createdAt: Date;
   updatedAt: Date;
 }): Customer => ({ ...value });
+
+const mapCustomerProfile = (value: {
+  id: string;
+  userId: string | null;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  avatarUrl: string | null;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}): CustomerProfile => ({ ...value });

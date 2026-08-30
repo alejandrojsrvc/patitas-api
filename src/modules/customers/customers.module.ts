@@ -38,6 +38,6 @@ import { CustomerProfileController } from './presentation/customer-profile.contr
       ) => new CustomerAddressService(repository, customers),
     },
   ],
-  exports: [CustomerService],
+  exports: [CustomerService, CustomerAddressService],
 })
 export class CustomersModule {}

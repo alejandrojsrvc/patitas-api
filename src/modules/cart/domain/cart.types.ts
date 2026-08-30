@@ -1,4 +1,12 @@
 export type CartStatus = 'ACTIVE' | 'ABANDONED' | 'CONVERTED' | 'EXPIRED';
+export type CartSource = 'STORE' | 'MOBILE';
+export type CartItemRole = 'MAIN' | 'EXTRA';
+
+export interface CartItemContext {
+  role: CartItemRole;
+  petId?: string | null;
+  planId?: string | null;
+}
 
 export interface CartItem {
   id: string;
@@ -14,6 +22,9 @@ export interface CartItem {
   lineTotal: string;
   weightGrams?: number | null;
   availableQuantity: number;
+  role: CartItemRole;
+  petId: string | null;
+  planId: string | null;
 }
 
 export interface Cart {
@@ -24,11 +35,13 @@ export interface Cart {
   subtotal: string;
   lastActivityAt: Date;
   items: CartItem[];
+  source: CartSource;
 }
 
 export interface CartOwner {
   customerId?: string;
   tokenHash?: string;
+  source?: CartSource;
 }
 
 export interface CartPage {

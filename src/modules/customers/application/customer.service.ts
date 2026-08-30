@@ -7,6 +7,7 @@ import type {
   CreateCustomerInput,
   CustomerFilter,
   UpdateCustomerInput,
+  UpdateCustomerProfileInput,
 } from '../domain/customer.types';
 
 export class CustomerService {
@@ -33,6 +34,21 @@ export class CustomerService {
     return this.update(customer.id, input);
   }
 
+  public async findProfileByUserId(userId: string) {
+    const customer = await this.repository.findProfileByUserId(userId);
+    if (!customer) throw new CustomerNotFoundError();
+    return customer;
+  }
+
+  public async updateProfileByUserId(
+    userId: string,
+    input: UpdateCustomerProfileInput,
+  ) {
+    const customer = await this.findProfileByUserId(userId);
+    validateCustomer(input);
+    return this.repository.updateProfile(customer.id, normalizeCustomer(input));
+  }
+
   public create(input: CreateCustomerInput) {
     validateCustomer(input);
     return this.repository.create(normalizeCustomer(input));
@@ -46,12 +62,13 @@ export class CustomerService {
 }
 
 const validateCustomer = (
-  input: CreateCustomerInput | UpdateCustomerInput,
+  input: CreateCustomerInput | UpdateCustomerInput | UpdateCustomerProfileInput,
 ): void => {
   if (input.fullName !== undefined && !input.fullName.trim()) {
     throw new CustomerValidationError('El nombre del cliente es obligatorio.');
   }
   if (
+    'email' in input &&
     input.email !== undefined &&
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email.trim())
   ) {
@@ -59,13 +76,19 @@ const validateCustomer = (
   }
 };
 
-const normalizeCustomer = <T extends CreateCustomerInput | UpdateCustomerInput>(
+const normalizeCustomer = <
+  T extends
+    CreateCustomerInput | UpdateCustomerInput | UpdateCustomerProfileInput,
+>(
   input: T,
 ): T => ({
   ...input,
   ...(input.fullName !== undefined ? { fullName: input.fullName.trim() } : {}),
-  ...(input.email !== undefined
+  ...('email' in input && input.email !== undefined
     ? { email: input.email.trim().toLowerCase() }
     : {}),
   ...(input.phone !== undefined ? { phone: input.phone?.trim() || null } : {}),
+  ...('avatarUrl' in input && input.avatarUrl !== undefined
+    ? { avatarUrl: input.avatarUrl?.trim() || null }
+    : {}),
 });
