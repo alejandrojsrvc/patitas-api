@@ -468,6 +468,28 @@ export class PrismaCatalogRepository implements CatalogRepository {
     return records.map(mapProduct);
   }
 
+  public async findExistingCatalogImportKeys(
+    slugs: string[],
+    skus: string[],
+  ): Promise<{ slugs: string[]; skus: string[] }> {
+    const [products, variants] = await this.prisma.$transaction([
+      this.prisma.product.findMany({
+        where: { slug: { in: slugs } },
+        select: { slug: true },
+      }),
+      this.prisma.productVariant.findMany({
+        where: { sku: { in: skus } },
+        select: { sku: true },
+      }),
+    ]);
+    return {
+      slugs: products.map((product) => product.slug),
+      skus: variants.flatMap((variant) =>
+        variant.sku === null ? [] : [variant.sku],
+      ),
+    };
+  }
+
   public async findProductById(id: string): Promise<Product | null> {
     const product = await this.prisma.product.findUnique({
       where: { id },

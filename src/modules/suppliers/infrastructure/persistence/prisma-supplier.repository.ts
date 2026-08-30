@@ -108,14 +108,24 @@ export class PrismaSupplierRepository implements SupplierRepository {
     return offers.map(mapOffer);
   }
   public async listAllOffers(): Promise<
-    Array<SupplierOffer & { supplierName: string; productName: string; sku: string | null }>
+    Array<
+      SupplierOffer & {
+        supplierName: string;
+        productName: string;
+        sku: string | null;
+      }
+    >
   > {
     const offers = await this.prisma.supplierOffer.findMany({
       include: {
         supplier: true,
         variant: { select: { sku: true, product: { select: { name: true } } } },
       },
-      orderBy: [{ supplier: { name: 'asc' } }, { updatedAt: 'desc' }, { id: 'asc' }],
+      orderBy: [
+        { supplier: { name: 'asc' } },
+        { updatedAt: 'desc' },
+        { id: 'asc' },
+      ],
     });
     return offers.map((offer: PersistenceExportOffer) => ({
       ...mapOffer(offer),

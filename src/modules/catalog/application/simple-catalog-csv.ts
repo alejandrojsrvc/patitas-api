@@ -13,7 +13,7 @@ export interface SimpleCatalogCsvRow {
   line: string | null;
   lifeStage: string | null;
   breedSize: string | null;
-  weightGrams: number;
+  weightGrams: number | null;
   description: string | null;
   imageUrl: string | null;
   salePrice: string | null;
@@ -24,7 +24,7 @@ export interface SimpleCatalogCsvRow {
   supplierStockStatus: SupplierStockStatus;
 }
 
-const REQUIRED_HEADERS = ['name', 'brand', 'weight_kg'];
+const REQUIRED_HEADERS = ['name', 'brand'];
 
 type CsvRecord = Record<string, string>;
 
@@ -77,10 +77,10 @@ export const parseSimpleCatalogCsv = (
         );
       }
       if (parsed.barcode) seenBarcodes.add(parsed.barcode);
-      const productWeight = `${parsed.slug}:${parsed.weightGrams}`;
+      const productWeight = `${parsed.slug}:${parsed.weightGrams ?? 'unit'}`;
       if (seenProductWeights.has(productWeight)) {
         throw new CatalogValidationError(
-          `El producto ${parsed.slug} repite el peso ${parsed.weightGrams} g.`,
+          `El producto ${parsed.slug} repite la presentación ${parsed.weightGrams ?? 'unit'}.`,
         );
       }
       seenProductWeights.add(productWeight);
@@ -95,16 +95,8 @@ const mapRow = (row: CsvRecord, rowNumber: number): SimpleCatalogCsvRow => {
       throw new CatalogValidationError(`La fila ${rowNumber} no tiene ${key}.`);
     return value;
   };
-  const weightKg = Number(required('weight_kg').replace(',', '.'));
-  if (
-    !Number.isFinite(weightKg) ||
-    weightKg <= 0 ||
-    !Number.isInteger(weightKg * 1000)
-  ) {
-    throw new CatalogValidationError(
-      `La fila ${rowNumber} tiene un peso inválido.`,
-    );
-  }
+  const weightKg = optionalWeight(row.weight_kg, rowNumber);
+  const weightGrams = weightKg === null ? null : Math.round(weightKg * 1000);
   const salePrice = optionalNumber(row.sale_price, rowNumber, 'sale_price');
   const initialStock = optionalInteger(
     row.initial_stock,
@@ -140,7 +132,7 @@ const mapRow = (row: CsvRecord, rowNumber: number): SimpleCatalogCsvRow => {
     rowNumber,
     sku:
       row.sku?.trim().toUpperCase() ||
-      generateSku(row.brand, row.name, Math.round(weightKg * 1000)),
+      generateSku(row.brand, row.name, weightGrams),
     barcode,
     name: required('name'),
     slug: slugify(row.slug?.trim() || row.name),
@@ -150,7 +142,7 @@ const mapRow = (row: CsvRecord, rowNumber: number): SimpleCatalogCsvRow => {
     line: row.line?.trim() || null,
     lifeStage: row.life_stage?.trim().toLowerCase() || null,
     breedSize: row.breed_size?.trim().toLowerCase() || null,
-    weightGrams: Math.round(weightKg * 1000),
+    weightGrams,
     description: row.description?.trim() || null,
     imageUrl,
     salePrice,
@@ -160,6 +152,24 @@ const mapRow = (row: CsvRecord, rowNumber: number): SimpleCatalogCsvRow => {
     supplierUnitCost,
     supplierStockStatus,
   };
+};
+
+const optionalWeight = (
+  value: string | undefined,
+  rowNumber: number,
+): number | null => {
+  if (!value?.trim()) return null;
+  const weightKg = Number(value.replace(',', '.'));
+  if (
+    !Number.isFinite(weightKg) ||
+    weightKg <= 0 ||
+    !Number.isInteger(weightKg * 1000)
+  ) {
+    throw new CatalogValidationError(
+      `La fila ${rowNumber} tiene un peso inválido.`,
+    );
+  }
+  return weightKg;
 };
 
 const optional = (value: string | undefined): string | null =>
@@ -244,7 +254,7 @@ const inferSpecies = (name: string): string =>
 const generateSku = (
   brand: string,
   name: string,
-  weightGrams: number,
+  weightGrams: number | null,
 ): string => {
   const compact = slugify(`${brand}-${name}`)
     .split('-')
@@ -253,7 +263,7 @@ const generateSku = (
     .join('')
     .slice(0, 55)
     .toUpperCase();
-  return `${compact || 'PRODUCTO'}-${weightGrams}G`;
+  return `${compact || 'PRODUCTO'}-${weightGrams === null ? 'UNIT' : `${weightGrams}G`}`;
 };
 
 const slugify = (value: string): string =>

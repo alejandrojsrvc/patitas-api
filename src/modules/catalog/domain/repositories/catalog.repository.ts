@@ -27,6 +27,11 @@ import type {
 
 export const CATALOG_REPOSITORY = Symbol('CATALOG_REPOSITORY');
 
+export interface ExistingCatalogImportKeys {
+  slugs: string[];
+  skus: string[];
+}
+
 export interface CatalogRepository {
   listPublicProducts(filter: PublicProductFilter): Promise<Page<Product>>;
   findPublicProductBySlug(slug: string): Promise<Product | null>;
@@ -41,6 +46,10 @@ export interface CatalogRepository {
   findActiveFeedingGuide(productId: string): Promise<FeedingGuide | null>;
   listAdminProducts(filter: AdminProductFilter): Promise<Page<Product>>;
   listAllAdminProducts(): Promise<Product[]>;
+  findExistingCatalogImportKeys(
+    slugs: string[],
+    skus: string[],
+  ): Promise<ExistingCatalogImportKeys>;
   findProductById(id: string): Promise<Product | null>;
   findProductBySlug(slug: string): Promise<Product | null>;
   findProductByVariantId(id: string): Promise<Product | null>;

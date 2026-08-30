@@ -260,23 +260,59 @@ export class CatalogService {
     options: { publish: boolean },
   ) {
     const rows = parseSimpleCatalogCsv(data);
-    const category = (await this.listCategories(false)).find(
-      (item) => item.slug === 'alimento-seco' && item.active,
+    const categories = new Map(
+      (await this.listCategories(false))
+        .filter((item) => item.active)
+        .map((item) => [item.slug, item]),
     );
-    if (!category) {
+    if (!categories.size) {
       throw new CatalogValidationError(
-        'No existe una categoría activa alimento-seco para importar.',
+        'No existen categorías activas para importar.',
       );
     }
 
-    const brands = new Map(
-      (await this.listBrands(false)).map((brand) => [brand.slug, brand]),
-    );
     const grouped = new Map<string, typeof rows>();
     for (const row of rows) {
       const productRows = grouped.get(row.slug) ?? [];
       productRows.push(row);
       grouped.set(row.slug, productRows);
+    }
+
+    const existingKeys = await this.repository.findExistingCatalogImportKeys(
+      [...grouped.keys()],
+      rows.map((row) => row.sku),
+    );
+    const existingSlugs = new Set(existingKeys.slugs);
+    const existingSkus = new Set(existingKeys.skus);
+    const skipped = [...grouped.entries()]
+      .filter(
+        ([slug, productRows]) =>
+          existingSlugs.has(slug) ||
+          productRows.some((row) => existingSkus.has(row.sku)),
+      )
+      .map(([slug, productRows]) => ({
+        slug,
+        reason: existingSlugs.has(slug) ? 'slug_exists' : 'sku_exists',
+        skus: productRows.map((row) => row.sku),
+      }));
+    const importEntries = [...grouped.entries()].filter(
+      ([slug, productRows]) =>
+        !existingSlugs.has(slug) &&
+        !productRows.some((row) => existingSkus.has(row.sku)),
+    );
+
+    const brands = new Map(
+      (await this.listBrands(false)).map((brand) => [brand.slug, brand]),
+    );
+    for (const brandName of new Set(
+      importEntries.flatMap(([, productRows]) =>
+        productRows.map((row) => row.brand),
+      ),
+    )) {
+      const brandSlug = slugify(brandName);
+      if (brands.has(brandSlug)) continue;
+      const brand = await this.createBrand({ name: brandName, active: true });
+      brands.set(brand.slug, brand);
     }
 
     const results: Array<{
@@ -293,131 +329,147 @@ export class CatalogService {
     }> = [];
     const supplierOfferRows: SupplierOfferImportRow[] = [];
 
-    for (const [slug, productRows] of grouped) {
-      const first = productRows[0];
-      let brand = brands.get(slugify(first.brand));
-      if (!brand) {
-        brand = await this.createBrand({ name: first.brand, active: true });
-        brands.set(brand.slug, brand);
-      }
+    const productResults = await mapWithConcurrency(
+      importEntries,
+      6,
+      async ([slug, productRows]) => {
+        const first = productRows[0];
+        const categorySlug = importCategorySlug(first.category);
+        const category = categories.get(categorySlug);
+        if (!category) {
+          throw new CatalogValidationError(
+            `La categoría ${categorySlug} no existe o está inactiva.`,
+          );
+        }
+        let brand = brands.get(slugify(first.brand));
+        if (!brand) {
+          brand = await this.createBrand({ name: first.brand, active: true });
+          brands.set(brand.slug, brand);
+        }
 
-      let product = await this.repository.findProductBySlug(slug);
-      const productInput = {
-        name: first.name,
-        slug,
-        description: first.description,
-        brandId: brand.id,
-        categoryId: category.id,
-        species: first.species,
-        line: first.line,
-        lifeStage: first.lifeStage,
-        breedSize: first.breedSize,
-      };
-      const wasExisting = Boolean(product);
-      if (product) {
-        product = await this.repository.updateProduct(product.id, productInput);
-      } else {
-        product = await this.createProduct(productInput);
-      }
-
-      const knownImages = new Set(product.media.map((media) => media.url));
-      const currentVariants = [...product.variants];
-      const importedVariants: Array<{
-        id: string;
-        sku: string | null;
-        weightGrams: number | null;
-      }> = [];
-      for (const row of productRows) {
-        let variant = currentVariants.find(
-          (item) =>
-            (row.barcode !== null && item.barcode === row.barcode) ||
-            item.sku === row.sku ||
-            item.weightGrams === row.weightGrams,
-        );
-        const variantInput = {
-          sku: row.sku,
-          barcode: row.barcode,
-          presentation: `${row.weightGrams / 1000} kg`,
-          weightGrams: row.weightGrams,
-          active: true,
+        let product = await this.repository.findProductBySlug(slug);
+        const productInput = {
+          name: first.name,
+          slug,
+          description: first.description,
+          brandId: brand.id,
+          categoryId: category.id,
+          species: first.species,
+          line: first.line,
+          lifeStage: first.lifeStage,
+          breedSize: first.breedSize,
         };
-        if (variant) {
-          variant = await this.repository.updateVariant(variant.id, {
-            ...variantInput,
-            ...(row.salePrice !== null ? { salePrice: row.salePrice } : {}),
-          });
+        const wasExisting = Boolean(product);
+        if (product) {
+          product = await this.repository.updateProduct(
+            product.id,
+            productInput,
+          );
         } else {
-          variant = await this.createVariant(product.id, variantInput);
-          if (row.salePrice !== null) {
+          product = await this.createProduct(productInput);
+        }
+
+        const knownImages = new Set(product.media.map((media) => media.url));
+        const currentVariants = [...product.variants];
+        const importedVariants: Array<{
+          id: string;
+          sku: string | null;
+          weightGrams: number | null;
+        }> = [];
+        for (const row of productRows) {
+          let variant = currentVariants.find(
+            (item) =>
+              (row.barcode !== null && item.barcode === row.barcode) ||
+              item.sku === row.sku ||
+              item.weightGrams === row.weightGrams,
+          );
+          const variantInput = {
+            sku: row.sku,
+            barcode: row.barcode,
+            presentation:
+              row.weightGrams === null ? null : `${row.weightGrams / 1000} kg`,
+            weightGrams: row.weightGrams,
+            active: true,
+          };
+          if (variant) {
             variant = await this.repository.updateVariant(variant.id, {
-              salePrice: row.salePrice,
+              ...variantInput,
+              ...(row.salePrice !== null ? { salePrice: row.salePrice } : {}),
+            });
+          } else {
+            variant = await this.createVariant(product.id, variantInput);
+            if (row.salePrice !== null) {
+              variant = await this.repository.updateVariant(variant.id, {
+                salePrice: row.salePrice,
+              });
+            }
+          }
+          const existingIndex = currentVariants.findIndex(
+            (item) => item.id === variant.id,
+          );
+          if (existingIndex >= 0) currentVariants[existingIndex] = variant;
+          else currentVariants.push(variant);
+          importedVariants.push({
+            id: variant.id,
+            sku: variant.sku,
+            weightGrams: variant.weightGrams,
+          });
+          if (row.supplierName && row.supplierUnitCost) {
+            supplierOfferRows.push({
+              rowNumber: row.rowNumber,
+              supplierId: null,
+              supplierName: row.supplierName,
+              variantId: variant.id,
+              sku: variant.sku,
+              barcode: variant.barcode,
+              supplierSku: row.supplierSku,
+              unitCost: row.supplierUnitCost,
+              stockStatus: row.supplierStockStatus,
+              leadTimeHours: null,
+              minimumQuantity: 1,
+              active: true,
             });
           }
+          if (row.initialStock !== null) {
+            await this.repository.setInventory(variant.id, {
+              onHand: row.initialStock,
+              reserved: variant.reserved ?? 0,
+              reason: 'Importación inicial CSV',
+            });
+          }
+          if (row.imageUrl && !knownImages.has(row.imageUrl)) {
+            await this.createProductMedia(product.id, {
+              url: row.imageUrl,
+              altText: `Imagen de ${row.name}`,
+              variantId: null,
+              displayOrder: 0,
+            });
+            knownImages.add(row.imageUrl);
+          }
         }
-        const existingIndex = currentVariants.findIndex(
-          (item) => item.id === variant.id,
-        );
-        if (existingIndex >= 0) currentVariants[existingIndex] = variant;
-        else currentVariants.push(variant);
-        importedVariants.push({
-          id: variant.id,
-          sku: variant.sku,
-          weightGrams: variant.weightGrams,
-        });
-        if (row.supplierName && row.supplierUnitCost) {
-          supplierOfferRows.push({
-            rowNumber: row.rowNumber,
-            supplierId: null,
-            supplierName: row.supplierName,
-            variantId: variant.id,
-            sku: variant.sku,
-            barcode: variant.barcode,
-            supplierSku: row.supplierSku,
-            unitCost: row.supplierUnitCost,
-            stockStatus: row.supplierStockStatus,
-            leadTimeHours: null,
-            minimumQuantity: 1,
-            active: true,
-          });
-        }
-        if (row.initialStock !== null) {
-          await this.repository.setInventory(variant.id, {
-            onHand: row.initialStock,
-            reserved: variant.reserved ?? 0,
-            reason: 'Importación inicial CSV',
-          });
-        }
-        if (row.imageUrl && !knownImages.has(row.imageUrl)) {
-          await this.createProductMedia(product.id, {
-            url: row.imageUrl,
-            altText: `Imagen de ${row.name}`,
-            variantId: null,
-            displayOrder: 0,
-          });
-          knownImages.add(row.imageUrl);
-        }
-      }
 
-      let published = false;
-      let publishError: string | undefined;
-      if (options.publish) {
-        try {
-          await this.updateProduct(product.id, { status: 'ACTIVE' });
-          published = true;
-        } catch (error) {
-          publishError =
-            error instanceof Error ? error.message : 'No publicable';
+        let published = false;
+        let publishError: string | undefined;
+        if (options.publish) {
+          try {
+            await this.updateProduct(product.id, { status: 'ACTIVE' });
+            published = true;
+          } catch (error) {
+            publishError =
+              error instanceof Error ? error.message : 'No publicable';
+          }
         }
-      }
-      results.push({
-        slug,
-        productId: product.id,
-        variants: importedVariants,
-        status: published ? 'ACTIVE' : wasExisting ? product.status : 'DRAFT',
-        published,
-        ...(publishError ? { publishError } : {}),
-      });
-    }
+        return {
+          slug,
+          productId: product.id,
+          variants: importedVariants,
+          status: published ? 'ACTIVE' : wasExisting ? product.status : 'DRAFT',
+          published,
+          ...(publishError ? { publishError } : {}),
+        };
+      },
+    );
+    results.push(...productResults);
     const supplierOffers =
       supplierOfferRows.length && this.supplierOffers
         ? await this.supplierOffers.importOfferRows(supplierOfferRows, {
@@ -431,6 +483,7 @@ export class CatalogService {
       published: results.filter((item) => item.published).length,
       draft: results.filter((item) => !item.published).length,
       items: results,
+      skipped,
       supplierOffers,
     };
   }
@@ -961,4 +1014,33 @@ const slugify = (value: string): string => {
     .replace(/^-|-$/g, '');
   if (!slug) throw new CatalogValidationError('El slug no puede quedar vacío.');
   return slug;
+};
+
+const importCategorySlug = (value: string): string =>
+  ({
+    'arena-sanitaria': 'arena-y-piedras',
+    'snack-dental': 'snacks',
+  })[value] ?? value;
+
+const mapWithConcurrency = async <T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T) => Promise<R>,
+): Promise<R[]> => {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+  const worker = async (): Promise<void> => {
+    while (true) {
+      const index = nextIndex++;
+      if (index >= items.length) return;
+      results[index] = await mapper(items[index]);
+    }
+  };
+  await Promise.all(
+    Array.from(
+      { length: Math.min(Math.max(concurrency, 1), items.length) },
+      () => worker(),
+    ),
+  );
+  return results;
 };

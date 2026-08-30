@@ -55,7 +55,11 @@ export class AdminSuppliersController {
     const suppliers = await this.suppliers.listAllSuppliers();
     return csv(
       ['supplier_id', 'name', 'active'],
-      suppliers.map((supplier) => [supplier.id, supplier.name, supplier.active]),
+      suppliers.map((supplier) => [
+        supplier.id,
+        supplier.name,
+        supplier.active,
+      ]),
     );
   }
   @Get('suppliers') public list(@Query() query: SuppliersQueryDto) {
@@ -90,15 +94,38 @@ export class AdminSuppliersController {
     const offers = await this.suppliers.listAllOffers();
     return csv(
       [
-        'offer_id', 'supplier_id', 'supplier_name', 'variant_id', 'product_name',
-        'sku', 'supplier_sku', 'unit_cost', 'currency', 'stock_status',
-        'lead_time_hours', 'minimum_quantity', 'active', 'revision', 'updated_at',
+        'offer_id',
+        'supplier_id',
+        'supplier_name',
+        'variant_id',
+        'product_name',
+        'sku',
+        'supplier_sku',
+        'unit_cost',
+        'currency',
+        'stock_status',
+        'lead_time_hours',
+        'minimum_quantity',
+        'active',
+        'revision',
+        'updated_at',
       ],
       offers.map((offer) => [
-        offer.id, offer.supplierId, offer.supplierName, offer.variantId,
-        offer.productName, offer.sku, offer.supplierSku, offer.unitCost,
-        offer.currency, offer.stockStatus, offer.leadTimeHours,
-        offer.minimumQuantity, offer.active, offer.revision, offer.updatedAt,
+        offer.id,
+        offer.supplierId,
+        offer.supplierName,
+        offer.variantId,
+        offer.productName,
+        offer.sku,
+        offer.supplierSku,
+        offer.unitCost,
+        offer.currency,
+        offer.stockStatus,
+        offer.leadTimeHours,
+        offer.minimumQuantity,
+        offer.active,
+        offer.revision,
+        offer.updatedAt,
       ]),
     );
   }

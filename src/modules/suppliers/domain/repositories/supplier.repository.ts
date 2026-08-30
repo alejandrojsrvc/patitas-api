@@ -30,7 +30,13 @@ export interface SupplierRepository {
     active?: boolean;
   }): Promise<SupplierOffer[]>;
   listAllOffers(): Promise<
-    Array<SupplierOffer & { supplierName: string; productName: string; sku: string | null }>
+    Array<
+      SupplierOffer & {
+        supplierName: string;
+        productName: string;
+        sku: string | null;
+      }
+    >
   >;
   findOffer(id: string): Promise<SupplierOffer | null>;
   createOffer(input: CreateSupplierOfferInput): Promise<SupplierOffer>;
