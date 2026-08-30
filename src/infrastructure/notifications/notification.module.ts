@@ -36,7 +36,7 @@ import { ResendNotificationAdapter } from './resend-notification.adapter';
         ),
     },
   ],
-  exports: [NOTIFICATION_PROVIDER],
+  exports: [NOTIFICATION_PROVIDER, ResendNotificationAdapter],
 })
 export class NotificationInfrastructureModule {}
 

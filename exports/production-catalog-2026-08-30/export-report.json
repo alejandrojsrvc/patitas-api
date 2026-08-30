@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-08-30T16:56:49.105Z",
+  "outputDirectory": "/Users/alejandrojesussojoruiz/projects/patitas-api/exports/production-catalog-2026-08-30",
+  "excludedFilter": "products.name = 'Test Product' OR brands.name = 'Test <uuid>'",
+  "counts": {
+    "categories": 2,
+    "brands": 3,
+    "products": 8,
+    "variants": 9,
+    "inventoryItems": 8,
+    "productMedia": 8,
+    "suppliers": 4,
+    "supplierOffers": 23,
+    "storageObjects": 8,
+    "externalImages": 0
+  }
+}

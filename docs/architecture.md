@@ -94,11 +94,19 @@ romper esa condición la validan antes de persistir.
 cliente Supabase Auth. El módulo `auth`, sus guards y sus casos de uso reciben
 tipos neutrales.
 
+Los correos de confirmación y recuperación no los envía Supabase. El adapter
+administrativo de Identity genera enlaces de un solo uso y entrega únicamente
+el token al caso de uso; `NotificationProvider` renderiza y envía el correo con
+Resend. Web y Mobile consumen el token mediante endpoints propios bajo
+`/api/v1/auth/**` y `/api/v1/mobile/auth/**`. La secret key permanece aislada en
+el cliente administrativo de Identity y nunca se expone a presentation.
+
 ### Storage
 
 `StorageProvider` es el contrato de aplicación. El adapter Supabase utiliza un
-cliente administrativo aislado. La secret key nunca se entrega al cliente de
-Auth ni se consume fuera del adapter de Storage.
+cliente administrativo aislado. Identity y Storage tienen clientes
+administrativos distintos: la secret key sólo se consume dentro de esos
+adapters y nunca se entrega a los clientes públicos ni a los módulos de negocio.
 
 El catálogo recibe por ahora una URL de media ya resuelta. La carga, firma o
 reemplazo de archivos deberá pasar por `StorageProvider` cuando exista ese caso

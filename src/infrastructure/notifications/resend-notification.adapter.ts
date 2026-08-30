@@ -15,6 +15,14 @@ import {
   ReplenishmentReminderEmail,
   type ReplenishmentReminderEmailProps,
 } from './email-templates/replenishment-reminder.email';
+import {
+  AccountConfirmationEmail,
+  type AccountConfirmationEmailProps,
+} from './email-templates/account-confirmation.email';
+import {
+  PasswordRecoveryEmail,
+  type PasswordRecoveryEmailProps,
+} from './email-templates/password-recovery.email';
 
 interface RenderedEmail {
   subject: string;
@@ -27,6 +35,29 @@ type TemplateRenderer = (
 ) => RenderedEmail;
 
 const templateRenderers: Readonly<Record<string, TemplateRenderer>> = {
+  account_confirmation: (variables, appUrl) => {
+    const props: AccountConfirmationEmailProps = {
+      actionUrl: buildActionUrl(appUrl, '/auth/confirm', {
+        token: requiredVariable(variables, 'token'),
+        type: requiredVariable(variables, 'type'),
+      }),
+    };
+    return {
+      subject: 'Confirmá tu cuenta | Patitas Inquietas',
+      element: createElement(AccountConfirmationEmail, props),
+    };
+  },
+  password_recovery: (variables, appUrl) => {
+    const props: PasswordRecoveryEmailProps = {
+      actionUrl: buildActionUrl(appUrl, '/auth/reset-password', {
+        token: requiredVariable(variables, 'token'),
+      }),
+    };
+    return {
+      subject: 'Recuperá tu contraseña | Patitas Inquietas',
+      element: createElement(PasswordRecoveryEmail, props),
+    };
+  },
   abandoned_cart: (variables, appUrl) => {
     const props: AbandonedCartEmailProps = {
       cartId: requiredVariable(variables, 'cartId'),
@@ -121,4 +152,16 @@ const readOptional = (config: ConfigService, key: string): string | undefined =>
 const normalizeAppUrl = (value: string): string => {
   const url = new URL(value);
   return url.toString().replace(/\/$/, '');
+};
+
+const buildActionUrl = (
+  appUrl: string,
+  path: string,
+  query: Record<string, string>,
+): string => {
+  const url = new URL(path, `${appUrl}/`);
+  for (const [key, value] of Object.entries(query)) {
+    url.searchParams.set(key, value);
+  }
+  return url.toString();
 };

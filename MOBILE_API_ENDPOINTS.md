@@ -63,9 +63,13 @@ Leyenda:
 
 | Prioridad | Estado  | Endpoint                                             | Uso principal                                  |
 | --------- | ------- | ---------------------------------------------------- | ---------------------------------------------- |
-| P0        | Existe  | `POST /auth/register`                                | Crear cuenta                                   |
-| P0        | Existe  | `POST /auth/login`                                   | Iniciar sesión                                 |
-| P0        | Existe  | `POST /auth/refresh`                                 | Renovar sesión                                 |
+| P0        | Existe  | `POST /mobile/auth/register`                         | Crear cuenta                                   |
+| P0        | Existe  | `POST /mobile/auth/login`                            | Iniciar sesión                                 |
+| P0        | Existe  | `POST /mobile/auth/refresh`                          | Renovar sesión                                 |
+| P0        | Existe  | `POST /mobile/auth/email-confirmation/confirm`       | Confirmar el correo y abrir sesión             |
+| P0        | Existe  | `POST /mobile/auth/email-confirmation/resend`        | Reenviar la confirmación                       |
+| P0        | Existe  | `POST /mobile/auth/password-recovery`                | Solicitar recuperación                         |
+| P0        | Existe  | `POST /mobile/auth/password-reset`                   | Establecer contraseña nueva                    |
 | P0        | Existe  | `GET /me`                                            | Usuario autenticado                            |
 | P0        | Existe  | `GET/PATCH /me/customer`                             | Perfil de Cuenta                               |
 | P0        | Existe  | `GET/POST/PATCH/DELETE /me/addresses`                | Direcciones y checkout                         |
@@ -106,7 +110,7 @@ Leyenda:
 
 ## 3. Autenticación y cuenta
 
-### `POST /auth/register`
+### `POST /mobile/auth/register`
 
 Request:
 
@@ -122,24 +126,47 @@ Response `201`:
 
 ```json
 {
-  "user": {
-    "id": "usr_123",
-    "email": "milo@example.com",
-    "fullName": "Alejandro",
-    "avatarUrl": null
-  },
-  "session": {
-    "accessToken": "...",
-    "refreshToken": "...",
-    "expiresAt": "2026-09-01T12:00:00Z"
-  },
-  "verificationRequired": false
+  "user": null,
+  "session": null,
+  "verificationRequired": true
 }
 ```
 
-Si hace falta verificar el email, `session` puede ser `null` y `verificationRequired` debe ser `true`.
+El registro no inicia sesión: Resend envía un enlace HTTPS propio de Patitas,
+`session` es `null` y `verificationRequired` es `true` hasta confirmar. El enlace
+debe configurarse como Universal Link/App Link para abrir la app cuando esté
+instalada y usar la web como fallback.
 
-### `POST /auth/login`
+### `POST /mobile/auth/email-confirmation/confirm`
+
+Request:
+
+```json
+{ "token": "...", "type": "signup" }
+```
+
+Response `200`: objeto `user + session` con `verificationRequired: false`.
+Los reenvíos usan `type: "magiclink"`.
+
+### `POST /mobile/auth/email-confirmation/resend`
+
+Request: `{ "email": "milo@example.com" }`. Response `202` siempre neutral.
+
+### `POST /mobile/auth/password-recovery`
+
+Request: `{ "email": "milo@example.com" }`. Response `202` siempre neutral.
+
+### `POST /mobile/auth/password-reset`
+
+Request:
+
+```json
+{ "token": "...", "newPassword": "una-clave-nueva" }
+```
+
+Response `204`. El token es temporal y de un solo uso.
+
+### `POST /mobile/auth/login`
 
 Request:
 
@@ -152,7 +179,7 @@ Request:
 
 Response `200`: mismo objeto `user + session` de registro.
 
-### `POST /auth/refresh`
+### `POST /mobile/auth/refresh`
 
 Request:
 

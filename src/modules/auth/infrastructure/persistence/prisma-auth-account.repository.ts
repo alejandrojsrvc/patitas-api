@@ -33,7 +33,7 @@ export class PrismaAuthAccountRepository implements AuthAccountRepository {
             await transaction.customer.create({
               data: {
                 userId: linked.user.id,
-                fullName: linked.user.email,
+                fullName: identity.displayName ?? linked.user.email,
                 email: linked.user.email,
               },
             });
@@ -61,7 +61,7 @@ export class PrismaAuthAccountRepository implements AuthAccountRepository {
             role: domainUser.role,
             customer: {
               create: {
-                fullName: domainUser.email,
+                fullName: identity.displayName ?? domainUser.email,
                 email: domainUser.email,
               },
             },
@@ -70,7 +70,11 @@ export class PrismaAuthAccountRepository implements AuthAccountRepository {
         });
       } else if (user.role === 'CUSTOMER' && !user.customer) {
         await transaction.customer.create({
-          data: { userId: user.id, fullName: user.email, email: user.email },
+          data: {
+            userId: user.id,
+            fullName: identity.displayName ?? user.email,
+            email: user.email,
+          },
         });
       }
 
@@ -83,6 +87,25 @@ export class PrismaAuthAccountRepository implements AuthAccountRepository {
       });
       return toDomainUser(user);
     });
+  }
+
+  public async findIdentityByEmail(
+    email: string,
+  ): Promise<ProviderIdentity | null> {
+    const account = await this.prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() },
+      include: { externalIdentities: true },
+    });
+    const identity = account?.externalIdentities.find(
+      (candidate) => candidate.provider === 'supabase',
+    );
+    if (!account || !identity) return null;
+    return {
+      provider: identity.provider,
+      providerUserId: identity.providerUserId,
+      email: account.email,
+      emailVerified: true,
+    };
   }
 
   public async grantAdminByEmail(email: string): Promise<User | null> {

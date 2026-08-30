@@ -59,6 +59,7 @@ export interface EmailLayoutProps {
   eyebrow: string;
   title: string;
   children: ReactNode;
+  footer?: string;
 }
 
 export function EmailLayout({
@@ -66,6 +67,7 @@ export function EmailLayout({
   eyebrow,
   title,
   children,
+  footer = 'Recibís este correo porque aceptaste recibir comunicaciones de Patitas Inquietas. Podés cancelar los avisos desde tu cuenta.',
 }: EmailLayoutProps) {
   return (
     <Html lang="es">
@@ -76,10 +78,7 @@ export function EmailLayout({
           <Text style={eyebrowStyle}>Patitas Inquietas · {eyebrow}</Text>
           <Heading style={headingStyle}>{title}</Heading>
           <Section style={textStyle}>{children}</Section>
-          <Text style={footerStyle}>
-            Recibís este correo porque aceptaste recibir comunicaciones de
-            Patitas Inquietas. Podés cancelar los avisos desde tu cuenta.
-          </Text>
+          <Text style={footerStyle}>{footer}</Text>
         </Container>
       </Body>
     </Html>

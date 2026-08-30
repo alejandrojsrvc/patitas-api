@@ -3,4 +3,5 @@ export interface ProviderIdentity {
   providerUserId: string;
   email: string | null;
   emailVerified: boolean;
+  displayName?: string;
 }
