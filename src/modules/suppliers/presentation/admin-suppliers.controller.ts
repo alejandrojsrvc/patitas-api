@@ -54,8 +54,9 @@ export class AdminSuppliersController {
   public async exportSuppliers() {
     const suppliers = await this.suppliers.listAllSuppliers();
     return csv(
-      ['supplier_id', 'name', 'active'],
+      ['uuid', 'supplier_id', 'name', 'active'],
       suppliers.map((supplier) => [
+        supplier.id,
         supplier.id,
         supplier.name,
         supplier.active,
