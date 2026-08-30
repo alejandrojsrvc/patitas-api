@@ -1,4 +1,5 @@
 import { mkdir, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import pg from 'pg';
@@ -6,6 +7,9 @@ import pg from 'pg';
 loadEnv({ path: ['.env.local', '.env.dist'], quiet: true });
 
 /** @typedef {Record<string, unknown>} DatabaseRow */
+
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error('DATABASE_URL es obligatoria.');
@@ -82,7 +86,7 @@ try {
       AND b.name !~ '^Test [0-9a-f-]{36}$'
     ORDER BY p.created_at, p.id
   `);
-  const productIds = products.map((product) => stringField(product, 'id'));
+  const productIds = products.map((product) => sourceId(product, 'id'));
   if (productIds.length === 0)
     throw new Error('No hay productos reales para exportar.');
 
@@ -103,8 +107,9 @@ try {
     SELECT DISTINCT ON (id) * FROM selected ORDER BY id, depth DESC
   `);
   categories.sort((left, right) => {
-    if (left.parent_id === right.id) return 1;
-    if (right.parent_id === left.id) return -1;
+    if (optionalSourceId(left, 'parent_id') === sourceId(right, 'id')) return 1;
+    if (optionalSourceId(right, 'parent_id') === sourceId(left, 'id'))
+      return -1;
     return stringField(left, 'slug').localeCompare(stringField(right, 'slug'));
   });
 
@@ -117,7 +122,7 @@ try {
     SELECT * FROM product_variants WHERE product_id IN (${ids})
     ORDER BY product_id, weight_grams NULLS LAST, id
   `);
-  const variantIds = variants.map((variant) => stringField(variant, 'id'));
+  const variantIds = variants.map((variant) => sourceId(variant, 'id'));
   const variantSql = variantIds.map(sqlString).join(', ');
   const inventory = await queryRows(`
     SELECT * FROM inventory_items WHERE variant_id IN (${variantSql})
@@ -131,13 +136,65 @@ try {
     SELECT * FROM supplier_offers WHERE variant_id IN (${variantSql})
     ORDER BY supplier_id, variant_id, id
   `);
-  const offerIds = offers.map((offer) => stringField(offer, 'id'));
   const suppliers = await queryRows(`
     SELECT * FROM suppliers WHERE id IN (
       SELECT DISTINCT supplier_id FROM supplier_offers
       WHERE variant_id IN (${variantSql})
     ) ORDER BY name, id
   `);
+
+  // Production uses UUID columns. Preserve valid IDs and remap legacy IDs
+  // (for example category 1000) consistently across every foreign key.
+  const categoryIdMap = createIdMap(categories, 'categories');
+  const brandIdMap = createIdMap(brands, 'brands');
+  const productIdMap = createIdMap(products, 'products');
+  const variantIdMap = createIdMap(variants, 'product_variants');
+  const supplierIdMap = createIdMap(suppliers, 'suppliers');
+  const offerIdMap = createIdMap(offers, 'supplier_offers');
+  const inventoryIdMap = createIdMap(inventory, 'inventory_items');
+  const mediaIdMap = createIdMap(media, 'product_media');
+
+  const normalizedCategories = remapRows(
+    categories,
+    categoryIdMap,
+    ['parent_id'],
+    { parent_id: categoryIdMap },
+  );
+  const normalizedBrands = remapRows(brands, brandIdMap);
+  const normalizedProducts = remapRows(
+    products,
+    productIdMap,
+    ['brand_id', 'category_id'],
+    {
+      brand_id: brandIdMap,
+      category_id: categoryIdMap,
+    },
+  );
+  const normalizedVariants = remapRows(
+    variants,
+    variantIdMap,
+    ['product_id', 'preferred_supplier_offer_id'],
+    { product_id: productIdMap, preferred_supplier_offer_id: offerIdMap },
+  );
+  const normalizedInventory = remapRows(
+    inventory,
+    inventoryIdMap,
+    ['variant_id'],
+    { variant_id: variantIdMap },
+  );
+  const normalizedMedia = remapRows(
+    media,
+    mediaIdMap,
+    ['product_id', 'variant_id'],
+    { product_id: productIdMap, variant_id: variantIdMap },
+  );
+  const normalizedOffers = remapRows(
+    offers,
+    offerIdMap,
+    ['supplier_id', 'variant_id'],
+    { supplier_id: supplierIdMap, variant_id: variantIdMap },
+  );
+  const normalizedSuppliers = remapRows(suppliers, supplierIdMap);
 
   const categoryColumns = [
     'id',
@@ -232,36 +289,39 @@ try {
     'created_at',
   ];
 
-  const preferredOffers = variants
+  const normalizedOfferIds = new Set(
+    normalizedOffers.map((offer) => sourceId(offer, 'id')),
+  );
+  const preferredOffers = normalizedVariants
     .filter((variant) => {
       const offerId = optionalStringField(
         variant,
         'preferred_supplier_offer_id',
       );
-      return offerId !== null && offerIds.includes(offerId);
+      return offerId !== null && normalizedOfferIds.has(offerId);
     })
     .map((variant) => {
       const offerId = stringField(variant, 'preferred_supplier_offer_id');
       const id = stringField(variant, 'id');
       return `UPDATE "product_variants" SET "preferred_supplier_offer_id" = ${sqlValue(offerId)} WHERE "id" = ${sqlValue(id)};`;
     });
-  const variantsWithoutPreferred = variants.map((variant) => ({
+  const variantsWithoutPreferred = normalizedVariants.map((variant) => ({
     ...variant,
     preferred_supplier_offer_id: null,
   }));
 
   const sql = [
     '-- Exportación de catálogo Patitas para producción.',
-    '-- Excluye Test Product y marcas Test <uuid>. Preserva UUIDs.',
+    '-- Excluye Test Product y marcas Test <uuid>. Preserva UUIDs válidos.',
     'BEGIN;',
-    insertRows('categories', categoryColumns, categories),
-    insertRows('brands', brandColumns, brands),
-    insertRows('products', productColumns, products),
+    insertRows('categories', categoryColumns, normalizedCategories),
+    insertRows('brands', brandColumns, normalizedBrands),
+    insertRows('products', productColumns, normalizedProducts),
     insertRows('product_variants', variantColumns, variantsWithoutPreferred),
-    insertRows('inventory_items', inventoryColumns, inventory),
-    insertRows('product_media', mediaColumns, media),
-    insertRows('suppliers', supplierColumns, suppliers),
-    insertRows('supplier_offers', offerColumns, offers),
+    insertRows('inventory_items', inventoryColumns, normalizedInventory),
+    insertRows('product_media', mediaColumns, normalizedMedia),
+    insertRows('suppliers', supplierColumns, normalizedSuppliers),
+    insertRows('supplier_offers', offerColumns, normalizedOffers),
     preferredOffers.join('\n'),
     'COMMIT;',
     '',
@@ -271,7 +331,7 @@ try {
     bucket: 'product-media',
     generatedAt: new Date().toISOString(),
     objects: [
-      ...media.map((item) => {
+      ...normalizedMedia.map((item) => {
         const url = stringField(item, 'url');
         return {
           path: url,
@@ -281,7 +341,7 @@ try {
           variantId: optionalStringField(item, 'variant_id'),
         };
       }),
-      ...brands
+      ...normalizedBrands
         .filter((brand) => optionalStringField(brand, 'logo_url') !== null)
         .map((brand) => {
           const logoUrl = stringField(brand, 'logo_url');
@@ -332,7 +392,7 @@ Este paquete excluye los productos y marcas identificados inequívocamente como 
 
 ## 2. Datos
 
-El SQL es transaccional, conserva los UUID y restaura las ofertas preferidas después de crear las ofertas:
+El SQL es transaccional, conserva los UUID válidos, remapea IDs legacy a UUID deterministas y restaura las ofertas preferidas después de crear las ofertas:
 
 \`\`\`bash
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f ${outputDirectory}/catalog-data.sql
@@ -376,6 +436,80 @@ El comando sin \`--apply\` verifica todos los objetos del origen y no escribe en
 }
 
 /**
+ * @param {DatabaseRow[]} rows
+ * @param {string} entity
+ * @returns {Map<string, string>}
+ */
+function createIdMap(rows, entity) {
+  const result = new Map();
+  const used = new Set();
+  for (const row of rows) {
+    const original = sourceId(row, 'id');
+    const normalized = uuidPattern.test(original)
+      ? original
+      : stableUuid(entity, original);
+    if (used.has(normalized)) {
+      throw new Error(`Colisión de UUID al exportar ${entity}: ${original}.`);
+    }
+    result.set(original, normalized);
+    used.add(normalized);
+    if (normalized !== original) {
+      console.log(`[uuid-remap] ${entity}: ${original} -> ${normalized}`);
+    }
+  }
+  return result;
+}
+
+/**
+ * Generates a deterministic UUID v5-shaped value for a legacy source ID.
+ * The stable mapping makes a regenerated export safe to retry.
+ *
+ * @param {string} entity
+ * @param {string} original
+ */
+function stableUuid(entity, original) {
+  const bytes = createHash('sha1')
+    .update(`patitas-catalog:${entity}:${original}`)
+    .digest();
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString('hex').slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(
+    12,
+    16,
+  )}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/**
+ * @param {DatabaseRow[]} rows
+ * @param {Map<string, string>} idMap
+ * @param {string[]} [foreignKeys]
+ * @param {Record<string, Map<string, string>>} [foreignMaps]
+ * @returns {DatabaseRow[]}
+ */
+function remapRows(rows, idMap, foreignKeys = [], foreignMaps = {}) {
+  return rows.map((row) => {
+    const normalized = { ...row, id: idMap.get(sourceId(row, 'id')) };
+    for (const field of foreignKeys) {
+      const value = optionalSourceId(row, field);
+      if (value === null) {
+        normalized[field] = null;
+        continue;
+      }
+      const map = foreignMaps[field];
+      const mapped = map?.get(value);
+      if (!mapped) {
+        throw new Error(
+          `No se encontró la referencia ${field}=${value} al exportar el catálogo.`,
+        );
+      }
+      normalized[field] = mapped;
+    }
+    return normalized;
+  });
+}
+
+/**
  * @param {DatabaseRow} row
  * @param {string} field
  */
@@ -398,4 +532,31 @@ function optionalStringField(row, field) {
     throw new Error(`El campo ${field} debe ser un string o null.`);
   }
   return value;
+}
+
+/**
+ * @param {DatabaseRow} row
+ * @param {string} field
+ */
+function sourceId(row, field) {
+  const value = row[field];
+  if (
+    (typeof value !== 'string' &&
+      typeof value !== 'number' &&
+      typeof value !== 'bigint') ||
+    String(value).length === 0
+  ) {
+    throw new Error(`El campo ${field} debe ser un identificador válido.`);
+  }
+  return String(value);
+}
+
+/**
+ * @param {DatabaseRow} row
+ * @param {string} field
+ */
+function optionalSourceId(row, field) {
+  const value = row[field];
+  if (value === null || value === undefined) return null;
+  return sourceId(row, field);
 }

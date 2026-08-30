@@ -460,6 +460,14 @@ export class PrismaCatalogRepository implements CatalogRepository {
     };
   }
 
+  public async listAllAdminProducts(): Promise<Product[]> {
+    const records = await this.prisma.product.findMany({
+      include: productInclude,
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
+    return records.map(mapProduct);
+  }
+
   public async findProductById(id: string): Promise<Product | null> {
     const product = await this.prisma.product.findUnique({
       where: { id },

@@ -20,6 +20,7 @@ export interface SupplierOfferImportOptions {
 
 export interface SupplierRepository {
   listSuppliers(filter: SupplierFilter): Promise<SupplierPage>;
+  listAllSuppliers(): Promise<Supplier[]>;
   findSupplier(id: string): Promise<Supplier | null>;
   createSupplier(input: CreateSupplierInput): Promise<Supplier>;
   updateSupplier(id: string, input: UpdateSupplierInput): Promise<Supplier>;
@@ -28,6 +29,9 @@ export interface SupplierRepository {
     variantId?: string;
     active?: boolean;
   }): Promise<SupplierOffer[]>;
+  listAllOffers(): Promise<
+    Array<SupplierOffer & { supplierName: string; productName: string; sku: string | null }>
+  >;
   findOffer(id: string): Promise<SupplierOffer | null>;
   createOffer(input: CreateSupplierOfferInput): Promise<SupplierOffer>;
   updateOffer(

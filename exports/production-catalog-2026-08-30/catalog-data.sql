@@ -1,6 +1,6 @@
 -- Exportación de catálogo Patitas para producción.
 
--- Excluye Test Product y marcas Test <uuid>. Preserva UUIDs.
+-- Excluye Test Product y marcas Test <uuid>. Preserva UUIDs válidos.
 
 BEGIN;
 

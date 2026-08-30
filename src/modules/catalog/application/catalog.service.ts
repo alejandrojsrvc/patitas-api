@@ -203,6 +203,13 @@ export class CatalogService {
     };
   }
 
+  public async listAllAdminProducts() {
+    const products = await this.repository.listAllAdminProducts();
+    return Promise.all(
+      products.map((product) => this.resolveProductMedia(product)),
+    );
+  }
+
   public async getAdminProduct(id: string) {
     const product = await this.repository.findProductById(id);
     if (!product) throw new CatalogNotFoundError('El producto');

@@ -37,6 +37,9 @@ export class SupplierService {
   public listSuppliers(filter: SupplierFilter) {
     return this.repository.listSuppliers(filter);
   }
+  public listAllSuppliers() {
+    return this.repository.listAllSuppliers();
+  }
   public async findSupplier(id: string) {
     const supplier = await this.repository.findSupplier(id);
     if (!supplier) throw new SupplierNotFoundError('El proveedor no existe.');
@@ -65,6 +68,9 @@ export class SupplierService {
     active?: boolean;
   }) {
     return this.repository.listOffers(filter);
+  }
+  public listAllOffers() {
+    return this.repository.listAllOffers();
   }
   public async findOffer(id: string) {
     const offer = await this.repository.findOffer(id);

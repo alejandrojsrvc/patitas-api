@@ -40,6 +40,11 @@ interface PersistenceOffer {
   updatedAt: Date;
 }
 
+interface PersistenceExportOffer extends PersistenceOffer {
+  supplier: { name: string };
+  variant: { sku: string | null; product: { name: string } };
+}
+
 @Injectable()
 export class PrismaSupplierRepository implements SupplierRepository {
   public constructor(private readonly prisma: PrismaService) {}
@@ -65,6 +70,12 @@ export class PrismaSupplierRepository implements SupplierRepository {
       perPage: filter.perPage,
       total,
     };
+  }
+  public async listAllSuppliers(): Promise<Supplier[]> {
+    const suppliers = await this.prisma.supplier.findMany({
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
+    return suppliers.map(mapSupplier);
   }
   public async findSupplier(id: string): Promise<Supplier | null> {
     const supplier = await this.prisma.supplier.findUnique({ where: { id } });
@@ -95,6 +106,23 @@ export class PrismaSupplierRepository implements SupplierRepository {
       orderBy: [{ unitCost: 'asc' }, { updatedAt: 'desc' }],
     });
     return offers.map(mapOffer);
+  }
+  public async listAllOffers(): Promise<
+    Array<SupplierOffer & { supplierName: string; productName: string; sku: string | null }>
+  > {
+    const offers = await this.prisma.supplierOffer.findMany({
+      include: {
+        supplier: true,
+        variant: { select: { sku: true, product: { select: { name: true } } } },
+      },
+      orderBy: [{ supplier: { name: 'asc' } }, { updatedAt: 'desc' }, { id: 'asc' }],
+    });
+    return offers.map((offer: PersistenceExportOffer) => ({
+      ...mapOffer(offer),
+      supplierName: offer.supplier.name,
+      productName: offer.variant.product.name,
+      sku: offer.variant.sku,
+    }));
   }
   public async findOffer(id: string): Promise<SupplierOffer | null> {
     const offer = await this.prisma.supplierOffer.findUnique({ where: { id } });

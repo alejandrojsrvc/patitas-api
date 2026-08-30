@@ -40,6 +40,7 @@ export interface CatalogRepository {
   listPurchasedVariantIds(customerId: string): Promise<string[]>;
   findActiveFeedingGuide(productId: string): Promise<FeedingGuide | null>;
   listAdminProducts(filter: AdminProductFilter): Promise<Page<Product>>;
+  listAllAdminProducts(): Promise<Product[]>;
   findProductById(id: string): Promise<Product | null>;
   findProductBySlug(slug: string): Promise<Product | null>;
   findProductByVariantId(id: string): Promise<Product | null>;

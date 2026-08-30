@@ -11,7 +11,7 @@ Este paquete excluye los productos y marcas identificados inequívocamente como 
 
 ## 2. Datos
 
-El SQL es transaccional, conserva los UUID y restaura las ofertas preferidas después de crear las ofertas:
+El SQL es transaccional, conserva los UUID válidos, remapea IDs legacy a UUID deterministas y restaura las ofertas preferidas después de crear las ofertas:
 
 ```bash
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f /Users/alejandrojesussojoruiz/projects/patitas-api/exports/production-catalog-2026-08-30/catalog-data.sql

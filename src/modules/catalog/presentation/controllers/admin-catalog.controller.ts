@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Param,
   Patch,
   Post,
@@ -16,7 +17,13 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminAuditInterceptor } from '../../../../infrastructure/audit/admin-audit.interceptor';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiProduces,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from '../../../auth/presentation/guards/auth.guard';
 import { RolesGuard } from '../../../auth/presentation/guards/roles.guard';
 import { Roles } from '../../../auth/presentation/decorators/roles.decorator';
@@ -40,6 +47,7 @@ import {
   UploadProductMediaDto,
 } from '../dto/catalog.dto';
 import { CatalogExceptionFilter } from '../filters/catalog-exception.filter';
+import { csv } from '../../../../shared/application/csv';
 
 @ApiTags('Admin catalog')
 @ApiBearerAuth()
@@ -50,6 +58,33 @@ import { CatalogExceptionFilter } from '../filters/catalog-exception.filter';
 @Controller('admin')
 export class AdminCatalogController {
   public constructor(private readonly catalog: CatalogService) {}
+
+  @Get('products/export-csv')
+  @ApiProduces('text/csv')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="products.csv"')
+  public async exportProducts() {
+    const products = await this.catalog.listAllAdminProducts();
+    return csv(
+      [
+        'product_id', 'name', 'slug', 'description', 'brand_id', 'brand_name',
+        'category_id', 'category_name', 'species', 'line', 'life_stage',
+        'breed_size', 'status', 'variant_id', 'sku', 'barcode', 'presentation',
+        'weight_grams', 'sale_price', 'compare_at_price', 'variant_active',
+        'on_hand', 'reserved', 'available_quantity', 'preferred_supplier_offer_id',
+      ],
+      products.flatMap((product) => product.variants.map((variant) => [
+        product.id, product.name, product.slug, product.description,
+        product.brandId, product.brand.name, product.categoryId,
+        product.category?.name, product.species, product.line, product.lifeStage,
+        product.breedSize, product.status, variant.id, variant.sku,
+        variant.barcode, variant.presentation, variant.weightGrams,
+        variant.salePrice, variant.compareAtPrice, variant.active,
+        variant.onHand ?? 0, variant.reserved ?? 0, variant.availableQuantity,
+        variant.preferredSupplierOfferId,
+      ])),
+    );
+  }
 
   @Get('products') public async products(
     @Query() query: AdminProductsQueryDto,

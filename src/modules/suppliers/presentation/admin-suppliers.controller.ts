@@ -36,6 +36,7 @@ import {
   UpdateSupplierOfferDto,
 } from './supplier.dto';
 import { SupplierExceptionFilter } from './supplier-exception.filter';
+import { csv } from '../../../shared/application/csv';
 
 @ApiTags('Admin suppliers')
 @ApiBearerAuth()
@@ -46,6 +47,17 @@ import { SupplierExceptionFilter } from './supplier-exception.filter';
 @Controller('admin')
 export class AdminSuppliersController {
   public constructor(private readonly suppliers: SupplierService) {}
+  @Get('suppliers/export-csv')
+  @ApiProduces('text/csv')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="suppliers.csv"')
+  public async exportSuppliers() {
+    const suppliers = await this.suppliers.listAllSuppliers();
+    return csv(
+      ['supplier_id', 'name', 'active'],
+      suppliers.map((supplier) => [supplier.id, supplier.name, supplier.active]),
+    );
+  }
   @Get('suppliers') public list(@Query() query: SuppliersQueryDto) {
     return this.suppliers.listSuppliers(query);
   }
@@ -69,6 +81,26 @@ export class AdminSuppliersController {
     @Query() query: SupplierOffersQueryDto,
   ) {
     return this.suppliers.listOffers(query);
+  }
+  @Get('supplier-offers/export-csv')
+  @ApiProduces('text/csv')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="supplier-offers.csv"')
+  public async exportOffers() {
+    const offers = await this.suppliers.listAllOffers();
+    return csv(
+      [
+        'offer_id', 'supplier_id', 'supplier_name', 'variant_id', 'product_name',
+        'sku', 'supplier_sku', 'unit_cost', 'currency', 'stock_status',
+        'lead_time_hours', 'minimum_quantity', 'active', 'revision', 'updated_at',
+      ],
+      offers.map((offer) => [
+        offer.id, offer.supplierId, offer.supplierName, offer.variantId,
+        offer.productName, offer.sku, offer.supplierSku, offer.unitCost,
+        offer.currency, offer.stockStatus, offer.leadTimeHours,
+        offer.minimumQuantity, offer.active, offer.revision, offer.updatedAt,
+      ]),
+    );
   }
   @Get('supplier-offers/import-template')
   @ApiProduces('text/csv')
