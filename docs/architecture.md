@@ -14,6 +14,7 @@ Patitas API
 │   ├── /api/v1/offers
 │   ├── /api/v1/recently-viewed
 │   ├── /api/v1/products/:slug/view
+│   ├── /api/v1/storefront/bootstrap
 │   └── /api/v1/calculator/...
 │
 ├── Customer API
@@ -21,8 +22,10 @@ Patitas API
 │   ├── /api/v1/me/customer
 │   ├── /api/v1/me/addresses
 │   ├── /api/v1/me/orders
+│   ├── /api/v1/me/account
 │   ├── /api/v1/cart
-│   └── /api/v1/checkout
+│   ├── /api/v1/checkout
+│   └── /api/v1/checkout/sessions/:id/bootstrap
 │
 ├── Mobile API
 │   ├── /api/v1/mobile/auth
@@ -65,6 +68,12 @@ versionado `/api/v1`. No se exponen aliases sin versión.
 La superficie Mobile vive exclusivamente bajo `/api/v1/mobile`. Reutiliza el
 dominio y los casos de uso de Customer/Public, pero mantiene controllers, DTOs
 y mappers propios para no modificar el contrato consumido por Web.
+
+Las lecturas compuestas de Web se implementan en el módulo `storefront` como
+read models de aplicación sobre las superficies Public y Customer existentes.
+`/storefront/bootstrap` entrega únicamente sesión, ubicación y resumen de
+carrito; `/me/account` agrupa por sección los datos privados de la cuenta. Los
+controllers no consultan Prisma ni coordinan SDKs externos.
 
 ## Dirección de dependencias
 

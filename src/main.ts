@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Logger,
   ValidationError,
   ValidationPipe,
 } from '@nestjs/common';
@@ -11,8 +12,11 @@ import type { Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { StructuredExceptionFilter } from './shared/presentation/structured-exception.filter';
 
+const SLOW_REQUEST_THRESHOLD_MS = 750;
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const performanceLogger = new Logger('HttpPerformance');
   const configService = app.get(ConfigService);
   const corsOrigins = configService
     .getOrThrow<string>('CORS_ORIGINS')
@@ -55,6 +59,21 @@ async function bootstrap() {
           ? requestId.trim()
           : randomUUID();
       response.setHeader('x-request-id', request.requestId);
+      const startedAt = process.hrtime.bigint();
+      response.once('finish', () => {
+        const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+        if (durationMs < SLOW_REQUEST_THRESHOLD_MS) return;
+        performanceLogger.warn(
+          JSON.stringify({
+            event: 'slow_http_request',
+            requestId: request.requestId,
+            method: request.method,
+            path: request.originalUrl.split('?')[0],
+            statusCode: response.statusCode,
+            durationMs: Number(durationMs.toFixed(1)),
+          }),
+        );
+      });
       next();
     },
   );

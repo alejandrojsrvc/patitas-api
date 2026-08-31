@@ -1,0 +1,16 @@
+{
+  "statusCode": 409,
+  "code": "CHECKOUT_CONFLICT",
+  "message": "El carrito cambió mientras completabas la compra.",
+  "requestId": "request-fixture",
+  "traceId": "request-fixture",
+  "currentState": {
+    "session": {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "stage": "SHIPPING",
+      "status": "DRAFT",
+      "items": []
+    },
+    "shippingOptions": []
+  }
+}

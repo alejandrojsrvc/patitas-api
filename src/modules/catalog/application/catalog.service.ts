@@ -31,6 +31,7 @@ import type {
   SupplierOfferImportResult,
   SupplierOfferImportRow,
 } from '../../suppliers/domain/supplier.types';
+import type { FulfillmentService } from '../../fulfillment/application/fulfillment.service';
 
 interface CatalogSupplierOfferImporter {
   importOfferRows(
@@ -44,22 +45,33 @@ export class CatalogService {
     private readonly repository: CatalogRepository,
     private readonly storage?: StorageProvider,
     private readonly supplierOffers?: CatalogSupplierOfferImporter,
+    private readonly fulfillment?: FulfillmentService,
   ) {}
 
   public async listPublicProducts(filter: PublicProductFilter) {
     const page = await this.repository.listPublicProducts(filter);
     return {
       ...page,
-      items: await Promise.all(
-        page.items.map((product) => this.resolveProductMedia(product)),
-      ),
+      items: await this.resolveProducts(page.items),
     };
+  }
+
+  public listPublicProductFacets(filter: PublicProductFilter) {
+    return this.repository.listPublicProductFacets(filter);
+  }
+
+  public listCalculatorProjection() {
+    return this.repository.listCalculatorProjection();
+  }
+
+  public listSitemapProjection() {
+    return this.repository.listSitemapProjection();
   }
 
   public async getPublicProduct(slug: string) {
     const product = await this.repository.findPublicProductBySlug(slug);
     if (!product) throw new CatalogNotFoundError('El producto');
-    return this.resolveProductMedia(product);
+    return (await this.resolveProducts([product]))[0];
   }
 
   public async getPublicProductByVariantId(variantId: string) {
@@ -71,27 +83,34 @@ export class CatalogService {
     ) {
       throw new CatalogNotFoundError('La variante');
     }
-    return this.resolveProductMedia(product);
+    return (await this.resolveProducts([product]))[0];
   }
 
   public resolvePublicProduct(product: Product) {
     return this.resolveProductMedia(product);
   }
 
+  public resolvePublicProducts(products: Product[]) {
+    return this.resolveProducts(products);
+  }
+
   public async getPublicProductDetail(
     slug: string,
   ): Promise<PublicProductDetail> {
-    const product = await this.getPublicProduct(slug);
+    const rawProduct = await this.repository.findPublicProductBySlug(slug);
+    if (!rawProduct) throw new CatalogNotFoundError('El producto');
     const [feedingGuide, relatedProducts] = await Promise.all([
-      this.repository.findActiveFeedingGuide(product.id),
-      this.repository.listRelatedPublicProducts(product, 6),
+      this.repository.findActiveFeedingGuide(rawProduct.id),
+      this.repository.listRelatedPublicProducts(rawProduct, 6),
+    ]);
+    const resolvedProducts = await this.resolveProducts([
+      rawProduct,
+      ...relatedProducts,
     ]);
     return {
-      product,
+      product: resolvedProducts[0],
       feedingGuide,
-      relatedProducts: await Promise.all(
-        relatedProducts.map((item) => this.resolveProductMedia(item)),
-      ),
+      relatedProducts: resolvedProducts.slice(1),
     };
   }
 
@@ -197,23 +216,19 @@ export class CatalogService {
     const page = await this.repository.listAdminProducts(filter);
     return {
       ...page,
-      items: await Promise.all(
-        page.items.map((product) => this.resolveProductMedia(product)),
-      ),
+      items: await this.resolveProducts(page.items),
     };
   }
 
   public async listAllAdminProducts() {
     const products = await this.repository.listAllAdminProducts();
-    return Promise.all(
-      products.map((product) => this.resolveProductMedia(product)),
-    );
+    return this.resolveProducts(products);
   }
 
   public async getAdminProduct(id: string) {
     const product = await this.repository.findProductById(id);
     if (!product) throw new CatalogNotFoundError('El producto');
-    return this.resolveProductMedia(product);
+    return (await this.resolveProducts([product]))[0];
   }
 
   public async getAdminFeedingGuide(productId: string) {
@@ -808,7 +823,7 @@ export class CatalogService {
   }
   public async listBrands(publicOnly = false) {
     const brands = await this.repository.listBrands(publicOnly);
-    return Promise.all(brands.map((brand) => this.resolveBrand(brand)));
+    return this.resolveBrands(brands);
   }
   public async createBrand(input: CreateReferenceInput) {
     if (!input.name.trim())
@@ -886,13 +901,60 @@ export class CatalogService {
     }
   }
 
-  private async resolveProductMedia(product: Product): Promise<Product> {
-    return {
-      ...product,
-      media: await Promise.all(
-        product.media.map((media) => this.resolveMedia(media)),
-      ),
-    };
+  private async resolveProducts(products: Product[]): Promise<Product[]> {
+    const fulfillment = this.fulfillment;
+    const settings = fulfillment ? await fulfillment.getSettings() : undefined;
+    const enriched =
+      fulfillment && settings
+        ? await Promise.all(
+            products.map((product) =>
+              fulfillment.enrichProduct(product, undefined, settings),
+            ),
+          )
+        : products;
+    return this.resolveProductMediaBatch(enriched);
+  }
+
+  private async resolveProductMedia(
+    product: Product,
+    settings?: Awaited<
+      ReturnType<NonNullable<FulfillmentService>['getSettings']>
+    >,
+  ): Promise<Product> {
+    const enriched =
+      this.fulfillment && settings
+        ? await this.fulfillment.enrichProduct(product, undefined, settings)
+        : product;
+    return (await this.resolveProductMediaBatch([enriched]))[0];
+  }
+
+  private resolveProductMediaBatch(products: Product[]): Promise<Product[]> {
+    const storage = this.storage;
+    if (!storage) return Promise.resolve(products);
+    return Promise.resolve(
+      products.map((product) => ({
+        ...product,
+        brand: {
+          ...product.brand,
+          logoUrl:
+            product.brand.logoUrl && !isHttpUrl(product.brand.logoUrl)
+              ? storage.getPublicUrl({
+                  bucket: PRODUCT_MEDIA_BUCKET,
+                  path: product.brand.logoUrl,
+                })
+              : product.brand.logoUrl,
+        },
+        media: product.media.map((media) => ({
+          ...media,
+          url: isHttpUrl(media.url)
+            ? media.url
+            : storage.getPublicUrl({
+                bucket: PRODUCT_MEDIA_BUCKET,
+                path: media.url,
+              }),
+        })),
+      })),
+    );
   }
 
   private async ensureProduct(id: string): Promise<Product> {
@@ -901,35 +963,43 @@ export class CatalogService {
     return product;
   }
 
-  private async resolveMedia(media: ProductMedia): Promise<ProductMedia> {
+  private resolveMedia(media: ProductMedia): Promise<ProductMedia> {
     if (isHttpUrl(media.url) || !this.storage) {
-      return media;
+      return Promise.resolve(media);
     }
 
-    return {
+    return Promise.resolve({
       ...media,
-      url: await this.storage.getSignedUrl(
-        { bucket: PRODUCT_MEDIA_BUCKET, path: media.url },
-        PRODUCT_MEDIA_SIGNED_URL_TTL_SECONDS,
-      ),
-    };
+      url: this.storage.getPublicUrl({
+        bucket: PRODUCT_MEDIA_BUCKET,
+        path: media.url,
+      }),
+    });
   }
 
   private async resolveBrand(brand: Brand): Promise<Brand> {
-    if (!brand.logoUrl || isHttpUrl(brand.logoUrl) || !this.storage)
-      return brand;
-    return {
-      ...brand,
-      logoUrl: await this.storage.getSignedUrl(
-        { bucket: PRODUCT_MEDIA_BUCKET, path: brand.logoUrl },
-        PRODUCT_MEDIA_SIGNED_URL_TTL_SECONDS,
-      ),
-    };
+    return (await this.resolveBrands([brand]))[0];
+  }
+
+  private resolveBrands(brands: Brand[]): Promise<Brand[]> {
+    const storage = this.storage;
+    if (!storage) return Promise.resolve(brands);
+    return Promise.resolve(
+      brands.map((brand) => ({
+        ...brand,
+        logoUrl:
+          brand.logoUrl && !isHttpUrl(brand.logoUrl)
+            ? storage.getPublicUrl({
+                bucket: PRODUCT_MEDIA_BUCKET,
+                path: brand.logoUrl,
+              })
+            : brand.logoUrl,
+      })),
+    );
   }
 }
 
 const PRODUCT_MEDIA_BUCKET = 'product-media';
-const PRODUCT_MEDIA_SIGNED_URL_TTL_SECONDS = 3_600;
 const MAX_PRODUCT_IMAGE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',

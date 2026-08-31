@@ -21,19 +21,18 @@ export class AnalyticsService {
       viewerKey,
       Math.min(20, Math.max(1, limit)),
     );
-    if (!this.storage) return items;
-    return Promise.all(
-      items.map(async (item: RecentlyViewedProduct) => ({
-        ...item,
-        imageUrl:
-          item.imageUrl && !/^https?:\/\//i.test(item.imageUrl)
-            ? await this.storage!.getSignedUrl(
-                { bucket: 'product-media', path: item.imageUrl },
-                3_600,
-              )
-            : item.imageUrl,
-      })),
-    );
+    const storage = this.storage;
+    if (!storage) return items;
+    return items.map((item: RecentlyViewedProduct) => ({
+      ...item,
+      imageUrl:
+        item.imageUrl && !/^https?:\/\//i.test(item.imageUrl)
+          ? storage.getPublicUrl({
+              bucket: 'product-media',
+              path: item.imageUrl,
+            })
+          : item.imageUrl,
+    }));
   }
   public productStats(productId: string, from?: string, to?: string) {
     const end = to ? new Date(`${to}T23:59:59.999Z`) : new Date();

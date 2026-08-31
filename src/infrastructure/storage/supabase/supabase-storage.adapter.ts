@@ -16,6 +16,7 @@ export class SupabaseStorageAdapter implements StorageProvider {
       .from(input.object.bucket)
       .upload(input.object.path, input.data, {
         contentType: input.contentType,
+        cacheControl: '31536000',
         upsert: input.upsert ?? false,
       });
 
@@ -59,6 +60,69 @@ export class SupabaseStorageAdapter implements StorageProvider {
     return data.signedUrl;
   }
 
+  public async getSignedUrls(
+    objects: StoredObject[],
+    expiresInSeconds: number,
+  ): Promise<string[]> {
+    if (!Number.isInteger(expiresInSeconds) || expiresInSeconds <= 0) {
+      throw new ProviderOperationError(
+        'storage',
+        'getSignedUrls',
+        'expiresInSeconds debe ser un entero positivo.',
+      );
+    }
+    if (!objects.length) return [];
+
+    const grouped = new Map<string, StoredObject[]>();
+    for (const object of objects) {
+      const bucketObjects = grouped.get(object.bucket);
+      if (bucketObjects) bucketObjects.push(object);
+      else grouped.set(object.bucket, [object]);
+    }
+    const signedByObject = new Map<string, string>();
+
+    await Promise.all(
+      Array.from(grouped.entries()).map(async ([bucket, bucketObjects]) => {
+        const paths = Array.from(
+          new Set(bucketObjects.map((object) => object.path)),
+        );
+        const { data, error } = await this.adminClient.client.storage
+          .from(bucket)
+          .createSignedUrls(paths, expiresInSeconds);
+
+        if (error || !data || data.length !== paths.length) {
+          throw this.error('getSignedUrls', error);
+        }
+
+        data.forEach((result, index) => {
+          if (!result.signedUrl) {
+            throw this.error('getSignedUrls', result.error);
+          }
+          signedByObject.set(
+            storageObjectKey(bucket, paths[index]),
+            result.signedUrl,
+          );
+        });
+      }),
+    );
+
+    return objects.map((object) => {
+      const signedUrl = signedByObject.get(
+        storageObjectKey(object.bucket, object.path),
+      );
+      if (!signedUrl) throw this.error('getSignedUrls', undefined);
+      return signedUrl;
+    });
+  }
+
+  public getPublicUrl(object: StoredObject): string {
+    const { data } = this.adminClient.client.storage
+      .from(object.bucket)
+      .getPublicUrl(object.path);
+    if (!data.publicUrl) throw this.error('getPublicUrl', undefined);
+    return data.publicUrl;
+  }
+
   private error(operation: string, cause: unknown): ProviderOperationError {
     return new ProviderOperationError(
       'supabase',
@@ -68,3 +132,6 @@ export class SupabaseStorageAdapter implements StorageProvider {
     );
   }
 }
+
+const storageObjectKey = (bucket: string, path: string) =>
+  `${bucket}\u0000${path}`;

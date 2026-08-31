@@ -22,11 +22,13 @@ export class MobileMoneyResponseDto {
 }
 
 export class MobileFulfillmentResponseDto {
-  @ApiProperty({ enum: ['IN_STOCK', 'ON_REQUEST', 'OUT_OF_STOCK'] })
+  @ApiProperty({
+    enum: ['IN_STOCK', 'SUPPLIER_EXPRESS', 'SUPPLIER_STANDARD', 'OUT_OF_STOCK'],
+  })
   public status!: string;
   @ApiProperty() public purchasable!: boolean;
   @ApiPropertyOptional({ nullable: true }) public leadTimeHours!: number | null;
-  @ApiProperty({ enum: ['TODAY', 'TOMORROW', 'OUT_OF_STOCK'] })
+  @ApiProperty({ enum: ['TODAY', 'TOMORROW', 'LATER', 'OUT_OF_STOCK'] })
   public availability!: string;
   @ApiPropertyOptional({ nullable: true, format: 'date' })
   public earliestDeliveryDate!: string | null;

@@ -17,6 +17,7 @@ import type {
   ProductVariant,
   MobileProductFilter,
   PublicProductFilter,
+  PublicProductFacets,
   SupplierStockStatus,
   UpdateProductInput,
   UpdateReferenceInput,
@@ -34,6 +35,25 @@ export interface ExistingCatalogImportKeys {
 
 export interface CatalogRepository {
   listPublicProducts(filter: PublicProductFilter): Promise<Page<Product>>;
+  listPublicProductFacets(
+    filter: PublicProductFilter,
+  ): Promise<PublicProductFacets>;
+  listCalculatorProjection(): Promise<
+    Array<{
+      id: string;
+      name: string;
+      slug: string;
+      species: string | null;
+      lifeStage: string | null;
+      estimatedDailyGramsPerKg: string | null;
+      variants: Array<{
+        id: string;
+        presentation: string | null;
+        weightGrams: number | null;
+      }>;
+    }>
+  >;
+  listSitemapProjection(): Promise<Array<{ slug: string; updatedAt: Date }>>;
   findPublicProductBySlug(slug: string): Promise<Product | null>;
   listRelatedPublicProducts(
     product: Product,

@@ -1,0 +1,24 @@
+{
+  "viewer": {
+    "authenticated": true,
+    "id": "00000000-0000-4000-8000-000000000001",
+    "email": "cliente@example.com",
+    "displayName": "Cliente Patitas",
+    "role": "CUSTOMER"
+  },
+  "location": {
+    "label": "Casa",
+    "street": "Av. Siempre Viva",
+    "number": "742",
+    "apartment": null,
+    "city": "Buenos Aires",
+    "province": "CABA",
+    "postalCode": "1000"
+  },
+  "cart": {
+    "id": "00000000-0000-4000-8000-000000000002",
+    "itemCount": 2,
+    "subtotal": "106990.00",
+    "currency": "ARS"
+  }
+}

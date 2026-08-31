@@ -29,10 +29,14 @@ export class PublicProductMediaResponseDto {
 }
 
 export class PublicFulfillmentResponseDto {
-  @ApiProperty({ enum: ['IN_STOCK', 'ON_REQUEST', 'OUT_OF_STOCK'] })
-  public status!: 'IN_STOCK' | 'ON_REQUEST' | 'OUT_OF_STOCK';
   @ApiProperty() public purchasable!: boolean;
-  @ApiPropertyOptional({ nullable: true }) public leadTimeHours!: number | null;
+  @ApiProperty({ enum: ['TODAY', 'TOMORROW', 'LATER', 'OUT_OF_STOCK'] })
+  public availability!: string;
+  @ApiProperty() public label!: string;
+  @ApiProperty() public availableQuantity!: number;
+  @ApiPropertyOptional({ nullable: true }) public orderBefore!: string | null;
+  @ApiPropertyOptional({ nullable: true, format: 'date' })
+  public deliveryDate!: string | null;
 }
 
 export class PublicProductVariantResponseDto {
@@ -132,6 +136,39 @@ export class PublicProductDetailResponseDto extends PublicProductResponseDto {
   public relatedProducts!: PublicRelatedProductResponseDto[];
 }
 
+export class PublicStringFacetOptionResponseDto {
+  @ApiProperty() public value!: string;
+  @ApiProperty() public label!: string;
+  @ApiProperty() public count!: number;
+}
+
+export class PublicWeightFacetOptionResponseDto {
+  @ApiProperty() public value!: number;
+  @ApiProperty() public label!: string;
+  @ApiProperty() public count!: number;
+}
+
+export class PublicBrandFacetOptionResponseDto extends PublicStringFacetOptionResponseDto {
+  @ApiPropertyOptional({ nullable: true }) public logoUrl!: string | null;
+}
+
+export class PublicCategoryFacetOptionResponseDto extends PublicStringFacetOptionResponseDto {
+  @ApiProperty({ type: [String] }) public species!: string[];
+  @ApiProperty({ type: () => [PublicCategoryFacetOptionResponseDto] })
+  public children!: PublicCategoryFacetOptionResponseDto[];
+}
+
+export class PublicProductFacetsResponseDto {
+  @ApiProperty({ type: [PublicBrandFacetOptionResponseDto] })
+  public brands!: PublicBrandFacetOptionResponseDto[];
+  @ApiProperty({ type: [PublicCategoryFacetOptionResponseDto] })
+  public categories!: PublicCategoryFacetOptionResponseDto[];
+  @ApiProperty({ type: [PublicStringFacetOptionResponseDto] })
+  public lifeStages!: PublicStringFacetOptionResponseDto[];
+  @ApiProperty({ type: [PublicWeightFacetOptionResponseDto] })
+  public weights!: PublicWeightFacetOptionResponseDto[];
+}
+
 export class PublicPageMetaResponseDto {
   @ApiProperty() public page!: number;
   @ApiProperty() public perPage!: number;
@@ -144,6 +181,29 @@ export class PublicProductPageResponseDto {
   public items!: PublicProductResponseDto[];
   @ApiProperty({ type: PublicPageMetaResponseDto })
   public meta!: PublicPageMetaResponseDto;
+}
+
+export class PublicCalculatorVariantProjectionResponseDto {
+  @ApiProperty({ format: 'uuid' }) public id!: string;
+  @ApiPropertyOptional({ nullable: true }) public presentation!: string | null;
+  @ApiPropertyOptional({ nullable: true }) public weightGrams!: number | null;
+}
+
+export class PublicCalculatorProductProjectionResponseDto {
+  @ApiProperty({ format: 'uuid' }) public id!: string;
+  @ApiProperty() public name!: string;
+  @ApiProperty() public slug!: string;
+  @ApiPropertyOptional({ nullable: true }) public species!: string | null;
+  @ApiPropertyOptional({ nullable: true }) public lifeStage!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  public estimatedDailyGramsPerKg!: string | null;
+  @ApiProperty({ type: [PublicCalculatorVariantProjectionResponseDto] })
+  public variants!: PublicCalculatorVariantProjectionResponseDto[];
+}
+
+export class PublicSitemapProjectionResponseDto {
+  @ApiProperty() public slug!: string;
+  @ApiProperty({ format: 'date-time' }) public updatedAt!: Date;
 }
 
 export class FoodDurationRangeResponseDto {

@@ -80,7 +80,8 @@ export class CartController {
       throw new CartValidationError('Se requiere una sesión de cliente.');
     return this.customers
       .findByUserId(userId)
-      .then((customer) => this.carts.merge(input.cartToken, customer.id));
+      .then((customer) => this.carts.merge(input.cartToken, customer.id))
+      .then((cart) => ({ ...cart, cartMerged: true as const }));
   }
 }
 

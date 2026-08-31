@@ -703,6 +703,47 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
     });
     return orders.map(mapOrder);
   }
+  public async listCustomerOrderPage(
+    customerId: string,
+    page: number,
+    perPage: number,
+  ) {
+    const where = { customerId };
+    const [orders, total] = await this.prisma.$transaction([
+      this.prisma.order.findMany({
+        where,
+        select: {
+          id: true,
+          number: true,
+          status: true,
+          paymentStatus: true,
+          total: true,
+          currency: true,
+          createdAt: true,
+          _count: { select: { lines: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * perPage,
+        take: perPage,
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+    return {
+      items: orders.map((order) => ({
+        id: order.id,
+        number: order.number,
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        total: order.total.toString(),
+        currency: 'ARS' as const,
+        lineCount: order._count.lines,
+        createdAt: order.createdAt,
+      })),
+      page,
+      perPage,
+      total,
+    };
+  }
   public async findCustomerOrder(customerId: string, orderId: string) {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, customerId },

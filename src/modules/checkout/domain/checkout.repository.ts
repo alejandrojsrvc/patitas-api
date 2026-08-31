@@ -1,6 +1,7 @@
 import type {
   CheckoutOwner,
   CheckoutSession,
+  CustomerOrderListItem,
   OrderSummary,
 } from './checkout.types';
 
@@ -55,6 +56,16 @@ export interface CheckoutRepository {
   }>;
   findPublicOrder(id: string, token: string): Promise<OrderSummary>;
   listCustomerOrders(customerId: string): Promise<OrderSummary[]>;
+  listCustomerOrderPage(
+    customerId: string,
+    page: number,
+    perPage: number,
+  ): Promise<{
+    items: CustomerOrderListItem[];
+    page: number;
+    perPage: number;
+    total: number;
+  }>;
   findCustomerOrder(customerId: string, orderId: string): Promise<OrderSummary>;
   findPetPurchaseHistory(
     customerId: string,

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Param,
   Post,
   Query,
@@ -18,7 +19,10 @@ import {
   PublicBrandResponseDto,
   PublicCategoryResponseDto,
   PublicProductDetailResponseDto,
+  PublicProductFacetsResponseDto,
   PublicProductPageResponseDto,
+  PublicCalculatorProductProjectionResponseDto,
+  PublicSitemapProjectionResponseDto,
 } from '../dto/public-catalog-response.dto';
 import { CatalogExceptionFilter } from '../filters/catalog-exception.filter';
 import { PromotionService } from '../../../promotions/application/promotion.service';
@@ -35,16 +39,61 @@ export class PublicCatalogController {
 
   @Get('products')
   @ApiOkResponse({ type: PublicProductPageResponseDto })
+  @Header(
+    'Cache-Control',
+    'public, max-age=30, s-maxage=60, stale-while-revalidate=300',
+  )
   public async products(@Query() query: PublicProductsQueryDto) {
-    const page = await this.catalog.listPublicProducts(query);
-    const promotions = await this.activePromotions();
+    const [page, promotions] = await Promise.all([
+      this.catalog.listPublicProducts(query),
+      this.activePromotions(),
+    ]);
     return toHttpPage({
       ...page,
       items: page.items.map((product) => toPublicProduct(product, promotions)),
     });
   }
+
+  @Get('products/facets')
+  @ApiOkResponse({ type: PublicProductFacetsResponseDto })
+  @Header(
+    'Cache-Control',
+    'public, max-age=60, s-maxage=600, stale-while-revalidate=1800',
+  )
+  public async productFacets(@Query() query: PublicProductsQueryDto) {
+    const [facets, brands, categories] = await Promise.all([
+      this.catalog.listPublicProductFacets(query),
+      this.catalog.listBrands(true),
+      this.catalog.listCategories(true),
+    ]);
+    return toRenderableFacets(facets, brands, categories);
+  }
+  @Get('products/projections/calculator')
+  @ApiOkResponse({ type: [PublicCalculatorProductProjectionResponseDto] })
+  @Header(
+    'Cache-Control',
+    'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400',
+  )
+  public calculatorProjection() {
+    return this.catalog.listCalculatorProjection();
+  }
+
+  @Get('products/projections/sitemap')
+  @ApiOkResponse({ type: [PublicSitemapProjectionResponseDto] })
+  @Header(
+    'Cache-Control',
+    'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400',
+  )
+  public sitemapProjection() {
+    return this.catalog.listSitemapProjection();
+  }
+
   @Get('products/:slug')
   @ApiOkResponse({ type: PublicProductDetailResponseDto })
+  @Header(
+    'Cache-Control',
+    'public, max-age=30, s-maxage=60, stale-while-revalidate=300',
+  )
   public async product(@Param('slug') slug: string) {
     const detail = await this.catalog.getPublicProductDetail(slug);
     const promotions = await this.activePromotions();
@@ -52,11 +101,19 @@ export class PublicCatalogController {
   }
   @Get('categories')
   @ApiOkResponse({ type: [PublicCategoryResponseDto] })
+  @Header(
+    'Cache-Control',
+    'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400',
+  )
   public async categories() {
     return toCategoryTree(await this.catalog.listCategories(true));
   }
   @Get('categories/:slug')
   @ApiOkResponse({ type: PublicCategoryResponseDto })
+  @Header(
+    'Cache-Control',
+    'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400',
+  )
   public async category(@Param('slug') slug: string) {
     const category = await this.catalog.getPublicCategory(slug);
     const tree = toCategoryTree(await this.catalog.listCategories(true));
@@ -75,12 +132,20 @@ export class PublicCatalogController {
   }
   @Get('brands')
   @ApiOkResponse({ type: [PublicBrandResponseDto] })
+  @Header(
+    'Cache-Control',
+    'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400',
+  )
   public async brands() {
     const brands = await this.catalog.listBrands(true);
     return brands.map(toPublicReference);
   }
   @Get('brands/:slug')
   @ApiOkResponse({ type: PublicBrandResponseDto })
+  @Header(
+    'Cache-Control',
+    'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400',
+  )
   public brand(@Param('slug') slug: string) {
     return this.catalog.getPublicBrand(slug).then(toPublicReference);
   }
@@ -143,7 +208,16 @@ const toPublicProduct = (
     salePrice: variant.salePrice,
     compareAtPrice: variant.compareAtPrice,
     currency: 'ARS' as const,
-    fulfillment: toFulfillment(variant),
+    fulfillment: variant.fulfillment
+      ? {
+          purchasable: variant.fulfillment.purchasable,
+          availability: variant.fulfillment.availability,
+          label: variant.fulfillment.label,
+          availableQuantity: variant.fulfillment.availableQuantity,
+          orderBefore: variant.fulfillment.orderBefore,
+          deliveryDate: variant.fulfillment.deliveryDate,
+        }
+      : toFulfillment(variant),
   })),
   offers: applicablePromotions(product, promotions),
 });
@@ -269,7 +343,7 @@ const toFulfillment = (
 
 const toCategoryTree = (
   categories: Awaited<ReturnType<CatalogService['listCategories']>>,
-) => {
+): CategoryTreeNode[] => {
   const byParent = new Map<string | null, typeof categories>();
   for (const category of categories) {
     const siblings = byParent.get(category.parentId) ?? [];
@@ -279,16 +353,7 @@ const toCategoryTree = (
   const build = (
     parentId: string | null,
     path = new Set<string>(),
-  ): Array<{
-    id: string;
-    name: string;
-    slug: string;
-    description: string | null;
-    seoTitle: string | null;
-    seoDescription: string | null;
-    parentId: string | null;
-    children: unknown[];
-  }> =>
+  ): CategoryTreeNode[] =>
     (byParent.get(parentId) ?? []).flatMap((category) => {
       if (path.has(category.id)) return [];
       const nextPath = new Set(path).add(category.id);
@@ -308,17 +373,97 @@ const toCategoryTree = (
   return build(null);
 };
 
-const findCategoryNode = (
-  nodes: Array<{ slug: string; children: unknown[] }>,
-  slug: string,
-): unknown => {
+const toRenderableFacets = (
+  facets: Awaited<ReturnType<CatalogService['listPublicProductFacets']>>,
+  brands: Awaited<ReturnType<CatalogService['listBrands']>>,
+  categories: Awaited<ReturnType<CatalogService['listCategories']>>,
+) => {
+  const brandCounts = new Map(
+    facets.brands.map((option) => [option.value, option.count]),
+  );
+  const categoryData = new Map(
+    facets.categories.map((option) => [option.value, option]),
+  );
+  const categoryTree = toCategoryTree(categories);
+  const decorateCategory = (category: CategoryTreeNode): CategoryFacetNode => {
+    const children = category.children.map(decorateCategory);
+    const own = categoryData.get(category.slug);
+    return {
+      ...category,
+      value: category.slug,
+      label: category.name,
+      count:
+        (own?.count ?? 0) + children.reduce((sum, item) => sum + item.count, 0),
+      species: Array.from(
+        new Set([
+          ...(own?.species ?? []),
+          ...children.flatMap((item) => item.species),
+        ]),
+      ).sort(),
+      children,
+    };
+  };
+  const lifeStageCounts = new Map(
+    facets.lifeStages.map((option) => [option.value, option.count]),
+  );
+  const weightCounts = new Map(
+    facets.weights.map((option) => [option.value, option.count]),
+  );
+  const brandOptions = brands.map((brand) => ({
+    value: brand.slug,
+    label: brand.name,
+    count: brandCounts.get(brand.slug) ?? 0,
+    logoUrl: brand.logoUrl,
+  }));
+  const categoryOptions = categoryTree.map(decorateCategory);
+  return {
+    brands: brandOptions.filter((option) => option.count > 0),
+    categories: categoryOptions.filter((option) => option.count > 0),
+    lifeStages: Array.from(lifeStageCounts.entries())
+      .map(([value, count]) => ({ value, label: facetLabel(value), count }))
+      .filter((option) => option.count > 0)
+      .sort((left, right) => left.label.localeCompare(right.label)),
+    weights: Array.from(weightCounts.entries())
+      .map(([value, count]) => ({
+        value,
+        label: value >= 1000 ? `${value / 1000} kg` : `${value} g`,
+        count,
+      }))
+      .filter((option) => option.count > 0)
+      .sort((left, right) => left.value - right.value),
+  };
+};
+
+const facetLabel = (value: string) =>
+  value
+    .toLowerCase()
+    .replaceAll('_', ' ')
+    .replace(/(^|\s)\p{L}/gu, (letter) => letter.toUpperCase());
+
+const findCategoryNode = (nodes: CategoryTreeNode[], slug: string): unknown => {
   for (const node of nodes) {
     if (node.slug === slug) return node;
-    const child = findCategoryNode(
-      node.children as Array<{ slug: string; children: unknown[] }>,
-      slug,
-    );
+    const child = findCategoryNode(node.children, slug);
     if (child) return child;
   }
   return null;
 };
+
+interface CategoryTreeNode {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  parentId: string | null;
+  children: CategoryTreeNode[];
+}
+
+interface CategoryFacetNode extends Omit<CategoryTreeNode, 'children'> {
+  value: string;
+  label: string;
+  count: number;
+  species: string[];
+  children: CategoryFacetNode[];
+}

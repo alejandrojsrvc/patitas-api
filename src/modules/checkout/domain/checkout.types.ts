@@ -64,3 +64,14 @@ export interface OrderSummary {
   }>;
   createdAt: Date;
 }
+
+export interface CustomerOrderListItem {
+  id: string;
+  number: string | null;
+  status: string;
+  paymentStatus: string;
+  total: string;
+  currency: 'ARS';
+  lineCount: number;
+  createdAt: Date;
+}

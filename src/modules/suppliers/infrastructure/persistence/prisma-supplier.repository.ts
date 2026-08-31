@@ -34,6 +34,10 @@ interface PersistenceOffer {
   currency: string;
   stockStatus: string;
   leadTimeHours: number | null;
+  fulfillmentMode: string;
+  supplierCutoff: string | null;
+  supplierToDepotMinutes: number | null;
+  fulfillmentCost: { toString(): string };
   minimumQuantity: number;
   active: boolean;
   revision: number;
@@ -416,6 +420,10 @@ const mapOffer = (offer: PersistenceOffer): SupplierOffer => ({
   currency: 'ARS',
   stockStatus: offer.stockStatus as SupplierOffer['stockStatus'],
   leadTimeHours: offer.leadTimeHours,
+  fulfillmentMode: offer.fulfillmentMode as SupplierOffer['fulfillmentMode'],
+  supplierCutoff: offer.supplierCutoff,
+  supplierToDepotMinutes: offer.supplierToDepotMinutes,
+  fulfillmentCost: offer.fulfillmentCost.toString(),
   minimumQuantity: offer.minimumQuantity,
   active: offer.active,
   revision: offer.revision,

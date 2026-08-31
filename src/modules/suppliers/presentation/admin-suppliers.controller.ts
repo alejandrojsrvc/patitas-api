@@ -106,6 +106,10 @@ export class AdminSuppliersController {
         'currency',
         'stock_status',
         'lead_time_hours',
+        'fulfillment_mode',
+        'supplier_cutoff',
+        'supplier_to_depot_minutes',
+        'fulfillment_cost',
         'minimum_quantity',
         'active',
         'revision',
@@ -123,6 +127,10 @@ export class AdminSuppliersController {
         offer.currency,
         offer.stockStatus,
         offer.leadTimeHours,
+        offer.fulfillmentMode,
+        offer.supplierCutoff,
+        offer.supplierToDepotMinutes,
+        offer.fulfillmentCost,
         offer.minimumQuantity,
         offer.active,
         offer.revision,
@@ -139,8 +147,8 @@ export class AdminSuppliersController {
   )
   public importTemplate() {
     return [
-      'supplier_id,supplier_name,variant_id,sku,barcode,ean,supplier_sku,unit_cost,stock_status,lead_time_hours,minimum_quantity,active',
-      ',NOMBRE_PROVEEDOR,,,SKU_VARIANTE,,PROV-001,12500.00,AVAILABLE,48,1,true',
+      'supplier_id,supplier_name,variant_id,sku,barcode,ean,supplier_sku,unit_cost,stock_status,lead_time_hours,fulfillment_mode,supplier_cutoff,supplier_to_depot_minutes,fulfillment_cost,minimum_quantity,active',
+      ',NOMBRE_PROVEEDOR,,,SKU_VARIANTE,,PROV-001,12500.00,AVAILABLE,48,STANDARD,,,0.00,1,true',
       '',
     ].join('\n');
   }

@@ -1,0 +1,14 @@
+supplier_id,supplier_name,variant_id,sku,barcode,ean,supplier_sku,unit_cost,stock_status,lead_time_hours,minimum_quantity,active
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,8f015b46-1e6b-48b0-8afa-29e2a1491ea0,PI-EXC-CAT-AD-75K,,,,53865.00,UNKNOWN,,1,true
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,2d4f2de6-8915-4781-b05d-e3a6cde0f6ae,PI-EXC-CAT-KIT-75K,,,,59640.00,UNKNOWN,,1,true
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,1eabc201-21b4-441c-85b1-60b1285b3d35,PI-EXC-CAT-ST-75K,,,,62076.00,UNKNOWN,,1,true
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,6c296738-e9ea-4956-80e7-f79425a4b96c,PI-EXC-CAT-UR-75K,,,,62076.00,UNKNOWN,,1,true
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,2d256b33-3db3-46db-93c2-56d35696d875,PI-EXC-DOG-AD-SM-15K,,,,62412.00,UNKNOWN,,1,true
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,bda0e1d0-cd4b-4889-ac2c-ac47a8f42526,PI-OP-EQ-CAT-AD-75K,,,,41706.00,UNKNOWN,,1,true
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,2175d54f-2d22-4344-8206-686cbfce5567,PI-OP-EQ-CAT-KIT-3K,,,,19824.00,UNKNOWN,,1,true
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,2eecca1c-ec04-4110-a333-a8f65c10ebfa,PI-OP-EQ-CAT-ST-75K,,,,45885.00,UNKNOWN,,1,true
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,3253cab2-ed98-45c1-bbbb-39dadb4f6871,PI-OP-EQ-CAT-UR-75K,,,,47859.00,UNKNOWN,,1,true
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,0759918f-371c-4372-86ed-b48ec5ac1c95,PI-OP-EQ-DOG-AD-SM-15K,,,,49014.00,UNKNOWN,,1,true
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,b6b892b4-af53-45f4-8b09-d65750c3d6f4,PI-OP-EQ-DOG-AD-SM-75K,,,,26964.00,UNKNOWN,,1,true
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,81e02231-66dd-451b-96de-11c2193f20a3,PI-OP-EQ-DOG-PUP-MG-15K,,,,49014.00,UNKNOWN,,1,true
+6a5721f6-27d5-4d5a-9911-752a938d47cf,Distribuidora Pecas,f6ce1532-0a88-4b10-98bb-c5f37921000f,PI-OP-NOV-DOG-AD-MG-15K,,,,60627.00,UNKNOWN,,1,true

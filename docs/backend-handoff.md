@@ -52,6 +52,48 @@ requieren marca y categoría activas, una imagen y al menos una variante activa
 con SKU y precio de venta. El inventario y el proveedor determinan si la
 variante aparece disponible para comprar, pero no bloquean la publicación.
 
+### Disponibilidad y promesa de entrega por variante
+
+La configuración operativa se administra con `GET/PATCH
+/api/v1/admin/fulfillment/settings`. Sus valores iniciales son zona horaria
+`America/Argentina/Buenos_Aires`, corte del depósito `14:00`, entrega el mismo
+día habilitada y 30 minutos de preparación.
+
+Cada oferta de proveedor puede configurarse desde
+`PATCH /api/v1/admin/supplier-offers/:id` con:
+
+```json
+{
+  "fulfillmentMode": "EXPRESS",
+  "supplierCutoff": "13:00",
+  "supplierToDepotMinutes": 45,
+  "fulfillmentCost": "500.00"
+}
+```
+
+Las respuestas públicas de catálogo incluyen una proyección reducida de
+`fulfillment` dentro de cada variante. El costo de abastecimiento, el proveedor
+y el modo interno permanecen únicamente en respuestas administrativas. La
+proyección informa si está disponible hoy, mañana, más adelante o agotado;
+internamente se usa stock propio, oferta express o reposición estándar.
+
+Ejemplo de respuesta pública:
+
+```json
+{
+  "purchasable": true,
+  "availability": "TODAY",
+  "label": "Disponible para entrega hoy",
+  "availableQuantity": 0,
+  "orderBefore": "13:00",
+  "deliveryDate": "2026-08-31"
+}
+```
+
+La promesa es operativa y debe volver a validarse en checkout. La fecha final
+de entrega al cliente puede depender además de la zona y de la opción de
+envío seleccionada.
+
 ## Proveedores
 
 `POST /api/v1/admin/supplier-offers/import-csv` importa ofertas de proveedores
@@ -234,3 +276,74 @@ Los pedidos de equilibrio se calculan como `ceil(costos fijos mensuales /
 aporte por pedido)`. El resultado no usa inventario ni mix histórico de
 productos; solo puede usar la cantidad de pedidos del período anterior cuando
 el escenario tiene `ordersSource=PREVIOUS_PERIOD`.
+
+## Read models optimizados para Web
+
+La Web dispone de endpoints agregados para renderizar por SSR sin repetir
+consultas de sesión, perfil, direcciones y carrito.
+
+### Bootstrap del storefront
+
+```http
+GET /api/v1/storefront/bootstrap
+Authorization: Bearer <access-token>   # opcional
+X-Cart-Token: <cart-token>              # opcional
+```
+
+Devuelve `viewer`, la ubicación predeterminada mínima y un resumen del carrito.
+Es una lectura: no crea carritos y no ejecuta el merge del carrito anónimo.
+
+### Cuenta por sección
+
+```http
+GET /api/v1/me/account?section=overview
+GET /api/v1/me/account?section=orders&orderId=<uuid>
+GET /api/v1/me/account?section=addresses
+GET /api/v1/me/account?section=pets
+GET /api/v1/me/account?section=replenishments
+Authorization: Bearer <access-token>
+```
+
+La respuesta siempre contiene `viewer`, `profile`, `defaultAddress` y
+`section`. El contenido de `section` cambia según la consulta. La Web no debe
+solicitar además `/auth/me` ni `/me/customer` para renderizar esa pantalla.
+
+### Checkout completo
+
+```http
+GET /api/v1/checkout/sessions/:id/bootstrap
+Authorization: Bearer <access-token>       # cliente autenticado
+X-Checkout-Token: <checkout-token>          # invitado
+```
+
+Devuelve en una respuesta `viewer`, `session`, resumen de `cart`,
+`shippingOptions`, `paymentMethods` y `savedAddresses`. Los datos internos de
+proveedores, costos y reglas de fulfillment no forman parte del contrato.
+
+### Facetas del catálogo
+
+`GET /api/v1/products` conserva `items` y la paginación. Las facetas se
+consultan por separado con `GET /api/v1/products/facets`, usando la categoría,
+especie y demás contexto de la pantalla. Devuelve:
+
+- `brandSlugs`
+- `lifeStages`
+- `weightGrams`
+- `brands`
+- `categories`
+
+El detalle de producto ya contiene `relatedProducts`; la Web no debe consultar
+listados adicionales por marca y categoría.
+
+Las imágenes comerciales usan URLs públicas estables del bucket
+`product-media`; ya no se firman durante cada respuesta. Los buckets de datos
+privados no cambian de política.
+
+Las solicitudes HTTP que superan 750 ms generan un evento estructurado
+`slow_http_request` con `requestId`, método, ruta sin query string, estado y
+duración. El log no incluye headers, tokens ni el cuerpo de la solicitud.
+
+El contrato consolidado para migrar la Web está documentado en
+`docs/frontend-api-contract.md`. Sus fixtures viven en
+`docs/fixtures/frontend-api/` y prevalecen sobre ejemplos anteriores de este
+documento cuando describen los nuevos read models de pantalla.

@@ -1,0 +1,10 @@
+{
+  "viewer": { "authenticated": false },
+  "location": null,
+  "cart": {
+    "id": null,
+    "itemCount": 0,
+    "subtotal": "0.00",
+    "currency": "ARS"
+  }
+}

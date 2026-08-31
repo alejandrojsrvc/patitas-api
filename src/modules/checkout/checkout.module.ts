@@ -10,6 +10,7 @@ import {
   type StorageProvider,
 } from '../../shared/application/ports/storage-provider.interface';
 import { CheckoutService } from './application/checkout.service';
+import { CheckoutBootstrapService } from './application/checkout-bootstrap.service';
 import {
   CHECKOUT_REPOSITORY,
   type CheckoutRepository,
@@ -19,6 +20,8 @@ import { CheckoutController } from './presentation/checkout.controller';
 import { CustomerOrdersController } from './presentation/customer-orders.controller';
 import { PaymentsModule } from '../payments/payments.module';
 import { PaymentService } from '../payments/application/payment.service';
+import { PaymentProviderConfigurationService } from '../payments/application/payment-provider-configuration.service';
+import { CustomerAddressService } from '../customers/application/customer-address.service';
 import { CheckoutHandoffService } from './application/checkout-handoff.service';
 import {
   CHECKOUT_HANDOFF_REPOSITORY,
@@ -59,6 +62,24 @@ import { CheckoutHandoffController } from './presentation/checkout-handoff.contr
       ) => new CheckoutService(repository, storage, payments, shipping),
     },
     {
+      provide: CheckoutBootstrapService,
+      inject: [
+        CheckoutService,
+        CustomerAddressService,
+        PaymentProviderConfigurationService,
+      ],
+      useFactory: (
+        checkout: CheckoutService,
+        addresses: CustomerAddressService,
+        paymentConfigurations: PaymentProviderConfigurationService,
+      ) =>
+        new CheckoutBootstrapService(
+          checkout,
+          addresses,
+          paymentConfigurations,
+        ),
+    },
+    {
       provide: CHECKOUT_HANDOFF_REPOSITORY,
       useClass: PrismaCheckoutHandoffRepository,
     },
@@ -69,6 +90,6 @@ import { CheckoutHandoffController } from './presentation/checkout-handoff.contr
         new CheckoutHandoffService(repository),
     },
   ],
-  exports: [CheckoutService, CheckoutHandoffService],
+  exports: [CheckoutService, CheckoutBootstrapService, CheckoutHandoffService],
 })
 export class CheckoutModule {}

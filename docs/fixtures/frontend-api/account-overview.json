@@ -1,0 +1,27 @@
+{
+  "shell": {
+    "viewer": {
+      "authenticated": true,
+      "id": "00000000-0000-4000-8000-000000000001",
+      "email": "cliente@example.com",
+      "displayName": "Cliente Patitas",
+      "role": "CUSTOMER"
+    },
+    "location": null,
+    "cart": {
+      "id": null,
+      "itemCount": 0,
+      "subtotal": "0.00",
+      "currency": "ARS"
+    }
+  },
+  "profile": {
+    "id": "00000000-0000-4000-8000-000000000003",
+    "fullName": "Cliente Patitas"
+  },
+  "section": {
+    "type": "overview",
+    "orderCount": 4,
+    "recentOrders": []
+  }
+}

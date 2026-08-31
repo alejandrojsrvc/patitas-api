@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   Max,
   Min,
 } from 'class-validator';
@@ -41,6 +42,23 @@ export class CreateSupplierOfferDto {
   public stockStatus?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'ON_REQUEST' | 'UNKNOWN';
   @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0) public leadTimeHours?:
     number | null;
+  @ApiPropertyOptional({ enum: ['STANDARD', 'EXPRESS'] })
+  @IsOptional()
+  @IsIn(['STANDARD', 'EXPRESS'])
+  public fulfillmentMode?: 'STANDARD' | 'EXPRESS';
+  @ApiPropertyOptional({ example: '13:00' })
+  @IsOptional()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/)
+  public supplierCutoff?: string | null;
+  @ApiPropertyOptional({ example: 45 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  public supplierToDepotMinutes?: number | null;
+  @ApiPropertyOptional({ example: '500.00' })
+  @IsOptional()
+  @IsNumberString()
+  public fulfillmentCost?: string;
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()
@@ -63,6 +81,23 @@ export class UpdateSupplierOfferDto {
   public stockStatus?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'ON_REQUEST' | 'UNKNOWN';
   @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0) public leadTimeHours?:
     number | null;
+  @ApiPropertyOptional({ enum: ['STANDARD', 'EXPRESS'] })
+  @IsOptional()
+  @IsIn(['STANDARD', 'EXPRESS'])
+  public fulfillmentMode?: 'STANDARD' | 'EXPRESS';
+  @ApiPropertyOptional({ example: '13:00' })
+  @IsOptional()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/)
+  public supplierCutoff?: string | null;
+  @ApiPropertyOptional({ example: 45 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  public supplierToDepotMinutes?: number | null;
+  @ApiPropertyOptional({ example: '500.00' })
+  @IsOptional()
+  @IsNumberString()
+  public fulfillmentCost?: string;
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()

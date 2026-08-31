@@ -14,6 +14,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { StorefrontShellResponseDto } from '../../storefront/presentation/storefront-response.dto';
 
 export class CreateCheckoutSessionDto {
   @ApiProperty({ format: 'uuid' }) @IsUUID() public cartId!: string;
@@ -86,4 +87,37 @@ export class ConfirmCheckoutDto {
 }
 export class CouponDto {
   @ApiProperty() @IsString() @MaxLength(80) public code!: string;
+}
+
+export class CheckoutShippingOptionResponseDto {
+  @ApiProperty() public id!: string;
+  @ApiProperty({ example: '0.00' }) public cost!: string;
+  @ApiProperty({ type: [Object] }) public deliverySlots!: Array<
+    Record<string, unknown>
+  >;
+}
+
+export class CheckoutMutationResponseDto {
+  @ApiProperty({ type: Object }) public session!: Record<string, unknown>;
+  @ApiProperty({ type: [CheckoutShippingOptionResponseDto] })
+  public shippingOptions!: CheckoutShippingOptionResponseDto[];
+}
+
+export class CheckoutScreenResponseDto extends CheckoutMutationResponseDto {
+  @ApiProperty({ type: StorefrontShellResponseDto })
+  public shell!: StorefrontShellResponseDto;
+  @ApiProperty({ type: [Object] })
+  public paymentMethods!: Array<Record<string, unknown>>;
+  @ApiProperty({ type: [Object] })
+  public savedAddresses!: Array<Record<string, unknown>>;
+}
+
+export class CheckoutConflictResponseDto {
+  @ApiProperty({ example: 409 }) public statusCode!: 409;
+  @ApiProperty({ example: 'CHECKOUT_CONFLICT' }) public code!: string;
+  @ApiProperty() public message!: string;
+  @ApiPropertyOptional({ nullable: true }) public requestId!: string | null;
+  @ApiPropertyOptional({ nullable: true }) public traceId!: string | null;
+  @ApiPropertyOptional({ type: CheckoutMutationResponseDto })
+  public currentState?: CheckoutMutationResponseDto;
 }

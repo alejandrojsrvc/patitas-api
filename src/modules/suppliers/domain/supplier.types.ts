@@ -1,5 +1,6 @@
 export type SupplierOfferStockStatus =
   'AVAILABLE' | 'OUT_OF_STOCK' | 'ON_REQUEST' | 'UNKNOWN';
+export type SupplierOfferFulfillmentMode = 'STANDARD' | 'EXPRESS';
 
 export interface Supplier {
   id: string;
@@ -30,6 +31,10 @@ export interface SupplierOffer {
   currency: 'ARS';
   stockStatus: SupplierOfferStockStatus;
   leadTimeHours: number | null;
+  fulfillmentMode: SupplierOfferFulfillmentMode;
+  supplierCutoff: string | null;
+  supplierToDepotMinutes: number | null;
+  fulfillmentCost: string;
   minimumQuantity: number;
   active: boolean;
   revision: number;
@@ -51,6 +56,10 @@ export interface CreateSupplierOfferInput {
   unitCost: string;
   stockStatus?: SupplierOfferStockStatus;
   leadTimeHours?: number | null;
+  fulfillmentMode?: SupplierOfferFulfillmentMode;
+  supplierCutoff?: string | null;
+  supplierToDepotMinutes?: number | null;
+  fulfillmentCost?: string;
   minimumQuantity?: number;
   active?: boolean;
 }

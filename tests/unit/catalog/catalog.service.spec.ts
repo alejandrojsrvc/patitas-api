@@ -6,6 +6,7 @@ import type {
   ProductVariant,
 } from '../../../src/modules/catalog/domain/catalog.types';
 import type { CatalogRepository } from '../../../src/modules/catalog/domain/repositories/catalog.repository';
+import type { StorageProvider } from '../../../src/shared/application/ports/storage-provider.interface';
 
 const brand: Brand = {
   id: 'brand-1',
@@ -128,5 +129,87 @@ describe('CatalogService', () => {
     expect(result.source).toBe('GENERAL_FALLBACK');
     expect(result.dailyGrams).toEqual({ min: 170, max: 170 });
     expect(result.durationDays).toEqual({ min: 17.6, max: 17.6 });
+  });
+
+  it('returns stable public URLs for product media', async () => {
+    const products = [
+      {
+        ...product,
+        media: [
+          {
+            id: 'media-1',
+            productId: product.id,
+            variantId: null,
+            url: 'products/product-1/front.jpg',
+            altText: 'Frente',
+            displayOrder: 0,
+          },
+        ],
+      },
+      {
+        ...product,
+        id: 'product-2',
+        slug: 'producto-2',
+        media: [
+          {
+            id: 'media-2',
+            productId: 'product-2',
+            variantId: null,
+            url: 'products/product-2/front.jpg',
+            altText: 'Frente',
+            displayOrder: 0,
+          },
+        ],
+      },
+    ];
+    const repository = {
+      listPublicProducts: jest.fn().mockResolvedValue({
+        items: products,
+        page: 1,
+        perPage: 24,
+        total: 2,
+      }),
+    } as unknown as CatalogRepository;
+    const getPublicUrl = jest.fn(
+      ({ path }: { path: string }) => `https://cdn.test/${path}`,
+    );
+    const storage = { getPublicUrl } as unknown as StorageProvider;
+    const service = new CatalogService(repository, storage);
+
+    const result = await service.listPublicProducts({ page: 1, perPage: 24 });
+
+    expect(getPublicUrl).toHaveBeenCalledTimes(2);
+    expect(result.items.map((item) => item.media[0].url)).toEqual([
+      'https://cdn.test/products/product-1/front.jpg',
+      'https://cdn.test/products/product-2/front.jpg',
+    ]);
+  });
+
+  it('returns stable public URLs for brand logos', async () => {
+    const repository = {
+      listBrands: jest.fn().mockResolvedValue([
+        { ...brand, logoUrl: 'brands/brand-1/logo.png' },
+        {
+          ...brand,
+          id: 'brand-2',
+          slug: 'brand-2',
+          logoUrl: 'brands/brand-2/logo.png',
+        },
+      ]),
+    } as unknown as CatalogRepository;
+    const getPublicUrl = jest.fn(
+      ({ path }: { path: string }) => `https://cdn.test/${path}`,
+    );
+    const service = new CatalogService(repository, {
+      getPublicUrl,
+    } as unknown as StorageProvider);
+
+    const result = await service.listBrands(true);
+
+    expect(getPublicUrl).toHaveBeenCalledTimes(2);
+    expect(result.map((item) => item.logoUrl)).toEqual([
+      'https://cdn.test/brands/brand-1/logo.png',
+      'https://cdn.test/brands/brand-2/logo.png',
+    ]);
   });
 });

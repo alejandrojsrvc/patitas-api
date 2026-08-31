@@ -65,7 +65,10 @@ export class MobileCatalogService {
       limit: input.limit,
     });
     return {
-      items: await this.prepareProducts(page.items, input.postalCode),
+      items: await this.prepareProducts(
+        await this.resolvePublicProducts(page.items),
+        input.postalCode,
+      ),
       nextCursor: page.nextCursor,
     };
   }
@@ -135,7 +138,7 @@ export class MobileCatalogService {
   ): Promise<MobileProductView[]> {
     return Promise.all(
       products.map(async (product) => {
-        const resolved = await this.catalog.resolvePublicProduct(product);
+        const resolved = product;
         const shippingQuotes = new Map<
           string,
           Awaited<ReturnType<ShippingService['quote']>>
@@ -155,6 +158,15 @@ export class MobileCatalogService {
         }
         return { product: resolved, shippingQuotes };
       }),
+    );
+  }
+
+  private resolvePublicProducts(products: Product[]) {
+    if (typeof this.catalog.resolvePublicProducts === 'function') {
+      return this.catalog.resolvePublicProducts(products);
+    }
+    return Promise.all(
+      products.map((product) => this.catalog.resolvePublicProduct(product)),
     );
   }
 

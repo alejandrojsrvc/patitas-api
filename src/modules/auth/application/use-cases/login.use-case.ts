@@ -15,7 +15,9 @@ export class LoginUseCase {
 
   public async execute(input: LoginInput): Promise<AuthenticatedResult> {
     const session = await this.identityProvider.login(input);
-    const user = await this.accounts.provision(session.identity);
+    const user =
+      (await this.accounts.resolve(session.identity)) ??
+      (await this.accounts.provision(session.identity));
     return { status: 'authenticated', user, session };
   }
 }

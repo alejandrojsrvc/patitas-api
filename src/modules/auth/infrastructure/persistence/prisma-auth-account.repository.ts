@@ -9,6 +9,19 @@ import type { AuthAccountRepository } from '../../domain/repositories/auth-accou
 export class PrismaAuthAccountRepository implements AuthAccountRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
+  public async resolve(identity: ProviderIdentity): Promise<User | null> {
+    const linked = await this.prisma.externalIdentity.findUnique({
+      where: {
+        provider_providerUserId: {
+          provider: identity.provider,
+          providerUserId: identity.providerUserId,
+        },
+      },
+      include: { user: true },
+    });
+    return linked ? toDomainUser(linked.user) : null;
+  }
+
   public async provision(identity: ProviderIdentity): Promise<User> {
     if (!identity.email) {
       throw new ExternalIdentityConflictError();

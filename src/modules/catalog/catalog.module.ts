@@ -14,6 +14,8 @@ import { ShippingModule } from '../shipping/shipping.module';
 import { CustomersModule } from '../customers/customers.module';
 import { ShippingService } from '../shipping/application/shipping.service';
 import { CustomerService } from '../customers/application/customer.service';
+import { FulfillmentModule } from '../fulfillment/fulfillment.module';
+import { FulfillmentService } from '../fulfillment/application/fulfillment.service';
 import { CatalogService } from './application/catalog.service';
 import { MobileCatalogService } from './application/mobile-catalog.service';
 import {
@@ -33,18 +35,25 @@ import { PublicCatalogController } from './presentation/controllers/public-catal
     SuppliersModule,
     ShippingModule,
     CustomersModule,
+    FulfillmentModule,
   ],
   controllers: [PublicCatalogController, AdminCatalogController],
   providers: [
     { provide: CATALOG_REPOSITORY, useClass: PrismaCatalogRepository },
     {
       provide: CatalogService,
-      inject: [CATALOG_REPOSITORY, STORAGE_PROVIDER, SupplierService],
+      inject: [
+        CATALOG_REPOSITORY,
+        STORAGE_PROVIDER,
+        SupplierService,
+        FulfillmentService,
+      ],
       useFactory: (
         repository: CatalogRepository,
         storage: StorageProvider,
         supplierOffers: SupplierService,
-      ) => new CatalogService(repository, storage, supplierOffers),
+        fulfillment: FulfillmentService,
+      ) => new CatalogService(repository, storage, supplierOffers, fulfillment),
     },
     {
       provide: MobileCatalogService,

@@ -31,6 +31,11 @@ enum SupplierOfferStockStatus {
   UNKNOWN
 }
 
+enum SupplierOfferFulfillmentMode {
+  STANDARD
+  EXPRESS
+}
+
 enum PricingRuleSetStatus {
   DRAFT
   ACTIVE
@@ -468,6 +473,17 @@ model Supplier {
   @@map("suppliers")
 }
 
+model FulfillmentSettings {
+  id                    String   @id @default(uuid()) @db.Uuid
+  timezone              String   @default("America/Argentina/Buenos_Aires")
+  depotCutoff           String   @default("14:00") @map("depot_cutoff") @db.VarChar(5)
+  sameDayEnabled        Boolean  @default(true) @map("same_day_enabled")
+  depotHandlingMinutes  Int      @default(30) @map("depot_handling_minutes")
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("fulfillment_settings")
+}
+
 model SupplierOffer {
   id              String                   @id @default(uuid()) @db.Uuid
   supplierId      String                   @map("supplier_id") @db.Uuid
@@ -477,6 +493,10 @@ model SupplierOffer {
   currency        String                   @default("ARS") @db.VarChar(3)
   stockStatus     SupplierOfferStockStatus @default(UNKNOWN) @map("stock_status")
   leadTimeHours   Int?                     @map("lead_time_hours")
+  fulfillmentMode SupplierOfferFulfillmentMode @default(STANDARD) @map("fulfillment_mode")
+  supplierCutoff  String?                  @map("supplier_cutoff") @db.VarChar(5)
+  supplierToDepotMinutes Int?              @map("supplier_to_depot_minutes")
+  fulfillmentCost Decimal                  @default(0) @map("fulfillment_cost") @db.Decimal(14, 2)
   minimumQuantity Int                      @default(1) @map("minimum_quantity")
   active          Boolean                  @default(true)
   revision        Int                      @default(1)

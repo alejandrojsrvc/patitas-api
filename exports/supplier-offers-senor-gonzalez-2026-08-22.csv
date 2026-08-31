@@ -1,0 +1,18 @@
+supplier_id,supplier_name,variant_id,sku,barcode,ean,supplier_sku,unit_cost,stock_status,lead_time_hours,minimum_quantity,active
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,2705f8e9-115b-4793-b441-2b6456cb1a02,PI-CC-CAT-AD-FISH-8K,,,,41700.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,2d4f2de6-8915-4781-b05d-e3a6cde0f6ae,PI-EXC-CAT-KIT-75K,,,,60300.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,8f015b46-1e6b-48b0-8afa-29e2a1491ea0,PI-EXC-CAT-AD-75K,,,,54200.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,38b9d844-be57-45ad-b4d6-aa05321a5b22,PI-EXC-DOG-AD-MG-15K,,,,60300.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,2d256b33-3db3-46db-93c2-56d35696d875,PI-EXC-DOG-AD-SM-15K,,,,63200.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,58e7d88b-e497-4649-afb6-568727c177a2,PI-EXC-DOG-PUP-MG-15K,,,,66500.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,1eabc201-21b4-441c-85b1-60b1285b3d35,PI-EXC-CAT-ST-75K,,,,62800.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,6c296738-e9ea-4956-80e7-f79425a4b96c,PI-EXC-CAT-UR-75K,,,,62600.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,b1be3234-71cd-4933-a455-ae8307d6d577,PI-PP-CAT-AD-75K,,,,85460.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,b842615c-23e1-4675-88b9-9ee2fef31fa6,PI-PP-DOG-AD-SM-75K,,,,63780.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,c519a686-0d97-4149-95a3-ca2d43911180,PI-PP-CAT-UR-75K,,,,93820.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,7a85c56a-261f-46eb-87c5-050722131707,PI-RC-CAT-FIT32-75K,,,,103500.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,04a5aaa5-2172-4215-b29d-fd45f019d7c6,PI-RC-CAT-ST-WC-75K,,,,103200.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,7f8c7aea-229c-4bf7-a2b4-3a56129d93f5,PI-RC-CAT-KIT-75K,,,,103400.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,f840c0ce-ae4b-475f-b48f-4d0e33cb9ece,PI-RC-DOG-MED-AD-15K,,,,120600.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,83828187-1805-4d3a-9a88-92b67052af6c,PI-RC-DOG-MINI-AD-75K,,,,77300.00,UNKNOWN,,1,true
+8357d7a1-e03f-42cc-ab8d-0cbf97226e6f,Distrubuidora Señor Gonzalez,638bff9c-bc64-4713-9a5a-f8c3532d5534,PI-RC-DOG-MINI-PUP-75K,,,,70800.00,UNKNOWN,,1,true

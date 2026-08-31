@@ -8,6 +8,7 @@ import type {
   CartItemContext,
   CartOwner,
   CartPage,
+  CartSummary,
 } from '../domain/cart.types';
 import { CartValidationError } from '../domain/cart.error';
 
@@ -37,10 +38,10 @@ export class PrismaCartRepository implements CartRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
   public async findActive(owner: CartOwner): Promise<Cart | null> {
-    await this.markAbandoned();
     const record = await this.prisma.cart.findFirst({
       where: {
         status: 'ACTIVE',
+        lastActivityAt: { gte: activeCartThreshold() },
         ...(owner.customerId
           ? { customerId: owner.customerId }
           : { anonymousTokenHash: owner.tokenHash }),
@@ -50,6 +51,44 @@ export class PrismaCartRepository implements CartRepository {
       orderBy: { updatedAt: 'desc' },
     });
     return record ? mapCart(record) : null;
+  }
+
+  public async findActiveSummary(
+    owner: CartOwner,
+  ): Promise<CartSummary | null> {
+    const record = await this.prisma.cart.findFirst({
+      where: {
+        status: 'ACTIVE',
+        lastActivityAt: { gte: activeCartThreshold() },
+        ...(owner.customerId
+          ? { customerId: owner.customerId }
+          : { anonymousTokenHash: owner.tokenHash }),
+        source: owner.source ?? 'STORE',
+      },
+      select: {
+        id: true,
+        items: {
+          select: {
+            quantity: true,
+            variant: { select: { salePrice: true } },
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+    if (!record) return null;
+    return {
+      id: record.id,
+      itemCount: record.items.reduce((total, item) => total + item.quantity, 0),
+      subtotal: record.items
+        .reduce(
+          (total, item) =>
+            total + Number(item.variant.salePrice ?? 0) * item.quantity,
+          0,
+        )
+        .toFixed(2),
+      currency: 'ARS',
+    };
   }
 
   public async create(owner: CartOwner): Promise<Cart> {
@@ -383,6 +422,8 @@ const findOrCreateTransactionCart = async (
     throw error;
   }
 };
+
+const activeCartThreshold = () => new Date(Date.now() - 24 * 60 * 60 * 1000);
 
 const isUniqueConstraintError = (error: unknown): boolean =>
   error instanceof Prisma.PrismaClientKnownRequestError &&

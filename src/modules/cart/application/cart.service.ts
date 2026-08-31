@@ -18,6 +18,10 @@ export class CartService {
     return cart ? this.resolveMedia(cart) : null;
   }
 
+  public findActiveSummary(owner: CartOwner) {
+    return this.repository.findActiveSummary(owner);
+  }
+
   public async getOrCreate(
     owner: CartOwner,
   ): Promise<{ cart: Cart; token?: string }> {
@@ -97,34 +101,39 @@ export class CartService {
     return { ...cart, ...(current.token ? { cartToken: current.token } : {}) };
   }
 
-  public merge(
+  public async merge(
     token: string,
     customerId: string,
     source: CartOwner['source'] = 'STORE',
   ) {
-    return this.repository.merge(hashAnonymousToken(token), customerId, source);
+    return this.resolveMedia(
+      await this.repository.merge(
+        hashAnonymousToken(token),
+        customerId,
+        source,
+      ),
+    );
   }
 
   public listAbandoned(page: number, perPage: number) {
     return this.repository.listAbandoned(page, perPage);
   }
 
-  private async resolveMedia(cart: Cart): Promise<Cart> {
-    if (!this.storage) return cart;
-    return {
+  private resolveMedia(cart: Cart): Promise<Cart> {
+    const storage = this.storage;
+    if (!storage) return Promise.resolve(cart);
+    return Promise.resolve({
       ...cart,
-      items: await Promise.all(
-        cart.items.map(async (item) => ({
-          ...item,
-          imageUrl:
-            item.imageUrl && !/^https?:\/\//i.test(item.imageUrl)
-              ? await this.storage!.getSignedUrl(
-                  { bucket: 'product-media', path: item.imageUrl },
-                  3_600,
-                )
-              : item.imageUrl,
-        })),
-      ),
-    };
+      items: cart.items.map((item) => ({
+        ...item,
+        imageUrl:
+          item.imageUrl && !/^https?:\/\//i.test(item.imageUrl)
+            ? storage.getPublicUrl({
+                bucket: 'product-media',
+                path: item.imageUrl,
+              })
+            : item.imageUrl,
+      })),
+    });
   }
 }

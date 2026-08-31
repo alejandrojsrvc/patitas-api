@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Headers,
   Param,
   Patch,
@@ -11,16 +12,27 @@ import {
   UseFilters,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiHeader,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
 import { OptionalAuthGuard } from '../../auth/presentation/guards/optional-auth.guard';
 import { CustomerService } from '../../customers/application/customer.service';
+import type { AuthenticatedUser } from '../../auth/presentation/authenticated-user';
 import { CheckoutService } from '../application/checkout.service';
+import { CheckoutBootstrapService } from '../application/checkout-bootstrap.service';
 import { CheckoutExceptionFilter } from './checkout.exception.filter';
 import { CheckoutValidationError } from '../domain/checkout.error';
 import {
   ContactStepDto,
   ConfirmCheckoutDto,
+  CheckoutMutationResponseDto,
+  CheckoutConflictResponseDto,
+  CheckoutScreenResponseDto,
   CreateCheckoutSessionDto,
   CouponDto,
   PaymentMethodStepDto,
@@ -40,6 +52,7 @@ export class CheckoutController {
   public constructor(
     private readonly checkout: CheckoutService,
     private readonly customers: CustomerService,
+    private readonly bootstrap: CheckoutBootstrapService,
   ) {}
 
   @Post('sessions') public async create(
@@ -60,23 +73,39 @@ export class CheckoutController {
       await ownerFromRequest(request, this.customers, 'checkout'),
     );
   }
-  @Patch('sessions/:id/contact') public async contact(
+  @Get('sessions/:id/bootstrap')
+  @ApiOkResponse({ type: CheckoutScreenResponseDto })
+  @Header('Cache-Control', 'private, no-store')
+  public async getBootstrap(@Req() request: Request, @Param('id') id: string) {
+    return this.bootstrap.get({
+      id,
+      owner: await ownerFromRequest(request, this.customers, 'checkout'),
+      user: (request as Request & { user?: AuthenticatedUser }).user,
+    });
+  }
+  @ApiOkResponse({ type: CheckoutMutationResponseDto })
+  @ApiConflictResponse({ type: CheckoutConflictResponseDto })
+  @Patch('sessions/:id/contact')
+  public async contact(
     @Req() request: Request,
     @Param('id') id: string,
     @Body() input: ContactStepDto,
   ) {
-    return this.checkout.setContact(
+    return this.checkout.setContactWithState(
       id,
       await ownerFromRequest(request, this.customers, 'checkout'),
       input,
     );
   }
-  @Patch('sessions/:id/shipping-address') public async address(
+  @ApiOkResponse({ type: CheckoutMutationResponseDto })
+  @ApiConflictResponse({ type: CheckoutConflictResponseDto })
+  @Patch('sessions/:id/shipping-address')
+  public async address(
     @Req() request: Request,
     @Param('id') id: string,
     @Body() input: ShippingAddressStepDto,
   ) {
-    return this.checkout.setAddress(
+    return this.checkout.setAddressWithState(
       id,
       await ownerFromRequest(request, this.customers, 'checkout'),
       input.address,
@@ -98,44 +127,53 @@ export class CheckoutController {
           })),
       );
   }
-  @Patch('sessions/:id/shipping-option') public async option(
+  @Patch('sessions/:id/shipping-option')
+  @ApiOkResponse({ type: CheckoutMutationResponseDto })
+  @ApiConflictResponse({ type: CheckoutConflictResponseDto })
+  public async option(
     @Req() request: Request,
     @Param('id') id: string,
     @Body() input: ShippingOptionStepDto,
   ) {
-    return this.checkout.setShippingOption(
+    return this.checkout.setShippingOptionWithState(
       id,
       await ownerFromRequest(request, this.customers, 'checkout'),
       input.shippingOptionId,
       input.deliverySlotId,
     );
   }
-  @Post('sessions/:id/coupon') public async coupon(
+  @ApiOkResponse({ type: CheckoutMutationResponseDto })
+  @ApiConflictResponse({ type: CheckoutConflictResponseDto })
+  @Post('sessions/:id/coupon')
+  public async coupon(
     @Req() request: Request,
     @Param('id') id: string,
     @Body() input: CouponDto,
   ) {
-    return this.checkout.applyCoupon(
+    return this.checkout.applyCouponWithState(
       id,
       await ownerFromRequest(request, this.customers, 'checkout'),
       input.code,
     );
   }
-  @Delete('sessions/:id/coupon') public async clearCoupon(
-    @Req() request: Request,
-    @Param('id') id: string,
-  ) {
-    return this.checkout.clearCoupon(
+  @ApiOkResponse({ type: CheckoutMutationResponseDto })
+  @ApiConflictResponse({ type: CheckoutConflictResponseDto })
+  @Delete('sessions/:id/coupon')
+  public async clearCoupon(@Req() request: Request, @Param('id') id: string) {
+    return this.checkout.clearCouponWithState(
       id,
       await ownerFromRequest(request, this.customers, 'checkout'),
     );
   }
-  @Patch('sessions/:id/payment-method') public async payment(
+  @ApiOkResponse({ type: CheckoutMutationResponseDto })
+  @ApiConflictResponse({ type: CheckoutConflictResponseDto })
+  @Patch('sessions/:id/payment-method')
+  public async payment(
     @Req() request: Request,
     @Param('id') id: string,
     @Body() input: PaymentMethodStepDto,
   ) {
-    return this.checkout.setPaymentMethod(
+    return this.checkout.setPaymentMethodWithState(
       id,
       await ownerFromRequest(request, this.customers, 'checkout'),
       input.paymentMethod,

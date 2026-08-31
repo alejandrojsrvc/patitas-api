@@ -1,9 +1,16 @@
-import type { Cart, CartItemContext, CartOwner, CartPage } from './cart.types';
+import type {
+  Cart,
+  CartItemContext,
+  CartOwner,
+  CartPage,
+  CartSummary,
+} from './cart.types';
 
 export const CART_REPOSITORY = Symbol('CART_REPOSITORY');
 
 export interface CartRepository {
   findActive(owner: CartOwner): Promise<Cart | null>;
+  findActiveSummary(owner: CartOwner): Promise<CartSummary | null>;
   create(owner: CartOwner): Promise<Cart>;
   setItem(
     owner: CartOwner,

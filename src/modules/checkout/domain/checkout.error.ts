@@ -7,7 +7,10 @@ export class CheckoutNotFoundError extends DomainError {
 }
 
 export class CheckoutConflictError extends DomainError {
-  public constructor(message: string) {
+  public constructor(
+    message: string,
+    public readonly currentState?: unknown,
+  ) {
     super(message, 'CHECKOUT_CONFLICT');
   }
 }

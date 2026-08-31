@@ -52,6 +52,21 @@ export interface InventoryMovement {
 export type SupplierStockStatus =
   'AVAILABLE' | 'OUT_OF_STOCK' | 'ON_REQUEST' | 'UNKNOWN';
 
+export type SupplierFulfillmentMode = 'STANDARD' | 'EXPRESS';
+
+export interface VariantFulfillment {
+  status:
+    'IN_STOCK' | 'SUPPLIER_EXPRESS' | 'SUPPLIER_STANDARD' | 'OUT_OF_STOCK';
+  purchasable: boolean;
+  availability: 'TODAY' | 'TOMORROW' | 'LATER' | 'OUT_OF_STOCK';
+  label: string;
+  availableQuantity: number;
+  source: 'OWN_STOCK' | 'SUPPLIER_EXPRESS' | 'SUPPLIER_STANDARD' | null;
+  orderBefore: string | null;
+  deliveryDate: string | null;
+  supplierFulfillmentCost: string | null;
+}
+
 export interface ProductVariant {
   id: string;
   productId: string;
@@ -67,6 +82,11 @@ export interface ProductVariant {
   availableQuantity: number;
   supplierStockStatus: SupplierStockStatus | null;
   supplierLeadTimeHours: number | null;
+  supplierFulfillmentMode?: SupplierFulfillmentMode | null;
+  supplierCutoff?: string | null;
+  supplierToDepotMinutes?: number | null;
+  supplierFulfillmentCost?: string | null;
+  fulfillment?: VariantFulfillment;
   onHand?: number;
   reserved?: number;
 }
@@ -189,6 +209,17 @@ export interface PublicProductFilter {
   sort?: 'featured' | 'name_asc' | 'price_asc' | 'price_desc';
   page: number;
   perPage: number;
+}
+
+export interface PublicProductFacets {
+  brands: Array<{ value: string; count: number }>;
+  categories: Array<{
+    value: string;
+    count: number;
+    species: string[];
+  }>;
+  lifeStages: Array<{ value: string; count: number }>;
+  weights: Array<{ value: number; count: number }>;
 }
 
 export interface MobileProductFilter {

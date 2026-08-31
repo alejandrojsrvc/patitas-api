@@ -24,10 +24,16 @@ export class CheckoutExceptionFilter implements ExceptionFilter {
           : error instanceof CheckoutConflictError
             ? HttpStatus.CONFLICT
             : HttpStatus.UNPROCESSABLE_ENTITY;
+    const response = errorResponse(host, status, error);
     host
       .switchToHttp()
       .getResponse<Response>()
       .status(status)
-      .json(errorResponse(host, status, error));
+      .json({
+        ...response,
+        ...(error instanceof CheckoutConflictError && error.currentState
+          ? { currentState: error.currentState }
+          : {}),
+      });
   }
 }

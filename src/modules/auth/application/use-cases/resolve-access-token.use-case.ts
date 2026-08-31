@@ -10,6 +10,9 @@ export class ResolveAccessTokenUseCase {
 
   public async execute(accessToken: string): Promise<User> {
     const identity = await this.identityProvider.verifyToken(accessToken);
-    return this.accounts.provision(identity);
+    return (
+      (await this.accounts.resolve(identity)) ??
+      this.accounts.provision(identity)
+    );
   }
 }

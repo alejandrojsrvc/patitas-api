@@ -5,6 +5,7 @@ export const AUTH_ACCOUNT_REPOSITORY = Symbol('AUTH_ACCOUNT_REPOSITORY');
 
 export interface AuthAccountRepository {
   provision(identity: ProviderIdentity): Promise<User>;
+  resolve(identity: ProviderIdentity): Promise<User | null>;
   findIdentityByEmail(email: string): Promise<ProviderIdentity | null>;
   grantAdminByEmail(email: string): Promise<User | null>;
 }

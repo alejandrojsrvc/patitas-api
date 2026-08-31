@@ -1,6 +1,9 @@
 import { hashAnonymousToken } from '../../../shared/application/anonymous-token';
-import { CheckoutValidationError } from '../domain/checkout.error';
-import type { CheckoutOwner } from '../domain/checkout.types';
+import {
+  CheckoutConflictError,
+  CheckoutValidationError,
+} from '../domain/checkout.error';
+import type { CheckoutOwner, CheckoutSession } from '../domain/checkout.types';
 import type { CheckoutRepository } from '../domain/checkout.repository';
 import type { StorageProvider } from '../../../shared/application/ports/storage-provider.interface';
 import type { PaymentService } from '../../payments/application/payment.service';
@@ -29,6 +32,18 @@ export class CheckoutService {
     owner: CheckoutOwner,
   ): Promise<ShippingOptionQuote[]> {
     const session = await this.repository.find(id, owner);
+    return this.shippingOptionsForSession(session);
+  }
+  public async shippingOptionsForSession(session: {
+    shippingAddress: Record<string, string> | null;
+    subtotal: string;
+    discountTotal: string;
+    items: Array<{
+      weightGrams?: number | null;
+      quantity: number;
+      availableQuantity: number;
+    }>;
+  }): Promise<ShippingOptionQuote[]> {
     if (!this.shipping) return [];
     const address = session.shippingAddress ?? {};
     const weightGrams = session.items.reduce<number | undefined>(
@@ -79,6 +94,19 @@ export class CheckoutService {
       })
       .then((session) => this.resolveMedia(session));
   }
+  public async setContactWithState(
+    id: string,
+    owner: CheckoutOwner,
+    input: {
+      contactName: string;
+      contactEmail: string;
+      contactPhone?: string | null;
+    },
+  ) {
+    return this.recoverableMutation(id, owner, () =>
+      this.setContact(id, owner, input),
+    );
+  }
   public setAddress(
     id: string,
     owner: CheckoutOwner,
@@ -101,6 +129,33 @@ export class CheckoutService {
       .setAddress(id, owner, address, deliveryInstructions)
       .then((session) => this.resolveMedia(session));
   }
+  public async setAddressWithState(
+    id: string,
+    owner: CheckoutOwner,
+    address: Record<string, string>,
+  ) {
+    return this.recoverableMutation(id, owner, async () => {
+      let session = await this.setAddress(id, owner, address);
+      let shippingOptions = await this.publicShippingOptions(session);
+      if (shippingOptions.length === 1) {
+        const onlyOption = shippingOptions[0];
+        const deliverySlotId =
+          onlyOption.deliverySlots.length === 1
+            ? onlyOption.deliverySlots[0].id
+            : undefined;
+        if (onlyOption.deliverySlots.length <= 1) {
+          session = await this.setShippingOption(
+            id,
+            owner,
+            onlyOption.id,
+            deliverySlotId,
+          );
+          shippingOptions = await this.publicShippingOptions(session);
+        }
+      }
+      return { session, shippingOptions };
+    });
+  }
   public setShippingOption(
     id: string,
     owner: CheckoutOwner,
@@ -110,6 +165,16 @@ export class CheckoutService {
     return this.repository
       .setShippingOption(id, owner, shippingOptionId, deliverySlotId)
       .then((session) => this.resolveMedia(session));
+  }
+  public async setShippingOptionWithState(
+    id: string,
+    owner: CheckoutOwner,
+    shippingOptionId: string,
+    deliverySlotId?: string,
+  ) {
+    return this.recoverableMutation(id, owner, () =>
+      this.setShippingOption(id, owner, shippingOptionId, deliverySlotId),
+    );
   }
   public setPaymentMethod(
     id: string,
@@ -131,6 +196,15 @@ export class CheckoutService {
       .setPaymentMethod(id, owner, paymentMethod, savedPaymentMethodId)
       .then((session) => this.resolveMedia(session));
   }
+  public async setPaymentMethodWithState(
+    id: string,
+    owner: CheckoutOwner,
+    paymentMethod: string,
+  ) {
+    return this.recoverableMutation(id, owner, () =>
+      this.setPaymentMethod(id, owner, paymentMethod),
+    );
+  }
   public applyCoupon(id: string, owner: CheckoutOwner, code: string) {
     if (!code.trim())
       throw new CheckoutValidationError('El cupón es obligatorio.');
@@ -138,10 +212,31 @@ export class CheckoutService {
       .applyCoupon(id, owner, code)
       .then((session) => this.resolveMedia(session));
   }
+  public async applyCouponWithState(
+    id: string,
+    owner: CheckoutOwner,
+    code: string,
+  ) {
+    return this.recoverableMutation(id, owner, () =>
+      this.applyCoupon(id, owner, code),
+    );
+  }
   public clearCoupon(id: string, owner: CheckoutOwner) {
     return this.repository
       .clearCoupon(id, owner)
       .then((session) => this.resolveMedia(session));
+  }
+  public async clearCouponWithState(id: string, owner: CheckoutOwner) {
+    return this.recoverableMutation(id, owner, () =>
+      this.clearCoupon(id, owner),
+    );
+  }
+
+  public async mutationState(session: CheckoutSession) {
+    return {
+      session,
+      shippingOptions: await this.publicShippingOptions(session),
+    };
   }
   public async confirm(
     id: string,
@@ -197,6 +292,9 @@ export class CheckoutService {
   public customerOrders(customerId: string) {
     return this.repository.listCustomerOrders(customerId);
   }
+  public customerOrderPage(customerId: string, page: number, perPage: number) {
+    return this.repository.listCustomerOrderPage(customerId, page, perPage);
+  }
   public customerOrder(customerId: string, orderId: string) {
     return this.repository.findCustomerOrder(customerId, orderId);
   }
@@ -204,24 +302,67 @@ export class CheckoutService {
     return this.repository.findPetPurchaseHistory(customerId, petId);
   }
 
-  private async resolveMedia<
-    T extends { items: Array<{ imageUrl: string | null }> },
-  >(session: T): Promise<T> {
-    if (!this.storage) return session;
-    return {
+  private resolveMedia<T extends { items: Array<{ imageUrl: string | null }> }>(
+    session: T,
+  ): Promise<T> {
+    const storage = this.storage;
+    if (!storage) return Promise.resolve(session);
+    return Promise.resolve({
       ...session,
-      items: await Promise.all(
-        session.items.map(async (item) => ({
-          ...item,
-          imageUrl:
-            item.imageUrl && !/^https?:\/\//i.test(item.imageUrl)
-              ? await this.storage!.getSignedUrl(
-                  { bucket: 'product-media', path: item.imageUrl },
-                  3_600,
-                )
-              : item.imageUrl,
-        })),
-      ),
-    };
+      items: session.items.map((item) => ({
+        ...item,
+        imageUrl:
+          item.imageUrl && !/^https?:\/\//i.test(item.imageUrl)
+            ? storage.getPublicUrl({
+                bucket: 'product-media',
+                path: item.imageUrl,
+              })
+            : item.imageUrl,
+      })),
+    });
+  }
+
+  private async recoverableMutation(
+    id: string,
+    owner: CheckoutOwner,
+    operation: () => Promise<
+      | CheckoutSession
+      | {
+          session: CheckoutSession;
+          shippingOptions: Array<{
+            id: string;
+            cost: string;
+            deliverySlots: ShippingOptionQuote['deliverySlots'];
+          }>;
+        }
+    >,
+  ) {
+    try {
+      const result = await operation();
+      return 'session' in result ? result : this.mutationState(result);
+    } catch (error) {
+      if (!(error instanceof CheckoutConflictError)) throw error;
+      try {
+        const current = await this.find(id, owner);
+        throw new CheckoutConflictError(
+          error.message,
+          await this.mutationState(current),
+        );
+      } catch (recoveryError) {
+        if (
+          recoveryError instanceof CheckoutConflictError &&
+          recoveryError.currentState
+        )
+          throw recoveryError;
+        throw error;
+      }
+    }
+  }
+
+  private async publicShippingOptions(session: CheckoutSession) {
+    if (session.stage === 'CONTACT') return [];
+    return (await this.shippingOptionsForSession(session))
+      .filter((option) => option.available)
+      .map(({ id, cost, deliverySlots }) => ({ id, cost, deliverySlots }));
   }
 }

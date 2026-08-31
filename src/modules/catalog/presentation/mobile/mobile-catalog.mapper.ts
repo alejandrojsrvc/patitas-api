@@ -65,6 +65,28 @@ export const toMobileFulfillment = (
   variant: ProductVariant,
   context: MobileFulfillmentContext = {},
 ) => {
+  if (variant.fulfillment) {
+    const shippingAvailable =
+      !context.shippingQuote || context.shippingQuote.available;
+    const shippingDate = context.shippingQuote?.available
+      ? (context.shippingQuote.deliverySlots[0]?.date ?? null)
+      : null;
+    const deliveryDate = maxDate(
+      variant.fulfillment.deliveryDate,
+      shippingDate,
+    );
+    return {
+      status: variant.fulfillment.status,
+      purchasable: variant.fulfillment.purchasable && shippingAvailable,
+      leadTimeHours:
+        variant.fulfillment.source === 'OWN_STOCK'
+          ? 0
+          : variant.supplierLeadTimeHours,
+      availability: variant.fulfillment.availability,
+      earliestDeliveryDate: deliveryDate,
+      orderBefore: variant.fulfillment.orderBefore,
+    };
+  }
   const onRequest =
     variant.availableQuantity <= 0 &&
     ['AVAILABLE', 'ON_REQUEST'].includes(variant.supplierStockStatus ?? '') &&
@@ -99,6 +121,12 @@ export const toMobileFulfillment = (
       ? (context.shippingQuote.cutoffs[0]?.time ?? null)
       : null,
   };
+};
+
+const maxDate = (left: string | null, right: string | null): string | null => {
+  if (!left) return right;
+  if (!right) return left;
+  return left > right ? left : right;
 };
 
 export const toMobileOffer = (promotion: {

@@ -38,6 +38,13 @@ export interface Cart {
   source: CartSource;
 }
 
+export interface CartSummary {
+  id: string | null;
+  itemCount: number;
+  subtotal: string;
+  currency: 'ARS';
+}
+
 export interface CartOwner {
   customerId?: string;
   tokenHash?: string;

@@ -76,6 +76,10 @@ interface PersistenceVariant {
   preferredSupplierOffer: {
     stockStatus: string;
     leadTimeHours: number | null;
+    fulfillmentMode: string;
+    supplierCutoff: string | null;
+    supplierToDepotMinutes: number | null;
+    fulfillmentCost: DecimalValue;
     active: boolean;
   } | null;
 }
@@ -120,6 +124,71 @@ const productInclude = {
   media: { orderBy: { displayOrder: 'asc' as const } },
 } as const;
 
+const publicProductWhere: Prisma.ProductWhereInput = {
+  status: 'ACTIVE',
+  brand: { active: true },
+  category: { is: { active: true } },
+  variants: {
+    some: { active: true, sku: { not: null }, salePrice: { gt: 0 } },
+  },
+};
+
+const publicSearchWhere = (
+  rawQuery?: string,
+): Prisma.ProductWhereInput | undefined => {
+  const query = rawQuery?.trim();
+  if (!query) return undefined;
+
+  const weightGrams = Array.from(
+    query.matchAll(/(\d+(?:[.,]\d+)?)\s*(kg|kilos?|g|gramos?)\b/gi),
+  )
+    .map((match) => {
+      const value = Number(match[1].replace(',', '.'));
+      return match[2].toLowerCase().startsWith('k') ? value * 1000 : value;
+    })
+    .filter((value) => Number.isInteger(value) && value > 0);
+  const textQuery = query
+    .replace(/\d+(?:[.,]\d+)?\s*(?:kg|kilos?|g|gramos?)\b/gi, ' ')
+    .trim();
+  const terms = textQuery.split(/\s+/).filter(Boolean);
+  const conditions: Prisma.ProductWhereInput[] = terms.map((term) => ({
+    OR: [
+      { name: { contains: term, mode: 'insensitive' as const } },
+      { slug: { contains: term, mode: 'insensitive' as const } },
+      { line: { contains: term, mode: 'insensitive' as const } },
+      { species: { contains: term, mode: 'insensitive' as const } },
+      { lifeStage: { contains: term, mode: 'insensitive' as const } },
+      { breedSize: { contains: term, mode: 'insensitive' as const } },
+      { brand: { name: { contains: term, mode: 'insensitive' as const } } },
+      { brand: { slug: { contains: term, mode: 'insensitive' as const } } },
+      {
+        category: {
+          is: { name: { contains: term, mode: 'insensitive' as const } },
+        },
+      },
+      {
+        variants: {
+          some: {
+            OR: [
+              { presentation: { contains: term, mode: 'insensitive' as const } },
+              { sku: { contains: term, mode: 'insensitive' as const } },
+              { barcode: { contains: term, mode: 'insensitive' as const } },
+            ],
+          },
+        },
+      },
+    ],
+  }));
+
+  if (weightGrams.length) {
+    conditions.push({
+      variants: { some: { weightGrams: { in: weightGrams } } },
+    });
+  }
+  if (!conditions.length) return undefined;
+  return conditions.length === 1 ? conditions[0] : { AND: conditions };
+};
+
 @Injectable()
 export class PrismaCatalogRepository implements CatalogRepository {
   public constructor(private readonly prisma: PrismaService) {}
@@ -145,21 +214,10 @@ export class PrismaCatalogRepository implements CatalogRepository {
       },
       ...(weights ? { weightGrams: { in: weights } } : {}),
     };
+    const searchWhere = publicSearchWhere(filter.q);
     const where = {
       status: 'ACTIVE' as const,
-      ...(filter.q
-        ? {
-            OR: [
-              { name: { contains: filter.q, mode: 'insensitive' as const } },
-              { line: { contains: filter.q, mode: 'insensitive' as const } },
-              {
-                brand: {
-                  name: { contains: filter.q, mode: 'insensitive' as const },
-                },
-              },
-            ],
-          }
-        : {}),
+      ...(searchWhere ?? {}),
       ...(filter.species
         ? {
             AND: [
@@ -184,47 +242,223 @@ export class PrismaCatalogRepository implements CatalogRepository {
     };
     const isPriceSort =
       filter.sort === 'price_asc' || filter.sort === 'price_desc';
-    const [records, total] = await this.prisma.$transaction([
-      this.prisma.product.findMany({
-        where,
-        include: productInclude,
-        ...(isPriceSort
-          ? {}
-          : {
-              orderBy:
-                filter.sort === 'name_asc'
-                  ? [{ name: 'asc' as const }]
-                  : [
-                      { featuredRank: 'asc' as const },
-                      { name: 'asc' as const },
-                    ],
-              skip: (filter.page - 1) * filter.perPage,
-              take: filter.perPage,
-            }),
-      }),
-      this.prisma.product.count({ where }),
-    ]);
     const variantFilter = {
       weights,
       minPrice: filter.minPrice ? Number(filter.minPrice) : undefined,
       maxPrice: filter.maxPrice ? Number(filter.maxPrice) : undefined,
     };
+    if (isPriceSort) {
+      const direction = filter.sort === 'price_asc' ? 'asc' : 'desc';
+      const [rankedProducts, total] = await this.prisma.$transaction([
+        this.prisma.productVariant.groupBy({
+          by: ['productId'],
+          where: {
+            ...priceCondition,
+            product: { is: where },
+          },
+          _min: { salePrice: true },
+          orderBy: [{ _min: { salePrice: direction } }, { productId: 'asc' }],
+          skip: (filter.page - 1) * filter.perPage,
+          take: filter.perPage,
+        }),
+        this.prisma.product.count({ where }),
+      ]);
+      const productIds = rankedProducts.map((row) => row.productId);
+      const records = productIds.length
+        ? await this.prisma.product.findMany({
+            where: { id: { in: productIds } },
+            include: productInclude,
+          })
+        : [];
+      const recordsById = new Map(records.map((record) => [record.id, record]));
+      return {
+        items: productIds.flatMap((id) => {
+          const record = recordsById.get(id);
+          return record
+            ? [onlySellableVariants(mapProduct(record), variantFilter)]
+            : [];
+        }),
+        page: filter.page,
+        perPage: filter.perPage,
+        total,
+      };
+    }
+    const [records, total] = await this.prisma.$transaction([
+      this.prisma.product.findMany({
+        where,
+        include: productInclude,
+        orderBy:
+          filter.sort === 'name_asc'
+            ? [{ name: 'asc' as const }]
+            : [{ featuredRank: 'asc' as const }, { name: 'asc' as const }],
+        skip: (filter.page - 1) * filter.perPage,
+        take: filter.perPage,
+      }),
+      this.prisma.product.count({ where }),
+    ]);
     const products = records
       .map(mapProduct)
       .map((product) => onlySellableVariants(product, variantFilter));
-    if (isPriceSort)
-      products.sort((left, right) => compareProducts(left, right, filter.sort));
-    return isPriceSort
-      ? {
-          items: products.slice(
-            (filter.page - 1) * filter.perPage,
-            filter.page * filter.perPage,
-          ),
-          page: filter.page,
-          perPage: filter.perPage,
-          total,
-        }
-      : { items: products, page: filter.page, perPage: filter.perPage, total };
+    return {
+      items: products,
+      page: filter.page,
+      perPage: filter.perPage,
+      total,
+    };
+  }
+
+  public async listPublicProductFacets(filter: PublicProductFilter) {
+    const searchWhere = publicSearchWhere(filter.q);
+    const categoryIds = filter.category
+      ? await this.resolveCategoryIds(filter.category)
+      : undefined;
+    const selectedBrands = filter.brand ? toArray(filter.brand) : [];
+    const selectedLifeStages = filter.lifeStage
+      ? toArray(filter.lifeStage)
+      : [];
+    const selectedWeights = filter.weightGrams
+      ? toArray(filter.weightGrams)
+      : [];
+    const priceCondition = {
+      active: true,
+      sku: { not: null },
+      salePrice: {
+        gt: 0,
+        ...(filter.minPrice ? { gte: filter.minPrice } : {}),
+        ...(filter.maxPrice ? { lte: filter.maxPrice } : {}),
+      },
+    };
+    const records = await this.prisma.product.findMany({
+      where: {
+        status: 'ACTIVE',
+        ...(searchWhere ?? {}),
+        ...(filter.species
+          ? {
+              AND: [
+                {
+                  OR: speciesAliases(filter.species).map((species) => ({
+                    species: { equals: species, mode: 'insensitive' },
+                  })),
+                },
+              ],
+            }
+          : {}),
+        ...(filter.featured ? { featuredRank: { not: null } } : {}),
+        brand: { active: true },
+        category: {
+          is: {
+            active: true,
+            ...(categoryIds ? { id: { in: categoryIds } } : {}),
+          },
+        },
+        variants: { some: priceCondition },
+      },
+      select: {
+        lifeStage: true,
+        species: true,
+        brand: { select: { slug: true } },
+        category: { select: { slug: true } },
+        variants: {
+          where: priceCondition,
+          select: { weightGrams: true },
+        },
+      },
+    });
+
+    const brandCounts = new Map<string, number>();
+    const categoryCounts = new Map<
+      string,
+      { count: number; species: Set<string> }
+    >();
+    const lifeStageCounts = new Map<string, number>();
+    const weightCounts = new Map<number, number>();
+    records.forEach((record) => {
+      const recordWeights = new Set(
+        record.variants
+          .map((variant) => variant.weightGrams)
+          .filter((value): value is number => value !== null),
+      );
+      const matchesBrand =
+        !selectedBrands.length || selectedBrands.includes(record.brand.slug);
+      const matchesLifeStage =
+        !selectedLifeStages.length ||
+        (record.lifeStage !== null &&
+          selectedLifeStages.includes(record.lifeStage));
+      const matchesWeight =
+        !selectedWeights.length ||
+        selectedWeights.some((weight) => recordWeights.has(weight));
+
+      if (matchesLifeStage && matchesWeight) {
+        increment(brandCounts, record.brand.slug);
+      }
+      if (
+        record.category &&
+        matchesBrand &&
+        matchesLifeStage &&
+        matchesWeight
+      ) {
+        const category = categoryCounts.get(record.category.slug) ?? {
+          count: 0,
+          species: new Set<string>(),
+        };
+        category.count += 1;
+        if (record.species) category.species.add(record.species);
+        categoryCounts.set(record.category.slug, category);
+      }
+      if (record.lifeStage && matchesBrand && matchesWeight) {
+        increment(lifeStageCounts, record.lifeStage);
+      }
+      if (matchesBrand && matchesLifeStage) {
+        recordWeights.forEach((weight) => increment(weightCounts, weight));
+      }
+    });
+    return {
+      brands: countedValues(brandCounts),
+      categories: Array.from(categoryCounts.entries())
+        .map(([value, data]) => ({
+          value,
+          count: data.count,
+          species: Array.from(data.species).sort(),
+        }))
+        .sort((left, right) => left.value.localeCompare(right.value)),
+      lifeStages: countedValues(lifeStageCounts),
+      weights: Array.from(weightCounts.entries())
+        .map(([value, count]) => ({ value, count }))
+        .sort((left, right) => left.value - right.value),
+    };
+  }
+
+  public async listCalculatorProjection() {
+    const products = await this.prisma.product.findMany({
+      where: publicProductWhere,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        species: true,
+        lifeStage: true,
+        estimatedDailyGramsPerKg: true,
+        variants: {
+          where: { active: true, sku: { not: null }, salePrice: { gt: 0 } },
+          select: { id: true, presentation: true, weightGrams: true },
+          orderBy: { weightGrams: 'asc' },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+    return products.map((product) => ({
+      ...product,
+      estimatedDailyGramsPerKg:
+        product.estimatedDailyGramsPerKg?.toString() ?? null,
+    }));
+  }
+
+  public listSitemapProjection() {
+    return this.prisma.product.findMany({
+      where: publicProductWhere,
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: 'desc' },
+    });
   }
 
   public async findPublicProductBySlug(slug: string): Promise<Product | null> {
@@ -249,7 +483,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     const categoryIds = filter.category
       ? await this.resolveCategoryIds(filter.category)
       : undefined;
-    const query = filter.query?.trim();
+    const searchWhere = publicSearchWhere(filter.query);
     const priceCondition = {
       active: true,
       sku: { not: null },
@@ -260,19 +494,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
       : {};
     const where: Prisma.ProductWhereInput = {
       status: 'ACTIVE',
-      ...(query
-        ? {
-            OR: [
-              { name: { contains: query, mode: 'insensitive' as const } },
-              { line: { contains: query, mode: 'insensitive' as const } },
-              {
-                brand: {
-                  name: { contains: query, mode: 'insensitive' as const },
-                },
-              },
-            ],
-          }
-        : {}),
+      ...(searchWhere ?? {}),
       ...(filter.species
         ? {
             species: {
@@ -963,6 +1185,19 @@ const mapVariant = (value: PersistenceVariant): ProductVariant => ({
   supplierLeadTimeHours: value.preferredSupplierOffer?.active
     ? value.preferredSupplierOffer.leadTimeHours
     : null,
+  supplierFulfillmentMode: value.preferredSupplierOffer?.active
+    ? (value.preferredSupplierOffer
+        .fulfillmentMode as ProductVariant['supplierFulfillmentMode'])
+    : null,
+  supplierCutoff: value.preferredSupplierOffer?.active
+    ? value.preferredSupplierOffer.supplierCutoff
+    : null,
+  supplierToDepotMinutes: value.preferredSupplierOffer?.active
+    ? value.preferredSupplierOffer.supplierToDepotMinutes
+    : null,
+  supplierFulfillmentCost: value.preferredSupplierOffer?.active
+    ? value.preferredSupplierOffer.fulfillmentCost.toString()
+    : null,
   onHand: value.inventory?.onHand ?? 0,
   reserved: value.inventory?.reserved ?? 0,
 });
@@ -1025,20 +1260,6 @@ const onlySellableVariants = (
     ),
   };
 };
-const minimumPrice = (product: Product) =>
-  Math.min(...product.variants.map((variant) => Number(variant.salePrice)));
-const compareProducts = (left: Product, right: Product, sort = 'featured') => {
-  if (sort === 'price_asc') return minimumPrice(left) - minimumPrice(right);
-  if (sort === 'price_desc') return minimumPrice(right) - minimumPrice(left);
-  if (sort === 'featured') {
-    return (
-      (left.featuredRank ?? Number.MAX_SAFE_INTEGER) -
-        (right.featuredRank ?? Number.MAX_SAFE_INTEGER) ||
-      left.name.localeCompare(right.name)
-    );
-  }
-  return left.name.localeCompare(right.name);
-};
 const relatedScore = (candidate: Product, product: Product): number =>
   (candidate.categoryId && candidate.categoryId === product.categoryId
     ? 4
@@ -1048,6 +1269,15 @@ const relatedScore = (candidate: Product, product: Product): number =>
   (candidate.brandId === product.brandId ? 1 : 0);
 const toArray = <T>(value: T | T[]): T[] =>
   Array.isArray(value) ? value : [value];
+
+const increment = <T>(counts: Map<T, number>, value: T): void => {
+  counts.set(value, (counts.get(value) ?? 0) + 1);
+};
+
+const countedValues = (counts: Map<string, number>) =>
+  Array.from(counts.entries())
+    .map(([value, count]) => ({ value, count }))
+    .sort((left, right) => left.value.localeCompare(right.value));
 const sellableProductWhere = {
   status: 'ACTIVE' as const,
   brand: { active: true },

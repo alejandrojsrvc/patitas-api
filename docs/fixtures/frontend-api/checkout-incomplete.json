@@ -1,0 +1,25 @@
+{
+  "shell": {
+    "viewer": { "authenticated": false },
+    "location": null,
+    "cart": {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "itemCount": 1,
+      "subtotal": "50990.00",
+      "currency": "ARS"
+    }
+  },
+  "session": {
+    "id": "00000000-0000-4000-8000-000000000004",
+    "stage": "CONTACT",
+    "status": "DRAFT",
+    "subtotal": "50990.00",
+    "discountTotal": "0.00",
+    "shippingCost": "0.00",
+    "total": "50990.00",
+    "items": []
+  },
+  "shippingOptions": [],
+  "paymentMethods": [],
+  "savedAddresses": []
+}
