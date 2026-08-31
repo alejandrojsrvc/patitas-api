@@ -1,4 +1,6 @@
-import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
+
+loadEnv({ path: ['.env.local', '.env.dist'], quiet: true });
 
 const args = process.argv.slice(2);
 const valueFor = (name) => {
