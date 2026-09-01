@@ -38,6 +38,7 @@
     "catalog:research:import": "tsx scripts/import-catalog-research.ts",
     "catalog:export-production": "node scripts/export-production-catalog.mjs",
     "catalog:copy-media": "node scripts/copy-product-media.mjs",
+    "storage:migrate:r2": "node scripts/migrate-supabase-storage-to-r2.mjs",
     "catalog:upload-images": "node scripts/upload-product-images.mjs",
     "catalog:cache:clear": "node scripts/invalidate-web-catalog-cache.mjs",
     "pricing:apply-all": "tsx scripts/apply-pricing-catalog.ts",
@@ -46,6 +47,8 @@
     "user:invite-production": "tsx scripts/invite-production-user.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1121.0",
+    "@aws-sdk/s3-request-presigner": "3.1121.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",

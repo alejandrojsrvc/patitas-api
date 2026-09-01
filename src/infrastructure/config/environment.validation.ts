@@ -1,10 +1,16 @@
 export type ApplicationEnvironment = 'development' | 'test' | 'production';
+export type StorageProviderName = 'supabase' | 'r2';
 
 export interface EnvironmentVariables {
   DATABASE_URL: string;
   SUPABASE_URL: string;
   SUPABASE_PUBLISHABLE_KEY: string;
   SUPABASE_SECRET_KEY: string;
+  STORAGE_PROVIDER: StorageProviderName;
+  R2_ACCOUNT_ID?: string;
+  R2_ACCESS_KEY_ID?: string;
+  R2_SECRET_ACCESS_KEY?: string;
+  R2_PUBLIC_BASE_URL?: string;
   NODE_ENV: ApplicationEnvironment;
   PORT: number;
   CORS_ORIGINS: string;
@@ -60,6 +66,30 @@ export const validateEnvironment = (
   const nodeEnv = typeof rawNodeEnv === 'string' ? rawNodeEnv : 'development';
   if (!['development', 'test', 'production'].includes(nodeEnv)) {
     throw new Error('NODE_ENV debe ser development, test o production.');
+  }
+
+  const rawStorageProvider = environment['STORAGE_PROVIDER'] ?? 'supabase';
+  if (
+    typeof rawStorageProvider !== 'string' ||
+    !['supabase', 'r2'].includes(rawStorageProvider)
+  ) {
+    throw new Error('STORAGE_PROVIDER debe ser supabase o r2.');
+  }
+  const storageProvider = rawStorageProvider as StorageProviderName;
+  const r2AccountId = optionalValue(environment['R2_ACCOUNT_ID']);
+  const r2AccessKeyId = optionalValue(environment['R2_ACCESS_KEY_ID']);
+  const r2SecretAccessKey = optionalValue(environment['R2_SECRET_ACCESS_KEY']);
+  const r2PublicBaseUrl = optionalValue(environment['R2_PUBLIC_BASE_URL']);
+
+  if (storageProvider === 'r2') {
+    requireValue(environment, 'R2_ACCOUNT_ID');
+    requireValue(environment, 'R2_ACCESS_KEY_ID');
+    requireValue(environment, 'R2_SECRET_ACCESS_KEY');
+    validateUrl(
+      requireValue(environment, 'R2_PUBLIC_BASE_URL'),
+      'R2_PUBLIC_BASE_URL',
+      ['https:'],
+    );
   }
 
   const port = Number(environment['PORT'] ?? 3000);
@@ -133,6 +163,19 @@ export const validateEnvironment = (
       'SUPABASE_PUBLISHABLE_KEY',
     ),
     SUPABASE_SECRET_KEY: requireValue(environment, 'SUPABASE_SECRET_KEY'),
+    STORAGE_PROVIDER: storageProvider,
+    ...(r2AccountId ? { R2_ACCOUNT_ID: r2AccountId } : {}),
+    ...(r2AccessKeyId ? { R2_ACCESS_KEY_ID: r2AccessKeyId } : {}),
+    ...(r2SecretAccessKey ? { R2_SECRET_ACCESS_KEY: r2SecretAccessKey } : {}),
+    ...(r2PublicBaseUrl
+      ? {
+          R2_PUBLIC_BASE_URL: validateUrl(
+            r2PublicBaseUrl,
+            'R2_PUBLIC_BASE_URL',
+            ['https:'],
+          ),
+        }
+      : {}),
     NODE_ENV: nodeEnv as ApplicationEnvironment,
     PORT: port,
     CORS_ORIGINS: corsOrigins,

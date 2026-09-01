@@ -112,14 +112,19 @@ el cliente administrativo de Identity y nunca se expone a presentation.
 
 ### Storage
 
-`StorageProvider` es el contrato de aplicación. El adapter Supabase utiliza un
-cliente administrativo aislado. Identity y Storage tienen clientes
-administrativos distintos: la secret key sólo se consume dentro de esos
-adapters y nunca se entrega a los clientes públicos ni a los módulos de negocio.
+`StorageProvider` es el contrato de aplicación. `STORAGE_PROVIDER=supabase`
+selecciona `SupabaseStorageAdapter` para el entorno local y
+`STORAGE_PROVIDER=r2` selecciona `CloudflareR2StorageAdapter` en producción.
+Así, desarrollo usa los buckets del Supabase local sin consumir transferencia
+ni lecturas de R2. El adapter R2 usa su endpoint S3 con credenciales limitadas
+a los buckets de la aplicación. `product-media` se publica exclusivamente
+mediante `R2_PUBLIC_BASE_URL`; `payment-proofs` permanece privado y se entrega
+mediante URLs S3 firmadas con vencimiento. Las credenciales R2 nunca se entregan
+a clientes públicos ni a los módulos de negocio.
 
-El catálogo recibe por ahora una URL de media ya resuelta. La carga, firma o
-reemplazo de archivos deberá pasar por `StorageProvider` cuando exista ese caso
-de uso; ningún módulo de catálogo importará el cliente de Supabase Storage.
+Las rutas persistidas son neutrales al proveedor y conservan únicamente la
+object key. Cargas, firmas, reemplazos y eliminaciones pasan por
+`StorageProvider`; ningún módulo de catálogo u órdenes importa SDKs concretos.
 
 Los carritos y sesiones de checkout de invitados usan tokens opacos y almacenan
 únicamente su hash. Las imágenes incluidas en carrito, checkout y últimos vistos
