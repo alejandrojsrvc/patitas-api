@@ -13,6 +13,7 @@ export class StorefrontLocationResponseDto {
   @ApiProperty() public street!: string;
   @ApiProperty() public number!: string;
   @ApiPropertyOptional({ nullable: true }) public apartment!: string | null;
+  @ApiPropertyOptional({ nullable: true }) public neighborhood!: string | null;
   @ApiProperty() public city!: string;
   @ApiProperty() public province!: string;
   @ApiProperty() public postalCode!: string;

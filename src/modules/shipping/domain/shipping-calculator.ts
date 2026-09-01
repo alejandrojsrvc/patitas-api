@@ -189,7 +189,7 @@ const deliveryWindowConfig = (
   const rawSlots = record.deliverySlots;
   if (!Array.isArray(rawSlots)) return null;
   const slots = rawSlots.filter(isDeliverySlot);
-  if (slots.length !== 2) return null;
+  if (slots.length < 1 || slots.length > 6) return null;
   const daysOfWeek = Array.isArray(record.daysOfWeek)
     ? record.daysOfWeek.filter(
         (day): day is number => Number.isInteger(day) && day >= 1 && day <= 7,

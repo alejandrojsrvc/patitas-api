@@ -58,7 +58,7 @@ export class PublicCatalogController {
   @ApiOkResponse({ type: PublicProductFacetsResponseDto })
   @Header(
     'Cache-Control',
-    'public, max-age=60, s-maxage=600, stale-while-revalidate=1800',
+    'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400',
   )
   public async productFacets(@Query() query: PublicProductsQueryDto) {
     const [facets, brands, categories] = await Promise.all([

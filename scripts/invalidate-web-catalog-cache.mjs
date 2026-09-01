@@ -41,7 +41,9 @@ const body = await response.json().catch(() => null);
 if (!response.ok) {
   throw new Error(
     `La invalidación falló (${response.status}). ${
-      body && typeof body.message === 'string' ? body.message : 'Respuesta no válida.'
+      body && typeof body.message === 'string'
+        ? body.message
+        : 'Respuesta no válida.'
     }`,
   );
 }

@@ -75,6 +75,7 @@ const normalizeAddress = <
       'street',
       'number',
       'apartment',
+      'neighborhood',
       'city',
       'province',
       'postalCode',

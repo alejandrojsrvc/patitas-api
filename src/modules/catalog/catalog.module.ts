@@ -16,6 +16,11 @@ import { ShippingService } from '../shipping/application/shipping.service';
 import { CustomerService } from '../customers/application/customer.service';
 import { FulfillmentModule } from '../fulfillment/fulfillment.module';
 import { FulfillmentService } from '../fulfillment/application/fulfillment.service';
+import { HttpCatalogCacheInvalidationAdapter } from '../../infrastructure/cache/http-catalog-cache-invalidation.adapter';
+import {
+  CATALOG_CACHE_INVALIDATION,
+  type CatalogCacheInvalidationPort,
+} from '../../shared/application/ports/catalog-cache-invalidation.port';
 import { CatalogService } from './application/catalog.service';
 import { MobileCatalogService } from './application/mobile-catalog.service';
 import {
@@ -41,19 +46,32 @@ import { PublicCatalogController } from './presentation/controllers/public-catal
   providers: [
     { provide: CATALOG_REPOSITORY, useClass: PrismaCatalogRepository },
     {
+      provide: CATALOG_CACHE_INVALIDATION,
+      useClass: HttpCatalogCacheInvalidationAdapter,
+    },
+    {
       provide: CatalogService,
       inject: [
         CATALOG_REPOSITORY,
         STORAGE_PROVIDER,
         SupplierService,
         FulfillmentService,
+        CATALOG_CACHE_INVALIDATION,
       ],
       useFactory: (
         repository: CatalogRepository,
         storage: StorageProvider,
         supplierOffers: SupplierService,
         fulfillment: FulfillmentService,
-      ) => new CatalogService(repository, storage, supplierOffers, fulfillment),
+        cacheInvalidation: CatalogCacheInvalidationPort,
+      ) =>
+        new CatalogService(
+          repository,
+          storage,
+          supplierOffers,
+          fulfillment,
+          cacheInvalidation,
+        ),
     },
     {
       provide: MobileCatalogService,

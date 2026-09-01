@@ -32,6 +32,10 @@ import type {
   SupplierOfferImportRow,
 } from '../../suppliers/domain/supplier.types';
 import type { FulfillmentService } from '../../fulfillment/application/fulfillment.service';
+import type {
+  CatalogCacheInvalidation,
+  CatalogCacheInvalidationPort,
+} from '../../../shared/application/ports/catalog-cache-invalidation.port';
 
 interface CatalogSupplierOfferImporter {
   importOfferRows(
@@ -46,6 +50,7 @@ export class CatalogService {
     private readonly storage?: StorageProvider,
     private readonly supplierOffers?: CatalogSupplierOfferImporter,
     private readonly fulfillment?: FulfillmentService,
+    private readonly cacheInvalidation?: CatalogCacheInvalidationPort,
   ) {}
 
   public async listPublicProducts(filter: PublicProductFilter) {
@@ -263,11 +268,13 @@ export class CatalogService {
         'La marca y categoría deben existir y estar activas.',
       );
     }
-    return this.repository.createProduct({
+    const product = await this.repository.createProduct({
       ...input,
       name: input.name.trim(),
       slug: slugify(input.slug ?? input.name),
     });
+    this.invalidateCatalogCache();
+    return product;
   }
 
   public async importSimpleCatalogCsv(
@@ -531,15 +538,22 @@ export class CatalogService {
     if (next.status === 'ACTIVE') {
       assertPublishable(next);
     }
-    return this.repository.updateProduct(id, {
+    const product = await this.repository.updateProduct(id, {
       ...input,
       ...(input.slug ? { slug: slugify(input.slug) } : {}),
     });
+    this.invalidateCatalogCache();
+    return product;
   }
 
   public async createVariant(productId: string, input: CreateVariantInput) {
     await this.getAdminProduct(productId);
-    return this.repository.createVariant(productId, normalizeVariant(input));
+    const variant = await this.repository.createVariant(
+      productId,
+      normalizeVariant(input),
+    );
+    this.invalidateCatalogCache();
+    return variant;
   }
 
   public async updateVariant(id: string, input: UpdateVariantInput) {
@@ -562,7 +576,12 @@ export class CatalogService {
         }
       }
     }
-    return this.repository.updateVariant(id, normalizeVariant(input));
+    const variant = await this.repository.updateVariant(
+      id,
+      normalizeVariant(input),
+    );
+    this.invalidateCatalogCache();
+    return variant;
   }
 
   public async createProductMedia(
@@ -590,6 +609,7 @@ export class CatalogService {
       altText: input.altText.trim(),
     });
 
+    this.invalidateCatalogCache();
     return this.resolveMedia(media);
   }
 
@@ -652,6 +672,7 @@ export class CatalogService {
         displayOrder: input.displayOrder ?? 0,
       });
 
+      this.invalidateCatalogCache();
       return this.resolveMedia(media);
     } catch (error) {
       await storage.delete(storedObject).catch(() => undefined);
@@ -682,9 +703,9 @@ export class CatalogService {
     if (next.altText !== undefined && !next.altText) {
       throw new CatalogValidationError('El texto alternativo es obligatorio.');
     }
-    return this.resolveMedia(
-      await this.repository.updateProductMedia(mediaId, next),
-    );
+    const updated = await this.repository.updateProductMedia(mediaId, next);
+    this.invalidateCatalogCache();
+    return this.resolveMedia(updated);
   }
 
   public async deleteProductMedia(productId: string, mediaId: string) {
@@ -692,6 +713,7 @@ export class CatalogService {
     const media = product.media.find((item) => item.id === mediaId);
     if (!media) throw new CatalogNotFoundError('La imagen');
     await this.repository.deleteProductMedia(mediaId);
+    this.invalidateCatalogCache();
     if (this.storage && !isHttpUrl(media.url)) {
       await this.storage
         .delete({ bucket: PRODUCT_MEDIA_BUCKET, path: media.url })
@@ -750,7 +772,7 @@ export class CatalogService {
         );
       }
     }
-    return this.repository.replaceFeedingGuide(productId, {
+    const feedingGuide = await this.repository.replaceFeedingGuide(productId, {
       ...input,
       sourceLabel: input.sourceLabel.trim(),
       entries: input.entries.map((entry) => ({
@@ -759,6 +781,8 @@ export class CatalogService {
         conditions: entry.conditions ?? {},
       })),
     });
+    this.invalidateCatalogCache();
+    return feedingGuide;
   }
 
   public async setInventory(variantId: string, input: SetInventoryInput) {
@@ -794,20 +818,22 @@ export class CatalogService {
   public listCategories(publicOnly = false) {
     return this.repository.listCategories(publicOnly);
   }
-  public createCategory(input: CreateReferenceInput) {
+  public async createCategory(input: CreateReferenceInput) {
     if (!input.name.trim())
       throw new CatalogValidationError(
         'El nombre de la categoría es obligatorio.',
       );
     const categoryInput = { ...input };
     delete categoryInput.logoUrl;
-    return this.repository.createCategory({
+    const category = await this.repository.createCategory({
       ...categoryInput,
       name: input.name.trim(),
       slug: slugify(input.slug ?? input.name),
     });
+    this.invalidateCatalogCache();
+    return category;
   }
-  public updateCategory(id: string, input: UpdateReferenceInput) {
+  public async updateCategory(id: string, input: UpdateReferenceInput) {
     if (input.name !== undefined && !input.name.trim()) {
       throw new CatalogValidationError(
         'El nombre de la categoría es obligatorio.',
@@ -815,11 +841,13 @@ export class CatalogService {
     }
     const categoryInput = { ...input };
     delete categoryInput.logoUrl;
-    return this.repository.updateCategory(id, {
+    const category = await this.repository.updateCategory(id, {
       ...categoryInput,
       ...(input.name !== undefined ? { name: input.name.trim() } : {}),
       ...(input.slug ? { slug: slugify(input.slug) } : {}),
     });
+    this.invalidateCatalogCache();
+    return category;
   }
   public async listBrands(publicOnly = false) {
     const brands = await this.repository.listBrands(publicOnly);
@@ -830,13 +858,13 @@ export class CatalogService {
       throw new CatalogValidationError('El nombre de la marca es obligatorio.');
     const brandInput = { ...input };
     delete brandInput.parentId;
-    return this.resolveBrand(
-      await this.repository.createBrand({
-        ...brandInput,
-        name: input.name.trim(),
-        slug: slugify(input.slug ?? input.name),
-      }),
-    );
+    const brand = await this.repository.createBrand({
+      ...brandInput,
+      name: input.name.trim(),
+      slug: slugify(input.slug ?? input.name),
+    });
+    this.invalidateCatalogCache();
+    return this.resolveBrand(brand);
   }
   public async updateBrand(id: string, input: UpdateReferenceInput) {
     if (input.name !== undefined && !input.name.trim()) {
@@ -844,13 +872,13 @@ export class CatalogService {
     }
     const brandInput = { ...input };
     delete brandInput.parentId;
-    return this.resolveBrand(
-      await this.repository.updateBrand(id, {
-        ...brandInput,
-        ...(input.name !== undefined ? { name: input.name.trim() } : {}),
-        ...(input.slug ? { slug: slugify(input.slug) } : {}),
-      }),
-    );
+    const brand = await this.repository.updateBrand(id, {
+      ...brandInput,
+      ...(input.name !== undefined ? { name: input.name.trim() } : {}),
+      ...(input.slug ? { slug: slugify(input.slug) } : {}),
+    });
+    this.invalidateCatalogCache();
+    return this.resolveBrand(brand);
   }
 
   public async uploadBrandLogo(
@@ -894,11 +922,19 @@ export class CatalogService {
           .delete({ bucket: PRODUCT_MEDIA_BUCKET, path: brand.logoUrl })
           .catch(() => undefined);
       }
+      this.invalidateCatalogCache();
       return this.resolveBrand(updated);
     } catch (error) {
       await storage.delete(storedObject).catch(() => undefined);
       throw error;
     }
+  }
+
+  private invalidateCatalogCache(
+    input: CatalogCacheInvalidation = { scope: 'catalog' },
+  ): void {
+    if (!this.cacheInvalidation) return;
+    void this.cacheInvalidation.invalidate(input).catch(() => undefined);
   }
 
   private async resolveProducts(products: Product[]): Promise<Product[]> {

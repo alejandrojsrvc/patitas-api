@@ -57,6 +57,7 @@ export interface CustomerAddress {
   street: string;
   number: string;
   apartment: string | null;
+  neighborhood: string | null;
   city: string;
   province: string;
   postalCode: string;
@@ -73,6 +74,7 @@ export interface CreateCustomerAddressInput {
   street: string;
   number: string;
   apartment?: string | null;
+  neighborhood?: string | null;
   city: string;
   province: string;
   postalCode: string;

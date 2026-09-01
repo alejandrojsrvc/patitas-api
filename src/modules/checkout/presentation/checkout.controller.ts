@@ -108,7 +108,7 @@ export class CheckoutController {
     return this.checkout.setAddressWithState(
       id,
       await ownerFromRequest(request, this.customers, 'checkout'),
-      input.address,
+      normalizeCheckoutAddress(input.address),
     );
   }
   @Get('sessions/:id/shipping-options') public options(
@@ -210,6 +210,13 @@ export class CheckoutController {
     return this.checkout.publicOrder(id, token);
   }
 }
+
+const normalizeCheckoutAddress = (
+  address: Record<string, string | undefined>,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(address).map(([key, value]) => [key, value ?? '']),
+  );
 
 const ownerFromRequest = async (
   request: Request,

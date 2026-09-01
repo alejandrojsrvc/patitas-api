@@ -103,6 +103,7 @@ const mapAddress = (
   street: value.street,
   number: value.number,
   apartment: value.apartment,
+  neighborhood: value.neighborhood,
   city: value.city,
   province: value.province,
   postalCode: value.postalCode,

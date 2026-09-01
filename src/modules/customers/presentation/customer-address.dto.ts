@@ -16,6 +16,11 @@ export class CreateCustomerAddressDto {
   @IsString()
   @MaxLength(80)
   public apartment?: string | null;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  public neighborhood?: string | null;
   @ApiProperty() @IsString() @MaxLength(100) public city!: string;
   @ApiProperty() @IsString() @MaxLength(100) public province!: string;
   @ApiProperty() @IsString() @MaxLength(20) public postalCode!: string;

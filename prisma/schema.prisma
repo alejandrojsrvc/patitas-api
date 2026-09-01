@@ -733,6 +733,7 @@ model CustomerAddress {
   street        String
   number        String
   apartment     String?
+  neighborhood  String?
   city          String
   province      String
   postalCode    String   @map("postal_code")

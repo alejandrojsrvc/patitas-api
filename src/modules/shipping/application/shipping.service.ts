@@ -116,9 +116,9 @@ const validateDeliveryWindows = (value: unknown) => {
     throw new ShippingValidationError('La configuración horaria no es válida.');
   const record = value as Record<string, unknown>;
   const slots = record.deliverySlots;
-  if (!Array.isArray(slots) || slots.length !== 2)
+  if (!Array.isArray(slots) || slots.length < 1 || slots.length > 6)
     throw new ShippingValidationError(
-      'La configuración debe contener exactamente dos franjas.',
+      'La configuración debe contener entre una y seis franjas.',
     );
   if (
     slots.some((slot) => {

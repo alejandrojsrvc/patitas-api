@@ -19,6 +19,7 @@ export interface EnvironmentVariables {
   PAYWAY_NOTIFICATION_URL?: string;
   PAYWAY_WEBHOOK_SECRET?: string;
   PUBLIC_WEB_URL?: string;
+  CATALOG_CACHE_INVALIDATION_SECRET?: string;
 }
 
 const requireValue = (
@@ -84,6 +85,9 @@ export const validateEnvironment = (
     environment['MERCADOPAGO_NOTIFICATION_URL'],
   );
   const publicWebUrl = optionalValue(environment['PUBLIC_WEB_URL']);
+  const catalogCacheInvalidationSecret = optionalValue(
+    environment['CATALOG_CACHE_INVALIDATION_SECRET'],
+  );
   const paywaySiteId = optionalValue(environment['PAYWAY_SITE_ID']);
   const paywayPublicApiKey = optionalValue(
     environment['PAYWAY_PUBLIC_API_KEY'],
@@ -159,6 +163,9 @@ export const validateEnvironment = (
       ? { PAYWAY_WEBHOOK_SECRET: paywayWebhookSecret }
       : {}),
     ...(publicWebUrl ? { PUBLIC_WEB_URL: publicWebUrl } : {}),
+    ...(catalogCacheInvalidationSecret
+      ? { CATALOG_CACHE_INVALIDATION_SECRET: catalogCacheInvalidationSecret }
+      : {}),
   };
 };
 

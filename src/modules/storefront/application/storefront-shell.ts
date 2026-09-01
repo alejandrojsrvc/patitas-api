@@ -17,6 +17,7 @@ export const toLocationSummary = <
     street: string;
     number: string;
     apartment: string | null;
+    neighborhood: string | null;
     city: string;
     province: string;
     postalCode: string;
@@ -30,6 +31,7 @@ export const toLocationSummary = <
         street: address.street,
         number: address.number,
         apartment: address.apartment,
+        neighborhood: address.neighborhood,
         city: address.city,
         province: address.province,
         postalCode: address.postalCode,

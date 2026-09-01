@@ -88,7 +88,7 @@ export const calculateVariantFulfillment = (
       availableQuantity: available,
       source: 'OWN_STOCK',
       orderBefore: today ? settings.depotCutoff : null,
-      deliveryDate: dateOnly(now, today ? 0 : 1),
+      deliveryDate: dateOnly(now, today ? 0 : 1, settings.timezone),
       supplierFulfillmentCost: null,
     };
   }
@@ -116,7 +116,7 @@ export const calculateVariantFulfillment = (
       availableQuantity: 0,
       source: 'SUPPLIER_EXPRESS',
       orderBefore: supplierCutoff,
-      deliveryDate: dateOnly(now, 0),
+      deliveryDate: dateOnly(now, 0, settings.timezone),
       supplierFulfillmentCost,
     };
   }
@@ -131,7 +131,7 @@ export const calculateVariantFulfillment = (
       availableQuantity: 0,
       source: 'SUPPLIER_STANDARD',
       orderBefore: null,
-      deliveryDate: dateOnly(now, days),
+      deliveryDate: dateOnly(now, days, settings.timezone),
       supplierFulfillmentCost,
     };
   }
@@ -150,7 +150,7 @@ export const calculateVariantFulfillment = (
 };
 
 const isBeforeCutoff = (now: Date, cutoff: string, timezone: string) =>
-  minutesInTimezone(now, timezone) <= timeToMinutes(cutoff);
+  minutesInTimezone(now, timezone) < timeToMinutes(cutoff);
 
 const minutesUntilCutoff = (now: Date, cutoff: string, timezone: string) =>
   timeToMinutes(cutoff) - minutesInTimezone(now, timezone);
@@ -174,8 +174,14 @@ const timeToMinutes = (value: string): number => {
   return hour * 60 + minute;
 };
 
-const dateOnly = (date: Date, days: number): string => {
-  const result = new Date(date);
+const dateOnly = (date: Date, days: number, timezone: string): string => {
+  const localDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+  const result = new Date(`${localDate}T00:00:00Z`);
   result.setUTCDate(result.getUTCDate() + days);
   return result.toISOString().slice(0, 10);
 };

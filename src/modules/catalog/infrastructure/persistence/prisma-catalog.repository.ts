@@ -124,6 +124,74 @@ const productInclude = {
   media: { orderBy: { displayOrder: 'asc' as const } },
 } as const;
 
+// Public catalog reads need fulfillment inputs, but not every column or
+// relation used by the backoffice/import paths.
+const publicProductInclude = {
+  brand: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      seoTitle: true,
+      seoDescription: true,
+      logoUrl: true,
+      displayOrder: true,
+      active: true,
+    },
+  },
+  category: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      seoTitle: true,
+      seoDescription: true,
+      displayOrder: true,
+      parentId: true,
+      active: true,
+    },
+  },
+  variants: {
+    select: {
+      id: true,
+      productId: true,
+      sku: true,
+      barcode: true,
+      presentation: true,
+      weightGrams: true,
+      salePrice: true,
+      compareAtPrice: true,
+      active: true,
+      preferredSupplierOfferId: true,
+      revision: true,
+      inventory: { select: { onHand: true, reserved: true } },
+      preferredSupplierOffer: {
+        select: {
+          stockStatus: true,
+          leadTimeHours: true,
+          fulfillmentMode: true,
+          supplierCutoff: true,
+          supplierToDepotMinutes: true,
+          fulfillmentCost: true,
+          active: true,
+        },
+      },
+    },
+  },
+  media: {
+    orderBy: { displayOrder: 'asc' as const },
+    select: {
+      id: true,
+      url: true,
+      altText: true,
+      displayOrder: true,
+      variantId: true,
+    },
+  },
+} as const;
+
 const publicProductWhere: Prisma.ProductWhereInput = {
   status: 'ACTIVE',
   brand: { active: true },
@@ -170,7 +238,9 @@ const publicSearchWhere = (
         variants: {
           some: {
             OR: [
-              { presentation: { contains: term, mode: 'insensitive' as const } },
+              {
+                presentation: { contains: term, mode: 'insensitive' as const },
+              },
               { sku: { contains: term, mode: 'insensitive' as const } },
               { barcode: { contains: term, mode: 'insensitive' as const } },
             ],
@@ -267,7 +337,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
       const records = productIds.length
         ? await this.prisma.product.findMany({
             where: { id: { in: productIds } },
-            include: productInclude,
+            include: publicProductInclude,
           })
         : [];
       const recordsById = new Map(records.map((record) => [record.id, record]));
@@ -286,7 +356,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     const [records, total] = await this.prisma.$transaction([
       this.prisma.product.findMany({
         where,
-        include: productInclude,
+        include: publicProductInclude,
         orderBy:
           filter.sort === 'name_asc'
             ? [{ name: 'asc' as const }]
@@ -472,7 +542,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
           some: { active: true, sku: { not: null }, salePrice: { gt: 0 } },
         },
       },
-      include: productInclude,
+      include: publicProductInclude,
     });
     return product ? onlySellableVariants(mapProduct(product)) : null;
   }
@@ -521,7 +591,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     const offset = decodeMobileCursor(filter.cursor);
     const records = await this.prisma.product.findMany({
       where,
-      include: productInclude,
+      include: publicProductInclude,
       orderBy: [{ featuredRank: 'asc' }, { name: 'asc' }, { id: 'asc' }],
       skip: offset,
       take: filter.limit + 1,
@@ -569,7 +639,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
         id: { not: product.id },
         OR: relationOr,
       },
-      include: productInclude,
+      include: publicProductInclude,
       orderBy: [{ featuredRank: 'asc' }, { name: 'asc' }],
       take: Math.max(limit * 3, limit),
     });
@@ -731,7 +801,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
   public async findProductByVariantId(id: string): Promise<Product | null> {
     const product = await this.prisma.product.findFirst({
       where: { variants: { some: { id } } },
-      include: productInclude,
+      include: publicProductInclude,
     });
     return product ? mapProduct(product) : null;
   }

@@ -4,7 +4,6 @@ import {
   IsIn,
   IsInt,
   IsNotEmpty,
-  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -28,12 +27,62 @@ export class ContactStepDto {
   @MaxLength(40)
   public contactPhone?: string | null;
 }
-export class ShippingAddressStepDto {
-  @ApiProperty({ type: Object }) @IsObject() public address!: Record<
-    string,
-    string
-  >;
+export class ShippingAddressDto {
+  [key: string]: string | undefined;
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(160)
+  public recipientName!: string;
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(120)
+  public street!: string;
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(30)
+  public number!: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  public apartment?: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  public neighborhood?: string;
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  public city!: string;
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  public province!: string;
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(20)
+  public postalCode!: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  public reference?: string;
 }
+
+export class ShippingAddressStepDto {
+  @ApiProperty({ type: Object })
+  @ValidateNested()
+  @Type(() => ShippingAddressDto)
+  public address!: ShippingAddressDto;
+}
+
 export class ShippingOptionStepDto {
   @ApiProperty({ format: 'uuid' }) @IsUUID() public shippingOptionId!: string;
   @ApiPropertyOptional({ example: 'MORNING' })
