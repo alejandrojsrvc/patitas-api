@@ -972,22 +972,13 @@ export class CatalogService {
         ...product,
         brand: {
           ...product.brand,
-          logoUrl:
-            product.brand.logoUrl && !isHttpUrl(product.brand.logoUrl)
-              ? storage.getPublicUrl({
-                  bucket: PRODUCT_MEDIA_BUCKET,
-                  path: product.brand.logoUrl,
-                })
-              : product.brand.logoUrl,
+          logoUrl: product.brand.logoUrl
+            ? resolveStorageMediaUrl(storage, product.brand.logoUrl)
+            : product.brand.logoUrl,
         },
         media: product.media.map((media) => ({
           ...media,
-          url: isHttpUrl(media.url)
-            ? media.url
-            : storage.getPublicUrl({
-                bucket: PRODUCT_MEDIA_BUCKET,
-                path: media.url,
-              }),
+          url: resolveStorageMediaUrl(storage, media.url),
         })),
       })),
     );
@@ -1000,16 +991,13 @@ export class CatalogService {
   }
 
   private resolveMedia(media: ProductMedia): Promise<ProductMedia> {
-    if (isHttpUrl(media.url) || !this.storage) {
+    if (!this.storage) {
       return Promise.resolve(media);
     }
 
     return Promise.resolve({
       ...media,
-      url: this.storage.getPublicUrl({
-        bucket: PRODUCT_MEDIA_BUCKET,
-        path: media.url,
-      }),
+      url: resolveStorageMediaUrl(this.storage, media.url),
     });
   }
 
@@ -1023,13 +1011,9 @@ export class CatalogService {
     return Promise.resolve(
       brands.map((brand) => ({
         ...brand,
-        logoUrl:
-          brand.logoUrl && !isHttpUrl(brand.logoUrl)
-            ? storage.getPublicUrl({
-                bucket: PRODUCT_MEDIA_BUCKET,
-                path: brand.logoUrl,
-              })
-            : brand.logoUrl,
+        logoUrl: brand.logoUrl
+          ? resolveStorageMediaUrl(storage, brand.logoUrl)
+          : brand.logoUrl,
       })),
     );
   }
@@ -1045,6 +1029,33 @@ const ALLOWED_IMAGE_TYPES = new Set([
 ]);
 
 const isHttpUrl = (value: string): boolean => /^https?:\/\//i.test(value);
+
+const resolveStorageMediaUrl = (storage: StorageProvider, value: string) => {
+  if (!isHttpUrl(value)) {
+    return storage.getPublicUrl({ bucket: PRODUCT_MEDIA_BUCKET, path: value });
+  }
+
+  try {
+    const url = new URL(value);
+    const marker = '/storage/v1/object/';
+    const markerIndex = url.pathname.indexOf(marker);
+    if (markerIndex === -1) return value;
+
+    const objectPath = url.pathname.slice(markerIndex + marker.length);
+    const bucketPrefix = `${PRODUCT_MEDIA_BUCKET}/`;
+    const pathIndex = objectPath.indexOf(bucketPrefix);
+    if (pathIndex === -1) return value;
+
+    const path = decodeURIComponent(
+      objectPath.slice(pathIndex + bucketPrefix.length),
+    );
+    return path
+      ? storage.getPublicUrl({ bucket: PRODUCT_MEDIA_BUCKET, path })
+      : value;
+  } catch {
+    return value;
+  }
+};
 
 const safeFileName = (value: string): string => {
   const normalized = value
