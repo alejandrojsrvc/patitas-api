@@ -31,7 +31,15 @@ export class AccountQueryService {
     page?: number;
     perPage?: number;
   }) {
-    const profile = await this.customers.findProfileByUserId(input.user.userId);
+    const customerService = this.customers as CustomerService & {
+      ensureProfileByUserId?: CustomerService['ensureProfileByUserId'];
+    };
+    const profile = customerService.ensureProfileByUserId
+      ? await customerService.ensureProfileByUserId(input.user.userId, {
+          fullName: input.user.email,
+          email: input.user.email,
+        })
+      : await this.customers.findProfileByUserId(input.user.userId);
     const addressesPromise = this.addresses.listForUserByCustomerId(profile.id);
     const [addresses, cart, section] = await Promise.all([
       addressesPromise,

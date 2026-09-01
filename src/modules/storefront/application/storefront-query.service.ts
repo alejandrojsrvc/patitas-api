@@ -38,8 +38,16 @@ export class StorefrontQueryService {
     },
     includeFullCart = false,
   ) {
+    const customerService = this.customers as CustomerService & {
+      ensureProfileByUserId?: CustomerService['ensureProfileByUserId'];
+    };
     const customer = input.user
-      ? await this.customers.findProfileByUserId(input.user.userId)
+      ? customerService.ensureProfileByUserId
+        ? await customerService.ensureProfileByUserId(input.user.userId, {
+            fullName: input.user.email,
+            email: input.user.email,
+          })
+        : await this.customers.findProfileByUserId(input.user.userId)
       : null;
     const owner = customer
       ? { customerId: customer.id }

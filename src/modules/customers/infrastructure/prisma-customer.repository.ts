@@ -71,6 +71,36 @@ export class PrismaCustomerRepository implements CustomerRepository {
     return customer ? mapCustomerProfile(customer) : null;
   }
 
+  public async ensureProfileByUserId(
+    userId: string,
+    input: { fullName: string; email: string },
+  ): Promise<CustomerProfile> {
+    return this.prisma.$transaction(async (transaction) => {
+      const existing = await transaction.customer.findUnique({
+        where: { userId },
+      });
+      if (existing) return mapCustomerProfile(existing);
+
+      try {
+        const created = await transaction.customer.create({
+          data: { userId, fullName: input.fullName, email: input.email },
+        });
+        return mapCustomerProfile(created);
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          const concurrent = await transaction.customer.findUnique({
+            where: { userId },
+          });
+          if (concurrent) return mapCustomerProfile(concurrent);
+        }
+        throw error;
+      }
+    });
+  }
+
   public async create(input: CreateCustomerInput): Promise<Customer> {
     try {
       return mapCustomer(await this.prisma.customer.create({ data: input }));

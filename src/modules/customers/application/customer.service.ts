@@ -40,6 +40,16 @@ export class CustomerService {
     return customer;
   }
 
+  public ensureProfileByUserId(
+    userId: string,
+    input: { fullName: string; email: string },
+  ) {
+    return this.repository.ensureProfileByUserId(userId, {
+      fullName: input.fullName.trim() || input.email,
+      email: input.email.trim().toLowerCase(),
+    });
+  }
+
   public async updateProfileByUserId(
     userId: string,
     input: UpdateCustomerProfileInput,
