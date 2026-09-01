@@ -24,9 +24,7 @@ export default tseslint.config(
       },
       sourceType: 'commonjs',
       parserOptions: {
-        projectService: {
-          allowDefaultProject: ['scripts/*.mjs'],
-        },
+        projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -76,6 +74,7 @@ export default tseslint.config(
   },
   {
     files: ['scripts/*.mjs'],
+    extends: [tseslint.configs.disableTypeChecked],
     rules: {
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
