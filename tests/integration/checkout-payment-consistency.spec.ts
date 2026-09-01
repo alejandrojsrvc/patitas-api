@@ -138,21 +138,24 @@ describe('checkout and payment database invariants', () => {
     });
 
     const repository = new PrismaOrderRepository(prisma as never);
-    await expect(repository.expirePaymentReservations()).resolves.toEqual({
-      expired: 1,
-    });
-    await expect(repository.expirePaymentReservations()).resolves.toEqual({
-      expired: 0,
-    });
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    const inventory = await prisma.inventoryItem.findUnique({
-      where: { variantId: fixture.variantId },
-    });
-    expect(order?.status).toBe('CANCELLED');
-    expect(order?.reservationReleasedAt).not.toBeNull();
-    expect(inventory?.reserved).toBe(0);
-    await prisma.order.delete({ where: { id: orderId } });
-    await cleanupFixture(fixture);
+    try {
+      await expect(repository.expirePaymentReservations()).resolves.toEqual({
+        expired: 1,
+      });
+      await expect(repository.expirePaymentReservations()).resolves.toEqual({
+        expired: 0,
+      });
+      const order = await prisma.order.findUnique({ where: { id: orderId } });
+      const inventory = await prisma.inventoryItem.findUnique({
+        where: { variantId: fixture.variantId },
+      });
+      expect(order?.status).toBe('CANCELLED');
+      expect(order?.reservationReleasedAt).not.toBeNull();
+      expect(inventory?.reserved).toBe(0);
+      await prisma.order.delete({ where: { id: orderId } });
+    } finally {
+      await cleanupFixture(fixture);
+    }
   });
 
   it('keeps an amount mismatch in reconciliation and makes the capture idempotent', async () => {
