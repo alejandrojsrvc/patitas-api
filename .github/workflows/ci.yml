@@ -8,6 +8,21 @@ jobs:
   quality:
     name: Quality
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/patitas
+      DIRECT_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/patitas
+      LOCAL_DATABASE_PORT: 54322
+      STORAGE_PROVIDER: minio
+      MINIO_ENDPOINT: http://127.0.0.1:59000
+      MINIO_REGION: us-east-1
+      MINIO_ACCESS_KEY_ID: minioadmin
+      MINIO_SECRET_ACCESS_KEY: minioadmin
+      MINIO_PUBLIC_BASE_URL: http://127.0.0.1:59000/product-media
+      AUTH_JWT_ISSUER: patitas-api-test
+      AUTH_JWT_AUDIENCE: patitas-test-clients
+      CORS_ORIGINS: http://localhost:3000
+      PORT: 3000
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,11 +41,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Start PostgreSQL 17 and MinIO
+        run: pnpm infra:start
+
       - name: Generate Prisma Client
         run: pnpm db:generate
 
       - name: Validate Prisma schema
         run: pnpm db:validate
+
+      - name: Apply migrations to PostgreSQL 17
+        run: pnpm db:deploy
 
       - name: Check formatting
         run: pnpm format:check
@@ -41,65 +62,34 @@ jobs:
       - name: Unit tests
         run: pnpm test:unit
 
+      - name: Integration tests
+        run: pnpm test:integration
+
+      - name: E2E tests
+        run: pnpm test:e2e
+
       - name: Build backend
         run: pnpm build
 
-  migrate-production:
-    name: Migrate production database
+  deploy-production:
+    name: Deploy production
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: quality
     runs-on: ubuntu-latest
     environment: production
     concurrency:
-      group: production-database-migrations
+      group: patitas-api-production
       cancel-in-progress: false
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      NODE_ENV: production
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.1.1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Apply committed migrations
-        run: pnpm db:deploy
-
-      - name: Verify migration status
-        run: pnpm db:status
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@48.10.2
-
-      - name: Pull Vercel production configuration
-        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Trigger Dokploy deployment
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Build Vercel production deployment
-        run: vercel build --prod --token="$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Deploy to Vercel production
-        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
+          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            "${DOKPLOY_URL}/api/application.deploy" \
+            --header "Content-Type: application/json" \
+            --header "x-api-key: ${DOKPLOY_API_TOKEN}" \
+            --data-raw "{\"applicationId\":\"${DOKPLOY_APPLICATION_ID}\"}"

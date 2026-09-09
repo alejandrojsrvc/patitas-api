@@ -15,20 +15,11 @@ const main = async (): Promise<void> => {
   const input = JSON.parse(await readFile(manifest, 'utf8')) as {
     schemaVersion?: string;
   };
-  const result =
-    input.schemaVersion === 'catalog-research.brand.v1'
-      ? await runBrandResearch(manifest, output)
-      : await runResearch(manifest, output);
-  console.log(
-    `Investigación ${result.runId}: ${result.products.length} productos, ${result.errors.length} errores.`,
-  );
+  const result = input.schemaVersion === 'catalog-research.brand.v1' ? await runBrandResearch(manifest, output) : await runResearch(manifest, output);
+  console.log(`Investigación ${result.runId}: ${result.products.length} productos, ${result.errors.length} errores.`);
 };
 
 main().catch((error: unknown) => {
-  console.error(
-    error instanceof Error
-      ? error.message
-      : 'No se pudo ejecutar la investigación.',
-  );
+  console.error(error instanceof Error ? error.message : 'No se pudo ejecutar la investigación.');
   process.exit(1);
 });

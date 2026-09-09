@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../database/prisma.service';
 import type { Prisma } from '../database/generated/prisma/client';
@@ -49,10 +43,7 @@ export class AuditController {
       ...(query.statusCode ? { statusCode: query.statusCode } : {}),
       ...(q
         ? {
-            OR: [
-              { action: { contains: q, mode: 'insensitive' } },
-              { path: { contains: q, mode: 'insensitive' } },
-            ],
+            OR: [{ action: { contains: q, mode: 'insensitive' } }, { path: { contains: q, mode: 'insensitive' } }],
           }
         : {}),
       ...(query.dateFrom || query.dateTo

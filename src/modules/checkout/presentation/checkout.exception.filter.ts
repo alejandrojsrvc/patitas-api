@@ -1,15 +1,7 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpStatus,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
 import type { Response } from 'express';
 import { DomainError } from '../../../shared/domain/domain-error';
-import {
-  CheckoutConflictError,
-  CheckoutNotFoundError,
-} from '../domain/checkout.error';
+import { CheckoutConflictError, CheckoutNotFoundError } from '../domain/checkout.error';
 
 import { errorResponse } from '../../../shared/presentation/error-response';
 
@@ -31,9 +23,7 @@ export class CheckoutExceptionFilter implements ExceptionFilter {
       .status(status)
       .json({
         ...response,
-        ...(error instanceof CheckoutConflictError && error.currentState
-          ? { currentState: error.currentState }
-          : {}),
+        ...(error instanceof CheckoutConflictError && error.currentState ? { currentState: error.currentState } : {}),
       });
   }
 }

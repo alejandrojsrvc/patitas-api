@@ -33,7 +33,7 @@ type StorefrontShell = {
     id: string | null;
     itemCount: number;
     subtotal: string;
-    currency: "ARS";
+    currency: 'ARS';
   };
 };
 ```
@@ -113,11 +113,80 @@ currentState: {
 }
 ```
 
+Una compra programada se configura con `POST
+/api/v1/checkout/sessions/:id/purchase-schedule` o su equivalente móvil bajo
+`/api/v1/mobile/checkout/sessions/:id/purchase-schedule`. Acepta `enabled` y,
+cuando está activa, `frequencyDays` de 7, 14, 21 o 30. La respuesta informa
+el descuento y los días de anticipación configurados. El checkout devuelve
+`scheduledPurchase`; no se combinan cupones con una compra programada.
+
+`GET /api/v1/me/purchase-schedules` y `POST
+/api/v1/me/purchase-schedules/:id/prepare-checkout` permiten listar y preparar
+una reposición pendiente de confirmación. La compra recurrente nunca se cobra
+sin que el cliente confirme el checkout preparado.
+
+La calculadora pública usa `POST /api/v1/replenishment-estimates`. Si no hay
+sesión devuelve un `accessToken` para conservar el cálculo sin exponer datos de
+cliente. El navegador debe enviarlo como `X-Replenishment-Token` al crear o
+consultar el aviso en `POST /api/v1/replenishment-reminders`; el aviso exige
+consentimiento explícito, email y versión del consentimiento.
+
+## Pricing y beneficios del checkout
+
+El checkout devuelve `pricing` y `actions` en la respuesta de sesión. `pricing`
+se calcula en backend e informa descuentos de productos, medio de pago y
+envío, además de `benefits` aplicados y `conflicts` explicables. `actions.coupon`
+indica si el cupón puede aplicarse y, si no, devuelve `reasonCode` y `message`.
+El frontend no debe reconstruir estas reglas.
+
+La compra programada y las promociones automáticas de productos/orden no se
+acumulan. La compra programada sí puede acumularse con transferencia, crédito y
+beneficios de envío. Un cupón compatible sí puede acumularse con transferencia
+y envío gratis. Si se intenta aplicar un cupón con compra programada activa,
+`POST /api/v1/checkout/sessions/:id/coupon` responde conflicto inmediatamente;
+la confirmación vuelve a validar todas las reglas.
+
+La configuración administrativa se consulta y modifica en
+`GET/PATCH /api/v1/admin/purchase-schedules/configuration`, con `enabled`,
+`discountPercent` y `leadDays`. Una configuración existente no se reemplaza
+por seeds ni por inicializaciones. Las compras programadas ya creadas conservan
+su porcentaje y anticipación como snapshot.
+
+La transferencia aparece en `GET /api/v1/payments/methods` únicamente si está
+habilitada y tiene datos bancarios configurados. Al confirmar un checkout con
+`BANK_TRANSFER`, la orden queda `PENDING_PAYMENT`; el backend persiste el
+intento, el importe esperado y su vencimiento, sin crear una captura pagada.
+El resultado incluye `transfer` con `status`, `expectedAmount`, `expiresAt` e
+`instructions`. El cliente puede consultar `GET /api/v1/payments/orders/:id/transfer`,
+informar `POST /api/v1/payments/orders/:id/transfer/report` y cargar evidencia
+en `POST /api/v1/payments/orders/:id/transfer/proof/upload`. La evidencia nunca
+aprueba el pago.
+
+Backoffice consulta `GET /api/v1/admin/payment-method-benefits/transfers` y
+confirma con `POST /api/v1/admin/payment-method-benefits/transfers/:attemptId/confirm`.
+Debe enviar el importe exacto esperado; la acción queda auditada. La
+confirmación administrativa reutiliza el mismo proceso interno de aprobación
+que una notificación de proveedor externo.
+
+Las órdenes exponen `benefits`, cada uno con tipo, alcance, origen, descripción,
+porcentaje y monto, para conservar el desglose de pricing usado al confirmar.
+
 ## Catálogo
 
 `GET /api/v1/products` devuelve únicamente resultados y paginación. La
 ordenación por precio se pagina en PostgreSQL y no descarga el catálogo para
 ordenarlo en memoria.
+
+`GET /api/v1/products/autocomplete?q=<prefijo>` y
+`GET /api/v1/mobile/products/autocomplete?q=<prefijo>` devuelven como máximo
+ocho coincidencias compactas, una por variante vendible. Con menos de dos
+caracteres devuelven `{ items: [] }` sin consultar el catálogo.
+
+Cada elemento contiene `id` de variante, `productId`, `slug`, `name`,
+`presentation`, `displayName`, marca resumida, imagen principal, `salePrice` y
+`currency: "ARS"`. La imagen es una URL pública estable de `product-media`.
+Estas respuestas no incluyen promociones, fulfillment, stock detallado ni el
+resto de variantes del producto.
 
 `GET /api/v1/products/facets` recibe los mismos parámetros de contexto,
 especialmente `category` y `species`, y devuelve las opciones posibles para

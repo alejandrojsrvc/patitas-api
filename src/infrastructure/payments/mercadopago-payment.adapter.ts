@@ -1,13 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'node:crypto';
-import {
-  MercadoPagoConfig,
-  Payment,
-  PaymentRefund,
-  Preference,
-  WebhookSignatureValidator,
-} from 'mercadopago';
+import { MercadoPagoConfig, Payment, PaymentRefund, Preference, WebhookSignatureValidator } from 'mercadopago';
 import type {
   InitiatePaymentInput,
   PaymentInitiationResult,
@@ -22,18 +16,16 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
   private readonly accessToken: string;
   private readonly webhookSecret: string | undefined;
   private readonly notificationUrl: string | undefined;
+  private readonly publicWebUrl: string | undefined;
   private readonly preference: Preference;
   private readonly payment: Payment;
   private readonly refund: PaymentRefund;
 
   public constructor(config: ConfigService) {
-    this.accessToken = config
-      .get<string>('MERCADOPAGO_ACCESS_TOKEN', '')
-      .trim();
-    this.webhookSecret =
-      config.get<string>('MERCADOPAGO_WEBHOOK_SECRET')?.trim() || undefined;
-    this.notificationUrl =
-      config.get<string>('MERCADOPAGO_NOTIFICATION_URL')?.trim() || undefined;
+    this.accessToken = config.get<string>('MERCADOPAGO_ACCESS_TOKEN', '').trim();
+    this.webhookSecret = config.get<string>('MERCADOPAGO_WEBHOOK_SECRET')?.trim() || undefined;
+    this.notificationUrl = config.get<string>('MERCADOPAGO_NOTIFICATION_URL')?.trim() || undefined;
+    this.publicWebUrl = config.get<string>('PUBLIC_WEB_URL')?.trim() || undefined;
     const mercadoPagoConfig = new MercadoPagoConfig({
       accessToken: this.accessToken,
     });
@@ -42,14 +34,8 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
     this.refund = new PaymentRefund(mercadoPagoConfig);
   }
 
-  public async refundPayment(input: {
-    paymentId: string;
-    amount: string;
-    currency: string;
-    idempotencyKey: string;
-  }) {
-    if (!this.accessToken)
-      throw new Error('MERCADOPAGO_ACCESS_TOKEN no está configurado.');
+  public async refundPayment(input: { paymentId: string; amount: string; currency: string; idempotencyKey: string }) {
+    if (!this.accessToken) throw new Error('MERCADOPAGO_ACCESS_TOKEN no está configurado.');
     try {
       const response = await this.refund.create({
         payment_id: input.paymentId,
@@ -64,8 +50,7 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
             : status === 'pending' || status === 'in_process'
               ? ('PROCESSING' as const)
               : ('FAILED' as const),
-        externalOperationId:
-          response.id !== undefined ? String(response.id) : undefined,
+        externalOperationId: response.id !== undefined ? String(response.id) : undefined,
         rawResponse: sanitize(response),
       };
     } catch (error) {
@@ -76,23 +61,29 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
     }
   }
 
-  public createExternalReference(input: {
-    orderId: string;
-    attemptId: string;
-  }): string {
-    return `order-${input.orderId}-${createHash('sha256')
-      .update(input.attemptId)
-      .digest('hex')
-      .slice(0, 16)}`;
+  public createExternalReference(input: { orderId: string; attemptId: string }): string {
+    return `order-${input.orderId}-${createHash('sha256').update(input.attemptId).digest('hex').slice(0, 16)}`;
   }
 
-  public async initiatePayment(
-    input: InitiatePaymentInput,
-  ): Promise<PaymentInitiationResult> {
-    if (!this.accessToken)
-      throw new Error('MERCADOPAGO_ACCESS_TOKEN no está configurado.');
+  public assertReady(): void {
+    if (!this.accessToken) throw new Error('Mercado Pago no está configurado.');
+    if (!this.publicWebUrl) throw new Error('PUBLIC_WEB_URL no está configurada.');
+    const url = new URL(this.publicWebUrl);
+    if (!['http:', 'https:'].includes(url.protocol)) throw new Error('PUBLIC_WEB_URL debe ser una URL web.');
+  }
+
+  public async initiatePayment(input: InitiatePaymentInput): Promise<PaymentInitiationResult> {
+    this.assertReady();
+    const returnUrl = new URL('/checkout/resultado', this.publicWebUrl);
+    returnUrl.searchParams.set('orderId', input.orderId);
     const response = await this.preference.create({
       body: {
+        back_urls: {
+          success: returnUrl.toString(),
+          pending: returnUrl.toString(),
+          failure: returnUrl.toString(),
+        },
+        ...(returnUrl.protocol === 'https:' ? { auto_return: 'approved' as const } : {}),
         items: [
           {
             id: input.orderId,
@@ -110,8 +101,7 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
       },
       requestOptions: { idempotencyKey: input.idempotencyKey },
     });
-    if (typeof response.init_point !== 'string')
-      throw new Error('Mercado Pago no pudo crear la preferencia.');
+    if (typeof response.init_point !== 'string') throw new Error('Mercado Pago no pudo crear la preferencia.');
     return {
       provider: this.name,
       externalId: response.id,
@@ -133,15 +123,14 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
     const data = asRecord(body.data);
     const bodyDataId = scalarString(data.id);
     const queryDataId = scalarString(input.dataId);
-    if (bodyDataId && queryDataId && bodyDataId !== queryDataId)
-      throw new Error('El ID del webhook de Mercado Pago no coincide.');
+    if (bodyDataId && queryDataId && bodyDataId !== queryDataId) throw new Error('El ID del webhook de Mercado Pago no coincide.');
+
     this.verifySignature(input.headers, queryDataId ?? bodyDataId);
-    const type =
-      scalarString(body.type) ?? scalarString(body.action) ?? 'payment';
+
+    const type = scalarString(body.type) ?? scalarString(body.action) ?? 'payment';
     const paymentId = bodyDataId ?? scalarString(body.id) ?? '';
     return Promise.resolve({
-      externalEventId:
-        scalarString(body.id) ?? `${type}:${paymentId || 'unknown'}`,
+      externalEventId: scalarString(body.id) ?? `${type}:${paymentId || 'unknown'}`,
       eventType: type,
       externalPaymentId: paymentId || undefined,
       externalReference: scalarString(body.external_reference),
@@ -149,9 +138,7 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
     });
   }
 
-  public async resolveWebhook(
-    receipt: PaymentWebhookReceipt,
-  ): Promise<PaymentWebhookResult> {
+  public async resolveWebhook(receipt: PaymentWebhookReceipt): Promise<PaymentWebhookResult> {
     const payment = receipt.eventType.includes('merchant_order')
       ? { status: 'PENDING' as const, externalReference: undefined }
       : await this.fetchPaymentStatus(receipt.externalPaymentId ?? '');
@@ -164,18 +151,15 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
     };
   }
 
-  private verifySignature(
-    headers: Record<string, string | string[] | undefined>,
-    dataId: string | string[] | undefined,
-  ): void {
-    if (!this.webhookSecret)
-      throw new Error(
-        'MERCADOPAGO_WEBHOOK_SECRET no está configurada para validar el webhook.',
-      );
+  private verifySignature(headers: Record<string, string | string[] | undefined>, dataId: string | string[] | undefined): void {
+    if (!this.webhookSecret) throw new Error('MERCADOPAGO_WEBHOOK_SECRET no está configurada para validar el webhook.');
     const signature = single(headers['x-signature']);
     const requestId = single(headers['x-request-id']);
-    if (!signature || !requestId)
-      throw new Error('Webhook de Mercado Pago sin firma.');
+    if (!signature || !requestId) throw new Error('Webhook de Mercado Pago sin firma.');
+    const timestamp = /(?:^|,)ts=(\d{10,13})(?:,|$)/.exec(signature)?.[1];
+    if (!timestamp) throw new Error('Webhook de Mercado Pago sin timestamp.');
+    const timestampMs = Number(timestamp) < 1_000_000_000_000 ? Number(timestamp) * 1_000 : Number(timestamp);
+    if (Math.abs(Date.now() - timestampMs) > 5 * 60_000) throw new Error('Webhook de Mercado Pago vencido.');
     try {
       WebhookSignatureValidator.validate({
         xSignature: signature,
@@ -213,34 +197,21 @@ export class MercadoPagoPaymentAdapter implements PaymentProvider {
             } as Record<string, PaymentWebhookResult['status']>
           )[response.status ?? 'pending'] ?? 'PENDING',
         externalReference: response.external_reference,
-        amount:
-          typeof response.transaction_amount === 'number'
-            ? response.transaction_amount.toFixed(2)
-            : undefined,
+        amount: typeof response.transaction_amount === 'number' ? response.transaction_amount.toFixed(2) : undefined,
         currency: response.currency_id,
       };
     } catch (error) {
-      throw new Error(
-        `No se pudo verificar el pago de Mercado Pago: ${
-          error instanceof Error ? error.message : 'error desconocido'
-        }`,
-      );
+      throw new Error(`No se pudo verificar el pago de Mercado Pago: ${error instanceof Error ? error.message : 'error desconocido'}`);
     }
   }
 }
 
-const single = (value: string | string[] | undefined): string | undefined =>
-  Array.isArray(value) ? value[0] : value;
+const single = (value: string | string[] | undefined): string | undefined => (Array.isArray(value) ? value[0] : value);
 
 const asRecord = (value: unknown): Record<string, unknown> =>
-  value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
+  value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 
-const scalarString = (value: unknown): string | undefined =>
-  typeof value === 'string' || typeof value === 'number'
-    ? String(value)
-    : undefined;
+const scalarString = (value: unknown): string | undefined => (typeof value === 'string' || typeof value === 'number' ? String(value) : undefined);
 
 const sanitize = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(sanitize);
@@ -253,5 +224,4 @@ const sanitize = (value: unknown): unknown => {
   );
 };
 
-const safeError = (error: unknown): string =>
-  error instanceof Error ? error.message.slice(0, 500) : 'Error desconocido';
+const safeError = (error: unknown): string => (error instanceof Error ? error.message.slice(0, 500) : 'Error desconocido');

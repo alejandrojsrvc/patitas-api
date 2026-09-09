@@ -1,16 +1,6 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsEmail,
-  IsInt,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsBoolean, IsEmail, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 
 export class CreateCustomerDto {
   @ApiProperty() @IsString() @MaxLength(160) public fullName!: string;

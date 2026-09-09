@@ -14,14 +14,10 @@ const scope = valueFor('--scope') ?? 'catalog';
 const slug = valueFor('--slug');
 
 if (!baseUrl) {
-  throw new Error(
-    'Falta --url o PUBLIC_WEB_URL. Ejemplo: --url http://localhost:3000',
-  );
+  throw new Error('Falta --url o PUBLIC_WEB_URL. Ejemplo: --url http://localhost:3000');
 }
 if (!token) {
-  throw new Error(
-    'Falta CATALOG_CACHE_INVALIDATION_SECRET en el entorno del API.',
-  );
+  throw new Error('Falta CATALOG_CACHE_INVALIDATION_SECRET en el entorno del API.');
 }
 
 const endpoint = new URL('/api/internal/cache/catalog', baseUrl);
@@ -39,13 +35,7 @@ const response = await fetch(endpoint, {
 
 const body = await response.json().catch(() => null);
 if (!response.ok) {
-  throw new Error(
-    `La invalidación falló (${response.status}). ${
-      body && typeof body.message === 'string'
-        ? body.message
-        : 'Respuesta no válida.'
-    }`,
-  );
+  throw new Error(`La invalidación falló (${response.status}). ${body && typeof body.message === 'string' ? body.message : 'Respuesta no válida.'}`);
 }
 
 console.log(JSON.stringify(body ?? { ok: true }));

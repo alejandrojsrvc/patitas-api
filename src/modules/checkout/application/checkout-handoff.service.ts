@@ -1,7 +1,4 @@
-import {
-  createAnonymousToken,
-  hashAnonymousToken,
-} from '../../../shared/application/anonymous-token';
+import { createAnonymousToken, hashAnonymousToken } from '../../../shared/application/anonymous-token';
 import type { CheckoutHandoffRepository } from '../domain/checkout-handoff.repository';
 
 export class CheckoutHandoffService {

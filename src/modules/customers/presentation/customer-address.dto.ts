@@ -32,6 +32,4 @@ export class CreateCustomerAddressDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() public isDefault?: boolean;
 }
 
-export class UpdateCustomerAddressDto extends PartialType(
-  CreateCustomerAddressDto,
-) {}
+export class UpdateCustomerAddressDto extends PartialType(CreateCustomerAddressDto) {}

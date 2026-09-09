@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AdminAuditInterceptor } from '../../../infrastructure/audit/admin-audit.interceptor';
 import { Roles } from '../../auth/presentation/decorators/roles.decorator';
@@ -23,18 +15,13 @@ import { UpdatePaymentProviderConfigurationDto } from './payment-provider-config
 @UseInterceptors(AdminAuditInterceptor)
 @Controller('admin/payment-providers')
 export class AdminPaymentProviderController {
-  public constructor(
-    private readonly configurations: PaymentProviderConfigurationService,
-  ) {}
+  public constructor(private readonly configurations: PaymentProviderConfigurationService) {}
 
   @Get() public list() {
     return this.configurations.list();
   }
 
-  @Patch(':provider') public update(
-    @Param('provider') provider: string,
-    @Body() input: UpdatePaymentProviderConfigurationDto,
-  ) {
+  @Patch(':provider') public update(@Param('provider') provider: string, @Body() input: UpdatePaymentProviderConfigurationDto) {
     return this.configurations.update(provider, input);
   }
 }

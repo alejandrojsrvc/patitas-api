@@ -69,25 +69,28 @@ export interface ReminderPlanRecord {
   durationDaysMax: number;
   petName: string;
 }
+export interface ReminderSubscriptionRecord {
+  id: string;
+  customerId: string | null;
+  guestAccessTokenHash: string | null;
+  email: string;
+  nextReminderAt: Date;
+  estimateId: string;
+  petName: string;
+  durationDaysMax: number;
+}
+export interface PurchaseScheduleReminderRecord {
+  id: string;
+  customerId: string;
+  nextReminderAt: Date;
+  productName: string;
+}
 export interface NotificationRepository {
   getPreferences(customerId: string): Promise<NotificationPreferences>;
-  updatePreferences(
-    customerId: string,
-    input: NotificationPreferences,
-  ): Promise<NotificationPreferences>;
-  getMobilePreferences(
-    customerId: string,
-  ): Promise<MobileNotificationPreferences>;
-  updateMobilePreferences(
-    customerId: string,
-    input: Partial<MobileNotificationPreferences>,
-  ): Promise<MobileNotificationPreferences>;
-  registerDeviceToken(input: {
-    customerId: string;
-    token: string;
-    platform: string;
-    appVersion?: string | null;
-  }): Promise<void>;
+  updatePreferences(customerId: string, input: NotificationPreferences): Promise<NotificationPreferences>;
+  getMobilePreferences(customerId: string): Promise<MobileNotificationPreferences>;
+  updateMobilePreferences(customerId: string, input: Partial<MobileNotificationPreferences>): Promise<MobileNotificationPreferences>;
+  registerDeviceToken(input: { customerId: string; token: string; platform: string; appVersion?: string | null }): Promise<void>;
   registerMobileDeviceToken(input: {
     customerId: string;
     token: string;
@@ -97,14 +100,8 @@ export interface NotificationRepository {
     appVersion?: string | null;
   }): Promise<DeviceTokenRecord>;
   deactivateDeviceToken(customerId: string, id: string): Promise<void>;
-  listInAppNotifications(
-    customerId: string,
-    input?: { unreadOnly?: boolean; cursor?: string; limit?: number },
-  ): Promise<InAppNotificationList>;
-  markInAppNotificationRead(
-    customerId: string,
-    id: string,
-  ): Promise<InAppNotificationRecord | null>;
+  listInAppNotifications(customerId: string, input?: { unreadOnly?: boolean; cursor?: string; limit?: number }): Promise<InAppNotificationList>;
+  markInAppNotificationRead(customerId: string, id: string): Promise<InAppNotificationRecord | null>;
   markAllInAppNotificationsRead(customerId: string): Promise<number>;
   createInAppNotification(input: {
     customerId: string;
@@ -121,17 +118,10 @@ export interface NotificationRepository {
     destination: string;
     version: string;
   }): Promise<NotificationConsentRecord>;
-  unsubscribe(input: {
-    customerId?: string;
-    guestTokenHash?: string;
-    channel: NotificationChannel;
-  }): Promise<void>;
+  unsubscribe(input: { customerId?: string; guestTokenHash?: string; channel: NotificationChannel }): Promise<void>;
   listAbandonedCarts(cutoff: Date): Promise<AbandonedCartRecord[]>;
   markCartAbandoned(cartId: string, at: Date): Promise<void>;
-  findConsent(
-    channel: NotificationChannel,
-    destination: string,
-  ): Promise<NotificationConsentRecord | null>;
+  findConsent(channel: NotificationChannel, destination: string): Promise<NotificationConsentRecord | null>;
   findConsentForOwner(input: {
     channel: NotificationChannel;
     customerId?: string | null;
@@ -146,10 +136,17 @@ export interface NotificationRepository {
     checkoutSessionId?: string | null;
     planId?: string;
     customerId?: string | null;
+    replenishmentReminderId?: string;
+    template?: string;
   }): Promise<string>;
   markSent(id: string, providerMessageId?: string): Promise<void>;
   markFailed(id: string, message: string): Promise<void>;
   listDuePlans(now: Date): Promise<ReminderPlanRecord[]>;
   pausePlan(id: string, at: Date): Promise<void>;
   advancePlan(id: string, nextReminderAt: Date): Promise<void>;
+  listDueReminderSubscriptions(now: Date): Promise<ReminderSubscriptionRecord[]>;
+  advanceReminderSubscription(id: string, nextReminderAt: Date): Promise<void>;
+  pauseReminderSubscription(id: string, at: Date): Promise<void>;
+  listDuePurchaseSchedules(now: Date): Promise<PurchaseScheduleReminderRecord[]>;
+  markPurchaseScheduleAwaitingConfirmation(id: string): Promise<void>;
 }

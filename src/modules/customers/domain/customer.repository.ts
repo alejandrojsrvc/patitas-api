@@ -15,14 +15,8 @@ export interface CustomerRepository {
   findById(id: string): Promise<Customer | null>;
   findByUserId(userId: string): Promise<Customer | null>;
   findProfileByUserId(userId: string): Promise<CustomerProfile | null>;
-  ensureProfileByUserId(
-    userId: string,
-    input: { fullName: string; email: string },
-  ): Promise<CustomerProfile>;
+  ensureProfileByUserId(userId: string, input: { fullName: string; email: string }): Promise<CustomerProfile>;
   create(input: CreateCustomerInput): Promise<Customer>;
   update(id: string, input: UpdateCustomerInput): Promise<Customer>;
-  updateProfile(
-    id: string,
-    input: UpdateCustomerProfileInput,
-  ): Promise<CustomerProfile>;
+  updateProfile(id: string, input: UpdateCustomerProfileInput): Promise<CustomerProfile>;
 }

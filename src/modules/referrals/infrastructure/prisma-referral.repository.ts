@@ -1,12 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import type {
-  ReferralCampaignRecord,
-  ReferralCodeRecord,
-  ReferralLedgerRecord,
-  ReferralRepository,
-} from '../domain/referral.repository';
+import type { ReferralCampaignRecord, ReferralCodeRecord, ReferralLedgerRecord, ReferralRepository } from '../domain/referral.repository';
 
 const campaignSelect = {
   id: true,
@@ -50,9 +45,7 @@ export class PrismaReferralRepository implements ReferralRepository {
     );
   }
 
-  public async findActiveCampaign(
-    id: string,
-  ): Promise<ReferralCampaignRecord | null> {
+  public async findActiveCampaign(id: string): Promise<ReferralCampaignRecord | null> {
     const campaign = await this.prisma.referralCampaign.findFirst({
       where: { id, active: true },
       select: campaignSelect,
@@ -60,9 +53,7 @@ export class PrismaReferralRepository implements ReferralRepository {
     return campaign ? mapCampaign(campaign) : null;
   }
 
-  public async findActiveCode(
-    code: string,
-  ): Promise<ReferralCodeRecord | null> {
+  public async findActiveCode(code: string): Promise<ReferralCodeRecord | null> {
     const record = await this.prisma.referralCode.findFirst({
       where: { code, active: true },
       include: codeInclude,
@@ -70,11 +61,7 @@ export class PrismaReferralRepository implements ReferralRepository {
     return record ? mapCode(record) : null;
   }
 
-  public async createCode(
-    customerId: string,
-    campaignId: string,
-    code: string,
-  ): Promise<ReferralCodeRecord> {
+  public async createCode(customerId: string, campaignId: string, code: string): Promise<ReferralCodeRecord> {
     return mapCode(
       await this.prisma.referralCode.create({
         data: { campaignId, referrerId: customerId, code },

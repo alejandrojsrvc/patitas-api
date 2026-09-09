@@ -1,7 +1,4 @@
-import type {
-  MobileAccessRepository,
-  RecordMobileAccessInput,
-} from '../../../shared/application/ports/mobile-access.repository';
+import type { MobileAccessRepository, RecordMobileAccessInput } from '../../../shared/application/ports/mobile-access.repository';
 
 export class MobileAccessService {
   public constructor(private readonly repository: MobileAccessRepository) {}

@@ -24,11 +24,7 @@ export interface SupplierRepository {
   findSupplier(id: string): Promise<Supplier | null>;
   createSupplier(input: CreateSupplierInput): Promise<Supplier>;
   updateSupplier(id: string, input: UpdateSupplierInput): Promise<Supplier>;
-  listOffers(filter: {
-    supplierId?: string;
-    variantId?: string;
-    active?: boolean;
-  }): Promise<SupplierOffer[]>;
+  listOffers(filter: { supplierId?: string; variantId?: string; active?: boolean }): Promise<SupplierOffer[]>;
   listAllOffers(): Promise<
     Array<
       SupplierOffer & {
@@ -40,12 +36,6 @@ export interface SupplierRepository {
   >;
   findOffer(id: string): Promise<SupplierOffer | null>;
   createOffer(input: CreateSupplierOfferInput): Promise<SupplierOffer>;
-  updateOffer(
-    id: string,
-    input: UpdateSupplierOfferInput,
-  ): Promise<SupplierOffer>;
-  importOffers(
-    rows: SupplierOfferImportRow[],
-    options: SupplierOfferImportOptions,
-  ): Promise<SupplierOfferImportResult>;
+  updateOffer(id: string, input: UpdateSupplierOfferInput): Promise<SupplierOffer>;
+  importOffers(rows: SupplierOfferImportRow[], options: SupplierOfferImportOptions): Promise<SupplierOfferImportResult>;
 }

@@ -4,10 +4,7 @@ import type { IdentityEmailAction } from '../../../shared/application/ports/iden
 export class AuthEmailService {
   public constructor(private readonly notifications: NotificationProvider) {}
 
-  public async sendConfirmation(
-    email: string,
-    action: IdentityEmailAction,
-  ): Promise<void> {
+  public async sendConfirmation(email: string, action: IdentityEmailAction): Promise<void> {
     await this.notifications.send({
       channel: 'EMAIL',
       destination: email.trim().toLowerCase(),
@@ -16,10 +13,7 @@ export class AuthEmailService {
     });
   }
 
-  public async sendPasswordRecovery(
-    email: string,
-    action: IdentityEmailAction,
-  ): Promise<void> {
+  public async sendPasswordRecovery(email: string, action: IdentityEmailAction): Promise<void> {
     await this.notifications.send({
       channel: 'EMAIL',
       destination: email.trim().toLowerCase(),

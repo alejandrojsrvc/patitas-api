@@ -1,10 +1,5 @@
 import { CatalogService } from '../../../src/modules/catalog/application/catalog.service';
-import type {
-  Brand,
-  Category,
-  Product,
-  ProductVariant,
-} from '../../../src/modules/catalog/domain/catalog.types';
+import type { Brand, Category, Product, ProductVariant } from '../../../src/modules/catalog/domain/catalog.types';
 import type { CatalogRepository } from '../../../src/modules/catalog/domain/repositories/catalog.repository';
 import type { StorageProvider } from '../../../src/shared/application/ports/storage-provider.interface';
 
@@ -170,9 +165,7 @@ describe('CatalogService', () => {
         total: 2,
       }),
     } as unknown as CatalogRepository;
-    const getPublicUrl = jest.fn(
-      ({ path }: { path: string }) => `https://cdn.test/${path}`,
-    );
+    const getPublicUrl = jest.fn(({ path }: { path: string }) => `https://cdn.test/${path}`);
     const storage = { getPublicUrl } as unknown as StorageProvider;
     const service = new CatalogService(repository, storage);
 
@@ -197,9 +190,7 @@ describe('CatalogService', () => {
         },
       ]),
     } as unknown as CatalogRepository;
-    const getPublicUrl = jest.fn(
-      ({ path }: { path: string }) => `https://cdn.test/${path}`,
-    );
+    const getPublicUrl = jest.fn(({ path }: { path: string }) => `https://cdn.test/${path}`);
     const service = new CatalogService(repository, {
       getPublicUrl,
     } as unknown as StorageProvider);
@@ -207,9 +198,58 @@ describe('CatalogService', () => {
     const result = await service.listBrands(true);
 
     expect(getPublicUrl).toHaveBeenCalledTimes(2);
-    expect(result.map((item) => item.logoUrl)).toEqual([
-      'https://cdn.test/brands/brand-1/logo.png',
-      'https://cdn.test/brands/brand-2/logo.png',
+    expect(result.map((item) => item.logoUrl)).toEqual(['https://cdn.test/brands/brand-1/logo.png', 'https://cdn.test/brands/brand-2/logo.png']);
+  });
+
+  it('does not query autocomplete for prefixes shorter than two characters', async () => {
+    const autocompleteProductVariants = jest.fn();
+    const repository = {
+      autocompleteProductVariants,
+    } as unknown as CatalogRepository;
+    const service = new CatalogService(repository);
+
+    await expect(service.autocompleteProducts(' e ')).resolves.toEqual([]);
+    expect(autocompleteProductVariants).not.toHaveBeenCalled();
+  });
+
+  it('returns compact autocomplete items with provider-resolved images', async () => {
+    const autocompleteProductVariants = jest.fn().mockResolvedValue([
+      {
+        id: 'variant-1',
+        productId: 'product-1',
+        slug: 'producto-mock',
+        name: 'Producto mock',
+        presentation: '3 kg',
+        displayName: 'Producto mock · 3 kg',
+        brand: { id: 'brand-1', name: 'Excellent', slug: 'excellent' },
+        image: { url: 'products/product-1/front.webp', altText: 'Frente' },
+        salePrice: '8990.00',
+        currency: 'ARS' as const,
+      },
     ]);
+    const repository = {
+      autocompleteProductVariants,
+    } as unknown as CatalogRepository;
+    const getPublicUrl = jest.fn(({ path }: { path: string }) => `https://cdn.test/${path}`);
+    const service = new CatalogService(repository, {
+      getPublicUrl,
+    } as unknown as StorageProvider);
+
+    await expect(service.autocompleteProducts('  ex   ')).resolves.toEqual([
+      expect.objectContaining({
+        id: 'variant-1',
+        displayName: 'Producto mock · 3 kg',
+        salePrice: '8990.00',
+        image: {
+          url: 'https://cdn.test/products/product-1/front.webp',
+          altText: 'Frente',
+        },
+      }),
+    ]);
+    expect(autocompleteProductVariants).toHaveBeenCalledWith('ex', 8);
+    expect(getPublicUrl).toHaveBeenCalledWith({
+      bucket: 'product-media',
+      path: 'products/product-1/front.webp',
+    });
   });
 });

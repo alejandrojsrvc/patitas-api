@@ -20,10 +20,29 @@ describe('CheckoutBootstrapService', () => {
         id: 'standard',
         available: true,
         cost: '3000.00',
+        tariff: '3000.00',
+        deliveryCount: 1,
+        zoneId: 'zone-1',
+        zoneName: 'CABA',
+        estimate: 'Entrega hoy',
+        message: 'Envío disponible.',
+        reasonCode: null,
         deliverySlots: [],
         internalReason: 'must-not-leak',
       },
-      { id: 'disabled', available: false, cost: '0.00', deliverySlots: [] },
+      {
+        id: 'disabled',
+        available: false,
+        cost: '0.00',
+        tariff: '0.00',
+        deliveryCount: 0,
+        zoneId: null,
+        zoneName: null,
+        estimate: null,
+        message: 'Sin cobertura.',
+        reasonCode: 'OUT_OF_COVERAGE',
+        deliverySlots: [],
+      },
     ]);
     const service = new CheckoutBootstrapService(
       {
@@ -31,9 +50,7 @@ describe('CheckoutBootstrapService', () => {
         shippingOptionsForSession,
       } as unknown as CheckoutService,
       {
-        listForUserByCustomerId: jest
-          .fn()
-          .mockResolvedValue([{ id: 'address-1' }]),
+        listForUserByCustomerId: jest.fn().mockResolvedValue([{ id: 'address-1' }]),
       } as unknown as CustomerAddressService,
       {
         availableMethods: jest.fn().mockResolvedValue([{ id: 'payway' }]),
@@ -53,7 +70,40 @@ describe('CheckoutBootstrapService', () => {
     expect(find).toHaveBeenCalledTimes(1);
     expect(shippingOptionsForSession).toHaveBeenCalledWith(session);
     expect(result.shippingOptions).toEqual([
-      { id: 'standard', cost: '3000.00', deliverySlots: [] },
+      {
+        id: 'standard',
+        cost: '3000.00',
+        tariff: '3000.00',
+        deliveryCount: 1,
+        zoneId: 'zone-1',
+        zoneName: 'CABA',
+        estimate: 'Entrega hoy',
+        available: true,
+        message: 'Envío disponible.',
+        reasonCode: null,
+        deliverySlots: [],
+        freeShippingFrom: undefined,
+        eligibleAmount: undefined,
+        remainingForFreeShipping: undefined,
+        benefit: undefined,
+      },
+      {
+        id: 'disabled',
+        cost: '0.00',
+        tariff: '0.00',
+        deliveryCount: 0,
+        zoneId: null,
+        zoneName: null,
+        estimate: null,
+        available: false,
+        message: 'Sin cobertura.',
+        reasonCode: 'OUT_OF_COVERAGE',
+        deliverySlots: [],
+        freeShippingFrom: undefined,
+        eligibleAmount: undefined,
+        remainingForFreeShipping: undefined,
+        benefit: undefined,
+      },
     ]);
     expect(result.shell.cart).toEqual({
       id: 'cart-1',

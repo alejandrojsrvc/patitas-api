@@ -3,13 +3,7 @@ import { Transform } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
 import type { AccountSection } from '../application/account-query.service';
 
-const accountSections: AccountSection[] = [
-  'overview',
-  'orders',
-  'addresses',
-  'pets',
-  'replenishments',
-];
+const accountSections: AccountSection[] = ['overview', 'orders', 'addresses', 'pets', 'replenishments'];
 
 export class AccountScreenQueryDto {
   @ApiPropertyOptional({ enum: accountSections, default: 'overview' })

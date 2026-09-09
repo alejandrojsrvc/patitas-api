@@ -1,11 +1,5 @@
-import {
-  extractManufacturer,
-  extractRetailObservation,
-} from '../../../tools/catalog-research/adapters';
-import {
-  normalizeMoney,
-  normalizeWeightGrams,
-} from '../../../tools/catalog-research/normalizers';
+import { extractManufacturer, extractRetailObservation } from '../../../tools/catalog-research/adapters';
+import { normalizeMoney, normalizeWeightGrams } from '../../../tools/catalog-research/normalizers';
 import type { CatalogResearchProductInput } from '../../../tools/catalog-research/types';
 
 const input: CatalogResearchProductInput = {
@@ -67,12 +61,8 @@ describe('catalog research extraction', () => {
         }),
       ]),
     );
-    expect(result.product.analyticalComposition).toEqual([
-      expect.objectContaining({ name: 'Proteína', minimum: 23 }),
-    ]);
-    expect(result.product.images[0]?.sourceUrl).toBe(
-      'https://cdn.example/old-prince.png',
-    );
+    expect(result.product.analyticalComposition).toEqual([expect.objectContaining({ name: 'Proteína', minimum: 23 })]);
+    expect(result.product.images[0]?.sourceUrl).toBe('https://cdn.example/old-prince.png');
   });
 
   it('marks a retailer with a different brand as a mismatch', () => {

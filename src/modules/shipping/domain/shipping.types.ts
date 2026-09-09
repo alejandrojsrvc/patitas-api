@@ -18,6 +18,7 @@ export interface ShippingOptionInput {
 export interface ShippingOptionQuote extends ShippingOption {
   cost: string;
   providerCost: string;
+  tariff: string;
   vat: string;
   subsidy: string;
   deliveryCount: number;
@@ -32,6 +33,16 @@ export interface ShippingOptionQuote extends ShippingOption {
     end: string;
     date: string;
   }>;
+  freeShippingFrom: string | null;
+  eligibleAmount: string;
+  remainingForFreeShipping: string | null;
+  reasonCode: string | null;
+  benefit?: {
+    type?: string;
+    origin: string;
+    description: string;
+    amount: string;
+  } | null;
   available: boolean;
   message: string;
 }
@@ -44,6 +55,7 @@ export interface ShippingZone {
   id: string;
   name: string;
   type: ShippingCoverageType;
+  region: 'AMBA' | 'CABA';
   active: boolean;
   priority: number;
   postalCodes: string[];
@@ -60,6 +72,7 @@ export interface ShippingZone {
 export interface ShippingZoneInput {
   name: string;
   type: ShippingCoverageType;
+  region: 'AMBA' | 'CABA';
   active?: boolean;
   priority?: number;
   postalCodes?: string[];

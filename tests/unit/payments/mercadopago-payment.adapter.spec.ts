@@ -12,6 +12,7 @@ describe('MercadoPagoPaymentAdapter', () => {
     const adapter = new MercadoPagoPaymentAdapter(
       buildConfig({
         MERCADOPAGO_ACCESS_TOKEN: 'TEST-access-token',
+        PUBLIC_WEB_URL: 'https://shop.example.com',
       }),
     );
     const preference = (
@@ -38,6 +39,12 @@ describe('MercadoPagoPaymentAdapter', () => {
 
     expect(preference.create).toHaveBeenCalledWith({
       body: {
+        back_urls: {
+          success: 'https://shop.example.com/checkout/resultado?orderId=order-123',
+          pending: 'https://shop.example.com/checkout/resultado?orderId=order-123',
+          failure: 'https://shop.example.com/checkout/resultado?orderId=order-123',
+        },
+        auto_return: 'approved',
         items: [
           {
             id: 'order-123',
@@ -65,6 +72,21 @@ describe('MercadoPagoPaymentAdapter', () => {
     });
   });
 
+  it('does not offer payment without a configured return URL', () => {
+    const adapter = new MercadoPagoPaymentAdapter(buildConfig({ MERCADOPAGO_ACCESS_TOKEN: 'TEST-access-token' }));
+    expect(() => adapter.assertReady()).toThrow('PUBLIC_WEB_URL');
+  });
+
+  it('rejects a non-web return URL', () => {
+    const adapter = new MercadoPagoPaymentAdapter(
+      buildConfig({
+        MERCADOPAGO_ACCESS_TOKEN: 'TEST-access-token',
+        PUBLIC_WEB_URL: 'javascript:alert(1)',
+      }),
+    );
+    expect(() => adapter.assertReady()).toThrow('PUBLIC_WEB_URL');
+  });
+
   it('validates the SDK webhook signature and retrieves the payment through the SDK', async () => {
     const secret = 'webhook-secret';
     const adapter = new MercadoPagoPaymentAdapter(
@@ -73,8 +95,7 @@ describe('MercadoPagoPaymentAdapter', () => {
         MERCADOPAGO_WEBHOOK_SECRET: secret,
       }),
     );
-    const payment = (adapter as unknown as { payment: { get: jest.Mock } })
-      .payment;
+    const payment = (adapter as unknown as { payment: { get: jest.Mock } }).payment;
     payment.get = jest.fn().mockResolvedValue({
       status: 'approved',
       external_reference: 'order-123',
@@ -83,9 +104,7 @@ describe('MercadoPagoPaymentAdapter', () => {
     const dataId = 'payment-123';
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const manifest = `id:${dataId};request-id:${requestId};ts:${timestamp};`;
-    const signature = createHmac('sha256', secret)
-      .update(manifest)
-      .digest('hex');
+    const signature = createHmac('sha256', secret).update(manifest).digest('hex');
 
     const receipt = await adapter.parseWebhook({
       headers: {

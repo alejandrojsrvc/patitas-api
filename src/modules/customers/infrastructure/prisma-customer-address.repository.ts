@@ -3,11 +3,7 @@ import { Prisma } from '../../../infrastructure/database/generated/prisma/client
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { CustomerNotFoundError } from '../domain/customer.error';
 import type { CustomerAddressRepository } from '../domain/customer-address.repository';
-import type {
-  CreateCustomerAddressInput,
-  CustomerAddress,
-  UpdateCustomerAddressInput,
-} from '../domain/customer.types';
+import type { CreateCustomerAddressInput, CustomerAddress, UpdateCustomerAddressInput } from '../domain/customer.types';
 
 @Injectable()
 export class PrismaCustomerAddressRepository implements CustomerAddressRepository {
@@ -21,10 +17,7 @@ export class PrismaCustomerAddressRepository implements CustomerAddressRepositor
     return records.map(mapAddress);
   }
 
-  public async create(
-    customerId: string,
-    input: CreateCustomerAddressInput,
-  ): Promise<CustomerAddress> {
+  public async create(customerId: string, input: CreateCustomerAddressInput): Promise<CustomerAddress> {
     return this.prisma.$transaction(async (transaction) => {
       if (input.isDefault) {
         await transaction.customerAddress.updateMany({
@@ -47,11 +40,7 @@ export class PrismaCustomerAddressRepository implements CustomerAddressRepositor
     });
   }
 
-  public async update(
-    id: string,
-    customerId: string,
-    input: UpdateCustomerAddressInput,
-  ): Promise<CustomerAddress> {
+  public async update(id: string, customerId: string, input: UpdateCustomerAddressInput): Promise<CustomerAddress> {
     return this.prisma.$transaction(async (transaction) => {
       const current = await transaction.customerAddress.findFirst({
         where: { id, customerId },
@@ -81,10 +70,7 @@ export class PrismaCustomerAddressRepository implements CustomerAddressRepositor
       if (!address) throw new CustomerNotFoundError();
       await this.prisma.customerAddress.delete({ where: { id: address.id } });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         throw new CustomerNotFoundError();
       }
       throw error;
@@ -92,9 +78,7 @@ export class PrismaCustomerAddressRepository implements CustomerAddressRepositor
   }
 }
 
-const mapAddress = (
-  value: Prisma.CustomerAddressGetPayload<Prisma.CustomerAddressDefaultArgs>,
-): CustomerAddress => ({
+const mapAddress = (value: Prisma.CustomerAddressGetPayload<Prisma.CustomerAddressDefaultArgs>): CustomerAddress => ({
   id: value.id,
   customerId: value.customerId,
   label: value.label,

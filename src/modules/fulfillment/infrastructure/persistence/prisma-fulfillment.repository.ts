@@ -1,10 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
-import type {
-  FulfillmentRepository,
-  FulfillmentSettings,
-  FulfillmentSettingsInput,
-} from '../../domain/fulfillment.types';
+import type { FulfillmentRepository, FulfillmentSettings, FulfillmentSettingsInput } from '../../domain/fulfillment.types';
 
 @Injectable()
 export class PrismaFulfillmentRepository implements FulfillmentRepository {
@@ -13,14 +9,10 @@ export class PrismaFulfillmentRepository implements FulfillmentRepository {
   public async getSettings(): Promise<FulfillmentSettings> {
     const existing = await this.prisma.fulfillmentSettings.findFirst();
     if (existing) return mapSettings(existing);
-    return mapSettings(
-      await this.prisma.fulfillmentSettings.create({ data: {} }),
-    );
+    return mapSettings(await this.prisma.fulfillmentSettings.create({ data: {} }));
   }
 
-  public async updateSettings(
-    input: FulfillmentSettingsInput,
-  ): Promise<FulfillmentSettings> {
+  public async updateSettings(input: FulfillmentSettingsInput): Promise<FulfillmentSettings> {
     const current = await this.getSettings();
     return mapSettings(
       await this.prisma.fulfillmentSettings.update({

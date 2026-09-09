@@ -8,8 +8,7 @@ export const emptyCartSummary = (): CartSummary => ({
   currency: 'ARS',
 });
 
-export const toCartSummary = (cart: CartSummary | null): CartSummary =>
-  cart ?? emptyCartSummary();
+export const toCartSummary = (cart: CartSummary | null): CartSummary => cart ?? emptyCartSummary();
 
 export const toLocationSummary = <
   T extends {
@@ -38,12 +37,7 @@ export const toLocationSummary = <
       }
     : null;
 
-export const toAuthenticatedViewer = (input: {
-  userId: string;
-  email: string;
-  role: UserRole;
-  displayName?: string | null;
-}) => ({
+export const toAuthenticatedViewer = (input: { userId: string; email: string; role: UserRole; displayName?: string | null }) => ({
   authenticated: true as const,
   id: input.userId,
   email: input.email,

@@ -42,8 +42,7 @@ export class MobileVariantResponseDto {
   @ApiPropertyOptional({ nullable: true }) public presentation!: string | null;
   @ApiPropertyOptional({ nullable: true }) public weightGrams!: number | null;
   @ApiProperty() public salePrice!: string;
-  @ApiPropertyOptional({ nullable: true }) public compareAtPrice!:
-    string | null;
+  @ApiPropertyOptional({ nullable: true }) public compareAtPrice!: string | null;
   @ApiProperty({ example: 'ARS' }) public currency!: 'ARS';
   @ApiProperty({ type: MobileFulfillmentResponseDto })
   public fulfillment!: MobileFulfillmentResponseDto;
@@ -83,4 +82,38 @@ export class MobileOfferResponseDto {
 export class MobileCursorPageResponseDto<T = unknown> {
   @ApiProperty({ type: [Object] }) public items!: T[];
   @ApiPropertyOptional({ nullable: true }) public nextCursor!: string | null;
+}
+
+export class MobileProductAutocompleteBrandResponseDto {
+  @ApiProperty() public id!: string;
+  @ApiProperty() public name!: string;
+  @ApiProperty() public slug!: string;
+}
+
+export class MobileProductAutocompleteImageResponseDto {
+  @ApiProperty() public url!: string;
+  @ApiProperty() public altText!: string;
+}
+
+export class MobileProductAutocompleteItemResponseDto {
+  @ApiProperty() public id!: string;
+  @ApiProperty() public productId!: string;
+  @ApiProperty() public slug!: string;
+  @ApiProperty() public name!: string;
+  @ApiPropertyOptional({ nullable: true }) public presentation!: string | null;
+  @ApiProperty() public displayName!: string;
+  @ApiProperty({ type: MobileProductAutocompleteBrandResponseDto })
+  public brand!: MobileProductAutocompleteBrandResponseDto;
+  @ApiPropertyOptional({
+    type: MobileProductAutocompleteImageResponseDto,
+    nullable: true,
+  })
+  public image!: MobileProductAutocompleteImageResponseDto | null;
+  @ApiProperty() public salePrice!: string;
+  @ApiProperty({ example: 'ARS' }) public currency!: 'ARS';
+}
+
+export class MobileProductAutocompleteResponseDto {
+  @ApiProperty({ type: [MobileProductAutocompleteItemResponseDto] })
+  public items!: MobileProductAutocompleteItemResponseDto[];
 }

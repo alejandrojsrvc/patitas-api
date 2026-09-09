@@ -1,25 +1,17 @@
-import {
-  HeadObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
+import { HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { config as loadEnv } from 'dotenv';
 import { readFile, readFile as readManifest } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 loadEnv({ path: ['.env.local', '.env.dist'], quiet: true });
 
-const inputDirectory = resolve(
-  argumentValue('--dir') ?? 'exports/product-images',
-);
+const inputDirectory = resolve(argumentValue('--dir') ?? 'exports/product-images');
 const manifestPath = join(inputDirectory, 'optimized', 'manifest.json');
 const apply = process.argv.includes('--apply');
 const force = process.argv.includes('--force');
 
 if (!apply) {
-  throw new Error(
-    'La subida requiere confirmación explícita: usa --apply. El modo por defecto es solo lectura.',
-  );
+  throw new Error('La subida requiere confirmación explícita: usa --apply. El modo por defecto es solo lectura.');
 }
 
 const accountId = requiredEnv('R2_ACCOUNT_ID');
@@ -36,8 +28,7 @@ const variants = manifest.entries.flatMap((entry) =>
   })),
 );
 
-if (!variants.length)
-  throw new Error(`El manifiesto no contiene variantes: ${manifestPath}`);
+if (!variants.length) throw new Error(`El manifiesto no contiene variantes: ${manifestPath}`);
 
 const client = new S3Client({
   region: 'auto',
@@ -60,13 +51,9 @@ for (const variant of variants) {
     }),
   );
 
-  const remote = await client.send(
-    new HeadObjectCommand({ Bucket: bucket, Key: variant.objectPath }),
-  );
+  const remote = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: variant.objectPath }));
   if (remote.ContentLength !== data.byteLength) {
-    throw new Error(
-      `El tamaño verificado de ${variant.objectPath} no coincide: ${remote.ContentLength} != ${data.byteLength}.`,
-    );
+    throw new Error(`El tamaño verificado de ${variant.objectPath} no coincide: ${remote.ContentLength} != ${data.byteLength}.`);
   }
 
   uploaded += 1;

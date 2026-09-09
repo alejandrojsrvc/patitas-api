@@ -28,32 +28,18 @@ export class PricingService {
   }
   public async activateDraft() {
     const { draft } = await this.repository.getRules();
-    if (!draft)
-      throw new PricingPreconditionError(
-        'No existe una configuración borrador.',
-      );
+    if (!draft) throw new PricingPreconditionError('No existe una configuración borrador.');
     this.calculator.calculate(dummyContext, draft);
     return this.repository.activateDraft();
   }
-  public async calculate(
-    variantId: string,
-    supplierOfferId?: string,
-    overrides: Partial<PricingRuleValues> = {},
-    scenarioId?: string,
-  ) {
+  public async calculate(variantId: string, supplierOfferId?: string, overrides: Partial<PricingRuleValues> = {}, scenarioId?: string) {
     const [{ active }, context, allocation] = await Promise.all([
       this.repository.getRules(),
       this.repository.getContext(variantId, supplierOfferId),
-      scenarioId
-        ? this.repository.getPricingScenarioAllocation(scenarioId)
-        : Promise.resolve(null),
+      scenarioId ? this.repository.getPricingScenarioAllocation(scenarioId) : Promise.resolve(null),
     ]);
-    if (!active)
-      throw new PricingPreconditionError('No existe una configuración activa.');
-    if (!context)
-      throw new PricingPreconditionError(
-        'La variante no tiene una oferta válida para calcular.',
-      );
+    if (!active) throw new PricingPreconditionError('No existe una configuración activa.');
+    if (!context) throw new PricingPreconditionError('La variante no tiene una oferta válida para calcular.');
     const effectiveRules = {
       ...active,
       ...(allocation?.paymentFeeOverrides ?? {}),
@@ -69,30 +55,12 @@ export class PricingService {
       }),
     };
   }
-  public async recalculate(
-    variantId: string,
-    supplierOfferId?: string,
-    overrides: Partial<PricingRuleValues> = {},
-    scenarioId?: string,
-  ) {
+  public async recalculate(variantId: string, supplierOfferId?: string, overrides: Partial<PricingRuleValues> = {}, scenarioId?: string) {
     if (supplierOfferId) {
-      await this.repository.setPreferredSupplierOffer(
-        variantId,
-        supplierOfferId,
-      );
+      await this.repository.setPreferredSupplierOffer(variantId, supplierOfferId);
     }
-    const result = await this.calculate(
-      variantId,
-      supplierOfferId,
-      overrides,
-      scenarioId,
-    );
-    return this.repository.saveReview(
-      result.context,
-      result.rules,
-      result.effectiveRules,
-      result.calculation,
-    );
+    const result = await this.calculate(variantId, supplierOfferId, overrides, scenarioId);
+    return this.repository.saveReview(result.context, result.rules, result.effectiveRules, result.calculation);
   }
   public async recalculateAll(scenarioId: string) {
     const [{ active }, allocation, contexts] = await Promise.all([
@@ -100,8 +68,7 @@ export class PricingService {
       this.repository.getPricingScenarioAllocation(scenarioId),
       this.repository.listContextsForBulkRecalculation(),
     ]);
-    if (!active)
-      throw new PricingPreconditionError('No existe una configuración activa.');
+    if (!active) throw new PricingPreconditionError('No existe una configuración activa.');
 
     const effectiveRules = {
       ...active,
@@ -131,19 +98,10 @@ export class PricingService {
   public listReviews(variantId: string) {
     return this.repository.listReviews(variantId);
   }
-  public listAllReviews(filter: {
-    status?: PricingReview['status'];
-    q?: string;
-    page: number;
-    perPage: number;
-  }) {
+  public listAllReviews(filter: { status?: PricingReview['status']; q?: string; page: number; perPage: number }) {
     return this.repository.listAllReviews(filter);
   }
-  public async apply(
-    variantId: string,
-    reviewId: string,
-    options?: { activateProduct?: boolean },
-  ) {
+  public async apply(variantId: string, reviewId: string, options?: { activateProduct?: boolean }) {
     return this.repository.applyReview(variantId, reviewId, options);
   }
   public listPaymentFeeSchedules(active?: boolean) {
@@ -153,10 +111,7 @@ export class PricingService {
     validatePaymentFeeSchedule(input);
     return this.repository.createPaymentFeeSchedule(input);
   }
-  public updatePaymentFeeSchedule(
-    id: string,
-    input: Partial<PaymentFeeScheduleInput>,
-  ) {
+  public updatePaymentFeeSchedule(id: string, input: Partial<PaymentFeeScheduleInput>) {
     validatePaymentFeeSchedule(input);
     return this.repository.updatePaymentFeeSchedule(id, input);
   }
@@ -166,9 +121,7 @@ export class PricingService {
       throw new PricingPreconditionError('La tarifa de pago no existe.');
     }
     if (!schedule.active) {
-      throw new PricingPreconditionError(
-        'No se puede seleccionar una tarifa inactiva.',
-      );
+      throw new PricingPreconditionError('No se puede seleccionar una tarifa inactiva.');
     }
     return this.repository.updateDraft({
       paymentFeeScheduleId: schedule.id,
@@ -197,10 +150,7 @@ export class PricingService {
     await this.validateScenarioPaymentFee(input.paymentFeeScheduleId);
     return this.repository.createPricingScenario(input);
   }
-  public async updatePricingScenario(
-    id: string,
-    input: Partial<PricingScenarioInput>,
-  ) {
+  public async updatePricingScenario(id: string, input: Partial<PricingScenarioInput>) {
     validatePricingScenario(input);
     await this.validateScenarioPaymentFee(input.paymentFeeScheduleId);
     return this.repository.updatePricingScenario(id, input);
@@ -213,9 +163,7 @@ export class PricingService {
     if (!id) return;
     const schedule = await this.repository.getPaymentFeeSchedule(id);
     if (!schedule || !schedule.active) {
-      throw new PricingPreconditionError(
-        'El escenario debe usar una tarifa de pago activa.',
-      );
+      throw new PricingPreconditionError('El escenario debe usar una tarifa de pago activa.');
     }
   }
 }
@@ -230,12 +178,7 @@ const dummyContext = {
 };
 
 const validateRuleValues = (input: Partial<PricingRuleValues>): void => {
-  const percentFields = new Set([
-    'paymentFeePercent',
-    'paymentFeeVatPercent',
-    'taxPercent',
-    'targetMarginPercent',
-  ]);
+  const percentFields = new Set(['paymentFeePercent', 'paymentFeeVatPercent', 'taxPercent', 'targetMarginPercent']);
   for (const [key, value] of Object.entries(input)) {
     if (value === undefined || value === null) continue;
     if (key === 'paymentFeeScheduleId' || key === 'paymentFeeVatApplies') {
@@ -246,34 +189,22 @@ const validateRuleValues = (input: Partial<PricingRuleValues>): void => {
       throw new PricingPreconditionError(`Valor inválido para ${key}.`);
     }
     if (percentFields.has(key) && Number(value) > 100) {
-      throw new PricingPreconditionError(
-        `El porcentaje ${key} no puede superar 100.`,
-      );
+      throw new PricingPreconditionError(`El porcentaje ${key} no puede superar 100.`);
     }
   }
 };
 
-const validatePaymentFeeSchedule = (
-  input: Partial<PaymentFeeScheduleInput>,
-): void => {
+const validatePaymentFeeSchedule = (input: Partial<PaymentFeeScheduleInput>): void => {
   if (input.settlementDays !== undefined && input.settlementDays < 0) {
-    throw new PricingPreconditionError(
-      'Los días de acreditación no pueden ser negativos.',
-    );
+    throw new PricingPreconditionError('Los días de acreditación no pueden ser negativos.');
   }
   for (const [key, value] of Object.entries(input)) {
-    if (
-      !['feePercent', 'vatPercent', 'fixedFee'].includes(key) ||
-      value === undefined
-    )
-      continue;
+    if (!['feePercent', 'vatPercent', 'fixedFee'].includes(key) || value === undefined) continue;
     if (typeof value !== 'string' || !/^\d+(\.\d{1,2})?$/.test(value)) {
       throw new PricingPreconditionError(`Valor inválido para ${key}.`);
     }
     if (['feePercent', 'vatPercent'].includes(key) && Number(value) > 100) {
-      throw new PricingPreconditionError(
-        `El porcentaje ${key} no puede superar 100.`,
-      );
+      throw new PricingPreconditionError(`El porcentaje ${key} no puede superar 100.`);
     }
   }
 };
@@ -285,45 +216,22 @@ const validateOperatingCost = (input: Partial<OperatingCostInput>): void => {
     }
   }
   if (input.percent !== undefined && input.percent !== null) {
-    if (
-      !/^\d+(\.\d{1,2})?$/.test(input.percent) ||
-      Number(input.percent) > 100
-    ) {
-      throw new PricingPreconditionError(
-        'El porcentaje del costo es inválido.',
-      );
+    if (!/^\d+(\.\d{1,2})?$/.test(input.percent) || Number(input.percent) > 100) {
+      throw new PricingPreconditionError('El porcentaje del costo es inválido.');
     }
   }
 };
 
-const validatePricingScenario = (
-  input: Partial<PricingScenarioInput>,
-): void => {
-  if (
-    input.projectedOrders !== undefined &&
-    (!Number.isInteger(input.projectedOrders) || input.projectedOrders < 0)
-  ) {
-    throw new PricingPreconditionError(
-      'La cantidad proyectada de pedidos debe ser un entero no negativo.',
-    );
+const validatePricingScenario = (input: Partial<PricingScenarioInput>): void => {
+  if (input.projectedOrders !== undefined && (!Number.isInteger(input.projectedOrders) || input.projectedOrders < 0)) {
+    throw new PricingPreconditionError('La cantidad proyectada de pedidos debe ser un entero no negativo.');
   }
   if (input.averageItemsPerOrder !== undefined) {
-    if (
-      !/^\d+(\.\d{1,2})?$/.test(input.averageItemsPerOrder) ||
-      Number(input.averageItemsPerOrder) <= 0
-    ) {
-      throw new PricingPreconditionError(
-        'La media de productos por pedido debe ser mayor que cero.',
-      );
+    if (!/^\d+(\.\d{1,2})?$/.test(input.averageItemsPerOrder) || Number(input.averageItemsPerOrder) <= 0) {
+      throw new PricingPreconditionError('La media de productos por pedido debe ser mayor que cero.');
     }
   }
-  if (
-    input.periodStart &&
-    input.periodEnd &&
-    input.periodEnd <= input.periodStart
-  ) {
-    throw new PricingPreconditionError(
-      'El período debe finalizar después de comenzar.',
-    );
+  if (input.periodStart && input.periodEnd && input.periodEnd <= input.periodStart) {
+    throw new PricingPreconditionError('El período debe finalizar después de comenzar.');
   }
 };

@@ -6,13 +6,7 @@ export type MobileFulfillmentContext = {
   now?: Date;
 };
 
-export const toMobileCategory = (category: {
-  id: string;
-  name: string;
-  slug: string;
-  parentId: string | null;
-  displayOrder: number;
-}) => ({
+export const toMobileCategory = (category: { id: string; name: string; slug: string; parentId: string | null; displayOrder: number }) => ({
   id: category.id,
   name: category.name,
   slug: category.slug,
@@ -20,11 +14,7 @@ export const toMobileCategory = (category: {
   sortOrder: category.displayOrder,
 });
 
-export const toMobileProduct = (
-  product: Product,
-  shippingQuotes = new Map<string, ShippingQuote>(),
-  now = new Date(),
-) => ({
+export const toMobileProduct = (product: Product, shippingQuotes = new Map<string, ShippingQuote>(), now = new Date()) => ({
   id: product.id,
   name: product.name,
   slug: product.slug,
@@ -32,9 +22,7 @@ export const toMobileProduct = (
   species: product.species,
   brand: toMobileReference(product.brand),
   category: product.category ? toMobileReference(product.category) : null,
-  image: product.media[0]
-    ? { url: product.media[0].url, altText: product.media[0].altText }
-    : null,
+  image: product.media[0] ? { url: product.media[0].url, altText: product.media[0].altText } : null,
   images: product.media.map((media) => ({
     url: media.url,
     altText: media.altText,
@@ -47,10 +35,7 @@ export const toMobileProduct = (
   ),
 });
 
-export const toMobileVariant = (
-  variant: ProductVariant,
-  context: MobileFulfillmentContext = {},
-) => ({
+export const toMobileVariant = (variant: ProductVariant, context: MobileFulfillmentContext = {}) => ({
   id: variant.id,
   sku: variant.sku,
   presentation: variant.presentation,
@@ -61,27 +46,15 @@ export const toMobileVariant = (
   fulfillment: toMobileFulfillment(variant, context),
 });
 
-export const toMobileFulfillment = (
-  variant: ProductVariant,
-  context: MobileFulfillmentContext = {},
-) => {
+export const toMobileFulfillment = (variant: ProductVariant, context: MobileFulfillmentContext = {}) => {
   if (variant.fulfillment) {
-    const shippingAvailable =
-      !context.shippingQuote || context.shippingQuote.available;
-    const shippingDate = context.shippingQuote?.available
-      ? (context.shippingQuote.deliverySlots[0]?.date ?? null)
-      : null;
-    const deliveryDate = maxDate(
-      variant.fulfillment.deliveryDate,
-      shippingDate,
-    );
+    const shippingAvailable = !context.shippingQuote || context.shippingQuote.available;
+    const shippingDate = context.shippingQuote?.available ? (context.shippingQuote.deliverySlots[0]?.date ?? null) : null;
+    const deliveryDate = maxDate(variant.fulfillment.deliveryDate, shippingDate);
     return {
       status: variant.fulfillment.status,
       purchasable: variant.fulfillment.purchasable && shippingAvailable,
-      leadTimeHours:
-        variant.fulfillment.source === 'OWN_STOCK'
-          ? 0
-          : variant.supplierLeadTimeHours,
+      leadTimeHours: variant.fulfillment.source === 'OWN_STOCK' ? 0 : variant.supplierLeadTimeHours,
       availability: variant.fulfillment.availability,
       earliestDeliveryDate: deliveryDate,
       orderBefore: variant.fulfillment.orderBefore,
@@ -92,24 +65,11 @@ export const toMobileFulfillment = (
     ['AVAILABLE', 'ON_REQUEST'].includes(variant.supplierStockStatus ?? '') &&
     isValidLeadTime(variant.supplierLeadTimeHours);
   const inStock = variant.availableQuantity > 0;
-  const status = inStock
-    ? 'IN_STOCK'
-    : onRequest
-      ? 'ON_REQUEST'
-      : 'OUT_OF_STOCK';
+  const status = inStock ? 'IN_STOCK' : onRequest ? 'ON_REQUEST' : 'OUT_OF_STOCK';
   const basePurchasable = inStock || onRequest;
-  const shippingAvailable =
-    !context.shippingQuote || context.shippingQuote.available;
-  const leadTimeHours = inStock
-    ? 0
-    : onRequest
-      ? variant.supplierLeadTimeHours
-      : null;
-  const earliestDeliveryDate = earliestDate(
-    leadTimeHours,
-    context.shippingQuote,
-    context.now ?? new Date(),
-  );
+  const shippingAvailable = !context.shippingQuote || context.shippingQuote.available;
+  const leadTimeHours = inStock ? 0 : onRequest ? variant.supplierLeadTimeHours : null;
+  const earliestDeliveryDate = earliestDate(leadTimeHours, context.shippingQuote, context.now ?? new Date());
 
   return {
     status,
@@ -117,9 +77,7 @@ export const toMobileFulfillment = (
     leadTimeHours,
     availability: inStock ? 'TODAY' : onRequest ? 'TOMORROW' : 'OUT_OF_STOCK',
     earliestDeliveryDate,
-    orderBefore: context.shippingQuote?.available
-      ? (context.shippingQuote.cutoffs[0]?.time ?? null)
-      : null,
+    orderBefore: context.shippingQuote?.available ? (context.shippingQuote.cutoffs[0]?.time ?? null) : null,
   };
 };
 
@@ -150,27 +108,17 @@ export const toMobileOffer = (promotion: {
   endsAt: promotion.endsAt,
 });
 
-const toMobileReference = (reference: {
-  id: string;
-  name: string;
-  slug: string;
-}) => ({ id: reference.id, name: reference.name, slug: reference.slug });
+const toMobileReference = (reference: { id: string; name: string; slug: string }) => ({
+  id: reference.id,
+  name: reference.name,
+  slug: reference.slug,
+});
 
-const isValidLeadTime = (value: number | null): value is number =>
-  value !== null && Number.isInteger(value) && value >= 0;
+const isValidLeadTime = (value: number | null): value is number => value !== null && Number.isInteger(value) && value >= 0;
 
-const earliestDate = (
-  leadTimeHours: number | null,
-  quote: ShippingQuote | undefined,
-  now: Date,
-): string | null => {
-  const leadDate =
-    leadTimeHours === null
-      ? null
-      : dateOnly(new Date(now.getTime() + leadTimeHours * 60 * 60 * 1000));
-  const shippingDate = quote?.available
-    ? (quote.deliverySlots[0]?.date ?? null)
-    : null;
+const earliestDate = (leadTimeHours: number | null, quote: ShippingQuote | undefined, now: Date): string | null => {
+  const leadDate = leadTimeHours === null ? null : dateOnly(new Date(now.getTime() + leadTimeHours * 60 * 60 * 1000));
+  const shippingDate = quote?.available ? (quote.deliverySlots[0]?.date ?? null) : null;
   if (!leadDate) return shippingDate;
   if (!shippingDate) return leadDate;
   return shippingDate < leadDate ? leadDate : shippingDate;

@@ -20,11 +20,7 @@ export const toMobilePlan = (plan: ReplenishmentPlan) => ({
     dailyGrams: {
       min: plan.dailyGramsMin ?? Number(plan.dailyConsumption),
       max: plan.dailyGramsMax ?? Number(plan.dailyConsumption),
-      nominal: Math.round(
-        ((plan.dailyGramsMin ?? Number(plan.dailyConsumption)) +
-          (plan.dailyGramsMax ?? Number(plan.dailyConsumption))) /
-          2,
-      ),
+      nominal: Math.round(((plan.dailyGramsMin ?? Number(plan.dailyConsumption)) + (plan.dailyGramsMax ?? Number(plan.dailyConsumption))) / 2),
     },
     startedAt: plan.bagStartedAt?.toISOString() ?? null,
     remainingBucket: plan.remainingBucket,
@@ -46,13 +42,7 @@ export const toMobilePlan = (plan: ReplenishmentPlan) => ({
 });
 
 const estimatedDaysRemaining = (plan: ReplenishmentPlan): number =>
-  Math.max(
-    0,
-    Math.ceil(
-      (plan.estimatedDepletionDate.getTime() - Date.now()) /
-        (24 * 60 * 60 * 1000),
-    ),
-  );
+  Math.max(0, Math.ceil((plan.estimatedDepletionDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
 
 const consumptionStatus = (plan: ReplenishmentPlan): string => {
   if (!plan.productId || !plan.variantId) return 'UNCONFIGURED';

@@ -29,12 +29,12 @@ export class SetMobileCartItemDto extends SetCartItemDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUUID()
-  public petId?: string;
+  declare public petId?: string;
 
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUUID()
-  public planId?: string;
+  declare public planId?: string;
 
   @ApiPropertyOptional({ type: MobileCartItemContextDto })
   @IsOptional()

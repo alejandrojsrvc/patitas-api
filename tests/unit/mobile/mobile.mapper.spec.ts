@@ -1,18 +1,9 @@
-import {
-  calculateAge,
-  toMobilePet,
-} from '../../../src/modules/mobile/presentation/mobile.mapper';
+import { calculateAge, toMobilePet } from '../../../src/modules/mobile/presentation/mobile.mapper';
 
 describe('mobile mapper', () => {
   it('derives the pet age from birthDate without persisting age', () => {
     const today = new Date();
-    const birthDate = new Date(
-      Date.UTC(
-        today.getUTCFullYear() - 4,
-        today.getUTCMonth(),
-        today.getUTCDate(),
-      ),
-    );
+    const birthDate = new Date(Date.UTC(today.getUTCFullYear() - 4, today.getUTCMonth(), today.getUTCDate()));
 
     expect(calculateAge(birthDate)).toBe(4);
     expect(calculateAge(null)).toBeNull();

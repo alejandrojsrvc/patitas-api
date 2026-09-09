@@ -48,31 +48,19 @@ describe('NotificationService mobile operations', () => {
     } as unknown as NotificationRepository;
     const service = new NotificationService(repository, provider);
 
-    await expect(
-      service.readInAppNotification('customer-id', 'notification-id'),
-    ).rejects.toMatchObject({ code: 'NOTIFICATION_NOT_FOUND' });
-    expect(markInAppNotificationRead).toHaveBeenCalledWith(
-      'customer-id',
-      'notification-id',
-    );
+    await expect(service.readInAppNotification('customer-id', 'notification-id')).rejects.toMatchObject({ code: 'NOTIFICATION_NOT_FOUND' });
+    expect(markInAppNotificationRead).toHaveBeenCalledWith('customer-id', 'notification-id');
   });
 
   it('marks all unread notifications idempotently', async () => {
-    const markAllInAppNotificationsRead = jest
-      .fn()
-      .mockResolvedValueOnce(2)
-      .mockResolvedValueOnce(0);
+    const markAllInAppNotificationsRead = jest.fn().mockResolvedValueOnce(2).mockResolvedValueOnce(0);
     const repository = {
       markAllInAppNotificationsRead,
     } as unknown as NotificationRepository;
     const service = new NotificationService(repository, provider);
 
-    await expect(
-      service.readAllInAppNotifications('customer-id'),
-    ).resolves.toEqual({ updated: 2, unreadCount: 0 });
-    await expect(
-      service.readAllInAppNotifications('customer-id'),
-    ).resolves.toEqual({ updated: 0, unreadCount: 0 });
+    await expect(service.readAllInAppNotifications('customer-id')).resolves.toEqual({ updated: 2, unreadCount: 0 });
+    await expect(service.readAllInAppNotifications('customer-id')).resolves.toEqual({ updated: 0, unreadCount: 0 });
   });
 
   it('does not emit a categorized notification when its preference is disabled', async () => {
@@ -101,5 +89,44 @@ describe('NotificationService mobile operations', () => {
       }),
     ).resolves.toBeNull();
     expect(createInAppNotification).not.toHaveBeenCalled();
+  });
+
+  it('notifies a due purchase schedule and waits for confirmation', async () => {
+    const markPurchaseScheduleAwaitingConfirmation = jest.fn().mockResolvedValue(undefined);
+    const repository = {
+      listDuePurchaseSchedules: jest.fn().mockResolvedValue([
+        {
+          id: 'schedule-id',
+          customerId: 'customer-id',
+          nextReminderAt: new Date('2026-09-02T00:00:00.000Z'),
+          productName: 'Alimento Patitas',
+        },
+      ]),
+      findConsentForOwner: jest.fn().mockResolvedValue({
+        id: 'consent-id',
+        destination: 'user@example.com',
+      }),
+      hasDelivery: jest.fn().mockResolvedValue(false),
+      createDelivery: jest.fn().mockResolvedValue('delivery-id'),
+      markSent: jest.fn().mockResolvedValue(undefined),
+      markPurchaseScheduleAwaitingConfirmation,
+    } as unknown as NotificationRepository;
+    const send = jest.fn().mockResolvedValue({
+      providerMessageId: 'provider-message-id',
+    });
+    const testProvider = { send } as unknown as NotificationProvider;
+    const service = new NotificationService(repository, testProvider);
+
+    await expect(service.processPurchaseScheduleReminders()).resolves.toEqual({
+      scanned: 1,
+      notified: 1,
+    });
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        template: 'replenishment_reminder',
+        variables: { planId: 'schedule-id', petName: 'Alimento Patitas' },
+      }),
+    );
+    expect(markPurchaseScheduleAwaitingConfirmation).toHaveBeenCalledWith('schedule-id');
   });
 });

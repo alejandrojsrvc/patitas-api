@@ -20,6 +20,14 @@ const onRequestVariant: ProductVariant = {
 };
 
 describe('Mobile catalog', () => {
+  it('delegates autocomplete to the shared catalog service', async () => {
+    const autocompleteProducts = jest.fn().mockResolvedValue(['suggestion']);
+    const service = new MobileCatalogService({} as never, { autocompleteProducts } as never, {} as never, {} as never, {} as never);
+
+    await expect(service.autocompleteProducts('roy')).resolves.toEqual(['suggestion']);
+    expect(autocompleteProducts).toHaveBeenCalledWith('roy');
+  });
+
   it('makes ON_REQUEST purchasable when its lead time is valid', () => {
     const result = toMobileVariant(onRequestVariant, {
       now: new Date('2026-01-01T12:00:00.000Z'),
@@ -47,9 +55,7 @@ describe('Mobile catalog', () => {
     });
     const repository = {
       listMobileProducts,
-      listPurchasedVariantIds: jest
-        .fn()
-        .mockResolvedValue(['variant-owned-by-customer']),
+      listPurchasedVariantIds: jest.fn().mockResolvedValue(['variant-owned-by-customer']),
     };
     const customers = {
       findByUserId: jest.fn().mockResolvedValue({ id: 'customer-1' }),
@@ -62,15 +68,10 @@ describe('Mobile catalog', () => {
       customers as never,
     );
 
-    await service.listProducts(
-      { previouslyPurchased: true, limit: 10 },
-      'user-1',
-    );
+    await service.listProducts({ previouslyPurchased: true, limit: 10 }, 'user-1');
 
     expect(customers.findByUserId).toHaveBeenCalledWith('user-1');
-    expect(repository.listPurchasedVariantIds).toHaveBeenCalledWith(
-      'customer-1',
-    );
+    expect(repository.listPurchasedVariantIds).toHaveBeenCalledWith('customer-1');
     expect(listMobileProducts).toHaveBeenCalledWith(
       expect.objectContaining({
         purchasedVariantIds: ['variant-owned-by-customer'],
@@ -80,17 +81,9 @@ describe('Mobile catalog', () => {
 
   it('returns no products for previouslyPurchased without authentication', async () => {
     const repository = { listMobileProducts: jest.fn() };
-    const service = new MobileCatalogService(
-      repository as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
-    );
+    const service = new MobileCatalogService(repository as never, {} as never, {} as never, {} as never, {} as never);
 
-    await expect(
-      service.listProducts({ previouslyPurchased: true, limit: 10 }),
-    ).resolves.toEqual({ items: [], nextCursor: null });
+    await expect(service.listProducts({ previouslyPurchased: true, limit: 10 })).resolves.toEqual({ items: [], nextCursor: null });
     expect(repository.listMobileProducts).not.toHaveBeenCalled();
   });
 });

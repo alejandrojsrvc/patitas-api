@@ -15,7 +15,9 @@ import {
   ValidateNested,
   Max,
   MaxLength,
+  MinLength,
   Min,
+  ArrayMaxSize,
   ArrayMinSize,
 } from 'class-validator';
 
@@ -27,8 +29,7 @@ export class ReferenceDto {
   @MaxLength(180)
   public slug?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() public active?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsString() public description?:
-    string | null;
+  @ApiPropertyOptional() @IsOptional() @IsString() public description?: string | null;
   @ApiPropertyOptional({ nullable: true })
   @IsOptional()
   @IsString()
@@ -37,10 +38,8 @@ export class ReferenceDto {
   @IsOptional()
   @IsObject()
   public analyticalComposition?: Record<string, unknown> | null;
-  @ApiPropertyOptional() @IsOptional() @IsString() public seoTitle?:
-    string | null;
-  @ApiPropertyOptional() @IsOptional() @IsString() public seoDescription?:
-    string | null;
+  @ApiPropertyOptional() @IsOptional() @IsString() public seoTitle?: string | null;
+  @ApiPropertyOptional() @IsOptional() @IsString() public seoDescription?: string | null;
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()
   @IsInt()
@@ -70,8 +69,7 @@ export class CreateProductDto {
   @IsString()
   @MaxLength(220)
   public slug?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() public description?:
-    string | null;
+  @ApiPropertyOptional() @IsOptional() @IsString() public description?: string | null;
   @ApiPropertyOptional({ nullable: true })
   @IsOptional()
   @IsString()
@@ -82,13 +80,10 @@ export class CreateProductDto {
   public analyticalComposition?: Record<string, unknown> | null;
   @ApiProperty({ format: 'uuid' }) @IsUUID() public brandId!: string;
   @ApiProperty({ format: 'uuid' }) @IsUUID() public categoryId!: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() public species?:
-    string | null;
+  @ApiPropertyOptional() @IsOptional() @IsString() public species?: string | null;
   @ApiPropertyOptional() @IsOptional() @IsString() public line?: string | null;
-  @ApiPropertyOptional() @IsOptional() @IsString() public lifeStage?:
-    string | null;
-  @ApiPropertyOptional() @IsOptional() @IsString() public breedSize?:
-    string | null;
+  @ApiPropertyOptional() @IsOptional() @IsString() public lifeStage?: string | null;
+  @ApiPropertyOptional() @IsOptional() @IsString() public breedSize?: string | null;
   @ApiPropertyOptional()
   @IsOptional()
   @IsNumberString()
@@ -107,8 +102,7 @@ export class UpdateProductDto extends PartialType(CreateProductDto) {
 }
 
 export class CreateVariantDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(100) public sku?:
-    string | null;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(100) public sku?: string | null;
   @ApiPropertyOptional({ description: 'Código EAN/GTIN del fabricante' })
   @IsOptional()
   @IsString()
@@ -119,8 +113,7 @@ export class CreateVariantDto {
   @IsString()
   @MaxLength(120)
   public presentation?: string | null;
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1) public weightGrams?:
-    number | null;
+  @ApiProperty({ minimum: 1 }) @IsInt() @Min(1) public weightGrams!: number;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() public active?: boolean;
 }
 export class UpdateVariantDto extends PartialType(CreateVariantDto) {
@@ -202,8 +195,7 @@ export class FeedingGuideEntryDto {
   @IsNumber()
   @Min(0.1)
   public petWeightKgMax?: number | null;
-  @ApiPropertyOptional() @IsOptional() @IsString() public lifeStage?:
-    string | null;
+  @ApiPropertyOptional() @IsOptional() @IsString() public lifeStage?: string | null;
   @ApiPropertyOptional({ type: Object })
   @IsOptional()
   @IsObject()
@@ -250,32 +242,57 @@ export class SetInventoryDto {
 }
 
 export class PublicProductsQueryDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() public q?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() public category?: string;
+  @ApiPropertyOptional({ maxLength: 80 })
+  @IsOptional()
+  @Transform(({ value }) => normalizeQueryText(value))
+  @IsString()
+  @MaxLength(80)
+  public q?: string;
+  @ApiPropertyOptional({ maxLength: 220 })
+  @IsOptional()
+  @Transform(({ value }) => normalizeQueryText(value))
+  @IsString()
+  @MaxLength(220)
+  public category?: string;
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @Transform(({ value }) => toArray(value))
+  @ArrayMaxSize(20)
   @IsString({ each: true })
+  @MaxLength(220, { each: true })
   public brand?: string[];
-  @ApiPropertyOptional() @IsOptional() @IsString() public species?: string;
+  @ApiPropertyOptional({ maxLength: 32 })
+  @IsOptional()
+  @Transform(({ value }) => normalizeQueryText(value))
+  @IsString()
+  @MaxLength(32)
+  public species?: string;
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @Transform(({ value }) => toArray(value))
+  @ArrayMaxSize(20)
   @IsString({ each: true })
+  @MaxLength(120, { each: true })
   public lifeStage?: string[];
   @ApiPropertyOptional({ type: [Number] })
   @IsOptional()
   @Transform(({ value }) => toArray(value).map(Number))
+  @ArrayMaxSize(20)
   @IsInt({ each: true })
   @Min(1, { each: true })
+  @Max(100_000, { each: true })
   public weightGrams?: number[];
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => normalizeQueryText(value))
   @IsNumberString()
+  @MaxLength(24)
   public minPrice?: string;
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => normalizeQueryText(value))
   @IsNumberString()
+  @MaxLength(24)
   public maxPrice?: string;
   @ApiPropertyOptional()
   @IsOptional()
@@ -288,10 +305,11 @@ export class PublicProductsQueryDto {
   @IsOptional()
   @IsIn(['featured', 'name_asc', 'price_asc', 'price_desc'])
   public sort?: 'featured' | 'name_asc' | 'price_asc' | 'price_desc';
-  @ApiPropertyOptional({ default: 1 })
+  @ApiPropertyOptional({ default: 1, maximum: 250 })
   @Transform(({ value }) => Number(value ?? 1))
   @IsInt()
   @Min(1)
+  @Max(250)
   public page = 1;
   @ApiPropertyOptional({ default: 24, maximum: 100 })
   @Transform(({ value }) => Number(value ?? 24))
@@ -301,11 +319,35 @@ export class PublicProductsQueryDto {
   public perPage = 24;
 }
 
+export class PublicProductAutocompleteQueryDto {
+  @ApiPropertyOptional({
+    description: 'Prefijo del producto, marca o presentación.',
+    maxLength: 80,
+  })
+  @IsOptional()
+  @Transform(({ value }) => normalizeQueryText(value))
+  @IsString()
+  @MinLength(2)
+  @MaxLength(80)
+  public q?: string;
+}
+
 const toArray = (value: unknown): unknown[] => {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') return value.split(',').filter(Boolean);
+  if (Array.isArray(value)) {
+    const values: unknown[] = value;
+    return values.flatMap((item) => (typeof item === 'string' ? item.split(',') : [item])).map(trimString);
+  }
+  if (typeof value === 'string')
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
   return [value];
 };
+
+const trimString = (value: unknown): unknown => (typeof value === 'string' ? value.trim() : value);
+
+const normalizeQueryText = (value: unknown): unknown => (typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value);
 
 const parseBoolean = (value: unknown): unknown => {
   if (value === true || value === 'true') return true;
@@ -337,8 +379,7 @@ export class AdminProductsQueryDto {
   @IsOptional()
   @IsIn(['name_asc', 'name_desc', 'updated_desc'])
   public sort?: 'name_asc' | 'name_desc' | 'updated_desc';
-  @Transform(({ value }) => Number(value ?? 1)) @IsInt() @Min(1) public page =
-    1;
+  @Transform(({ value }) => Number(value ?? 1)) @IsInt() @Min(1) public page = 1;
   @Transform(({ value }) => Number(value ?? 24))
   @IsInt()
   @Min(1)

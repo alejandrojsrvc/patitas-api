@@ -12,9 +12,7 @@ export class MobilePetBreedController {
   @Get()
   public async list(@Query() query: MobilePetBreedsQueryDto) {
     return {
-      items: (await this.breeds.listActive(query.species, query.query)).map(
-        toMobileBreed,
-      ),
+      items: (await this.breeds.listActive(query.species, query.query)).map(toMobileBreed),
       nextCursor: null,
     };
   }

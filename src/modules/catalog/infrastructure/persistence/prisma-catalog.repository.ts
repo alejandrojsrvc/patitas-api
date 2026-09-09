@@ -2,11 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { Prisma } from '../../../../infrastructure/database/generated/prisma/client';
-import {
-  CatalogConflictError,
-  CatalogNotFoundError,
-  CatalogValidationError,
-} from '../../domain/errors/catalog.error';
+import { CatalogConflictError, CatalogNotFoundError, CatalogValidationError } from '../../domain/errors/catalog.error';
 import type {
   AdminProductFilter,
   Brand,
@@ -21,6 +17,7 @@ import type {
   InventoryMovement,
   Page,
   Product,
+  ProductAutocompleteItem,
   ProductMedia,
   ProductVariant,
   MobileProductFilter,
@@ -117,6 +114,22 @@ interface PersistenceProduct {
   media: PersistenceMedia[];
 }
 
+interface ProductAutocompleteRow {
+  variantId: string;
+  productId: string;
+  slug: string;
+  species: string | null;
+  categorySlug: string;
+  productName: string;
+  presentation: string | null;
+  brandId: string;
+  brandName: string;
+  brandSlug: string;
+  imageUrl: string | null;
+  imageAltText: string | null;
+  salePrice: string;
+}
+
 const productInclude = {
   brand: true,
   category: true,
@@ -201,23 +214,17 @@ const publicProductWhere: Prisma.ProductWhereInput = {
   },
 };
 
-const publicSearchWhere = (
-  rawQuery?: string,
-): Prisma.ProductWhereInput | undefined => {
+const publicSearchWhere = (rawQuery?: string): Prisma.ProductWhereInput | undefined => {
   const query = rawQuery?.trim();
   if (!query) return undefined;
 
-  const weightGrams = Array.from(
-    query.matchAll(/(\d+(?:[.,]\d+)?)\s*(kg|kilos?|g|gramos?)\b/gi),
-  )
+  const weightGrams = Array.from(query.matchAll(/(\d+(?:[.,]\d+)?)\s*(kg|kilos?|g|gramos?)\b/gi))
     .map((match) => {
       const value = Number(match[1].replace(',', '.'));
       return match[2].toLowerCase().startsWith('k') ? value * 1000 : value;
     })
     .filter((value) => Number.isInteger(value) && value > 0);
-  const textQuery = query
-    .replace(/\d+(?:[.,]\d+)?\s*(?:kg|kilos?|g|gramos?)\b/gi, ' ')
-    .trim();
+  const textQuery = query.replace(/\d+(?:[.,]\d+)?\s*(?:kg|kilos?|g|gramos?)\b/gi, ' ').trim();
   const terms = textQuery.split(/\s+/).filter(Boolean);
   const conditions: Prisma.ProductWhereInput[] = terms.map((term) => ({
     OR: [
@@ -263,17 +270,95 @@ const publicSearchWhere = (
 export class PrismaCatalogRepository implements CatalogRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  public async listPublicProducts(
-    filter: PublicProductFilter,
-  ): Promise<Page<Product>> {
+  public async autocompleteProductVariants(query: string, limit: number): Promise<ProductAutocompleteItem[]> {
+    const normalizedQuery = query.trim().replace(/\s+/g, ' ');
+    if (normalizedQuery.length < 2 || limit <= 0) return [];
+
+    const pattern = `${escapeLikePrefix(normalizedQuery)}%`;
+    const rows = await this.prisma.$queryRaw<ProductAutocompleteRow[]>`
+      SELECT
+        pv."id" AS "variantId",
+        p."id" AS "productId",
+        p."slug" AS "slug",
+        p."species" AS "species",
+        c."slug" AS "categorySlug",
+        p."name" AS "productName",
+        pv."presentation" AS "presentation",
+        b."id" AS "brandId",
+        b."name" AS "brandName",
+        b."slug" AS "brandSlug",
+        media."url" AS "imageUrl",
+        media."alt_text" AS "imageAltText",
+        pv."sale_price"::text AS "salePrice"
+      FROM "product_variants" AS pv
+      INNER JOIN "products" AS p ON p."id" = pv."product_id"
+      INNER JOIN "brands" AS b ON b."id" = p."brand_id"
+      INNER JOIN "categories" AS c ON c."id" = p."category_id"
+      LEFT JOIN LATERAL (
+        SELECT pm."url", pm."alt_text", pm."variant_id", pm."display_order", pm."id"
+        FROM "product_media" AS pm
+        WHERE pm."product_id" = p."id"
+          AND (pm."variant_id" = pv."id" OR pm."variant_id" IS NULL)
+        ORDER BY
+          CASE WHEN pm."variant_id" = pv."id" THEN 0 ELSE 1 END,
+          pm."display_order" ASC,
+          pm."id" ASC
+        LIMIT 1
+      ) AS media ON TRUE
+      WHERE p."status" = 'ACTIVE'
+        AND b."active" = TRUE
+        AND c."active" = TRUE
+        AND pv."active" = TRUE
+        AND pv."sku" IS NOT NULL
+        AND pv."sale_price" > 0
+        AND (
+          lower(p."name") LIKE lower(${pattern}) ESCAPE '\\'
+          OR lower(b."name") LIKE lower(${pattern}) ESCAPE '\\'
+          OR lower(pv."presentation") LIKE lower(${pattern}) ESCAPE '\\'
+          OR lower(pv."sku") LIKE lower(${pattern}) ESCAPE '\\'
+          OR lower(pv."barcode") LIKE lower(${pattern}) ESCAPE '\\'
+        )
+      ORDER BY
+        CASE
+          WHEN lower(p."name") LIKE lower(${pattern}) ESCAPE '\\' THEN 0
+          WHEN lower(b."name") LIKE lower(${pattern}) ESCAPE '\\' THEN 1
+          WHEN lower(pv."presentation") LIKE lower(${pattern}) ESCAPE '\\' THEN 2
+          ELSE 3
+        END,
+        lower(p."name") ASC,
+        pv."weight_grams" ASC NULLS LAST,
+        pv."id" ASC
+      LIMIT ${limit}
+    `;
+
+    return rows.map((row) => {
+      const presentation = row.presentation?.trim() || null;
+      return {
+        id: row.variantId,
+        productId: row.productId,
+        slug: row.slug,
+        species: row.species,
+        categorySlug: row.categorySlug,
+        name: row.productName,
+        presentation,
+        displayName: presentation ? `${row.productName} · ${presentation}` : row.productName,
+        brand: {
+          id: row.brandId,
+          name: row.brandName,
+          slug: row.brandSlug,
+        },
+        image: row.imageUrl && row.imageAltText ? { url: row.imageUrl, altText: row.imageAltText } : null,
+        salePrice: row.salePrice,
+        currency: 'ARS',
+      };
+    });
+  }
+
+  public async listPublicProducts(filter: PublicProductFilter): Promise<Page<Product>> {
     const brands = filter.brand ? toArray(filter.brand) : undefined;
     const lifeStages = filter.lifeStage ? toArray(filter.lifeStage) : undefined;
-    const weights = filter.weightGrams
-      ? toArray(filter.weightGrams)
-      : undefined;
-    const categoryIds = filter.category
-      ? await this.resolveCategoryIds(filter.category)
-      : undefined;
+    const weights = filter.weightGrams ? toArray(filter.weightGrams) : undefined;
+    const categoryIds = filter.category ? await this.resolveCategoryIds(filter.category) : undefined;
     const priceCondition = {
       active: true,
       sku: { not: null },
@@ -287,15 +372,19 @@ export class PrismaCatalogRepository implements CatalogRepository {
     const searchWhere = publicSearchWhere(filter.q);
     const where = {
       status: 'ACTIVE' as const,
-      ...(searchWhere ?? {}),
-      ...(filter.species
+      ...(searchWhere || filter.species
         ? {
             AND: [
-              {
-                OR: speciesAliases(filter.species).map((species) => ({
-                  species: { equals: species, mode: 'insensitive' as const },
-                })),
-              },
+              ...(searchWhere ? [searchWhere] : []),
+              ...(filter.species
+                ? [
+                    {
+                      OR: speciesAliases(filter.species).map((species) => ({
+                        species: { equals: species, mode: 'insensitive' as const },
+                      })),
+                    },
+                  ]
+                : []),
             ],
           }
         : {}),
@@ -310,8 +399,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
       },
       variants: { some: priceCondition },
     };
-    const isPriceSort =
-      filter.sort === 'price_asc' || filter.sort === 'price_desc';
+    const isPriceSort = filter.sort === 'price_asc' || filter.sort === 'price_desc';
     const variantFilter = {
       weights,
       minPrice: filter.minPrice ? Number(filter.minPrice) : undefined,
@@ -344,9 +432,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
       return {
         items: productIds.flatMap((id) => {
           const record = recordsById.get(id);
-          return record
-            ? [onlySellableVariants(mapProduct(record), variantFilter)]
-            : [];
+          return record ? [onlySellableVariants(mapProduct(record), variantFilter)] : [];
         }),
         page: filter.page,
         perPage: filter.perPage,
@@ -357,18 +443,13 @@ export class PrismaCatalogRepository implements CatalogRepository {
       this.prisma.product.findMany({
         where,
         include: publicProductInclude,
-        orderBy:
-          filter.sort === 'name_asc'
-            ? [{ name: 'asc' as const }]
-            : [{ featuredRank: 'asc' as const }, { name: 'asc' as const }],
+        orderBy: filter.sort === 'name_asc' ? [{ name: 'asc' as const }] : [{ featuredRank: 'asc' as const }, { name: 'asc' as const }],
         skip: (filter.page - 1) * filter.perPage,
         take: filter.perPage,
       }),
       this.prisma.product.count({ where }),
     ]);
-    const products = records
-      .map(mapProduct)
-      .map((product) => onlySellableVariants(product, variantFilter));
+    const products = records.map(mapProduct).map((product) => onlySellableVariants(product, variantFilter));
     return {
       items: products,
       page: filter.page,
@@ -379,16 +460,10 @@ export class PrismaCatalogRepository implements CatalogRepository {
 
   public async listPublicProductFacets(filter: PublicProductFilter) {
     const searchWhere = publicSearchWhere(filter.q);
-    const categoryIds = filter.category
-      ? await this.resolveCategoryIds(filter.category)
-      : undefined;
+    const categoryIds = filter.category ? await this.resolveCategoryIds(filter.category) : undefined;
     const selectedBrands = filter.brand ? toArray(filter.brand) : [];
-    const selectedLifeStages = filter.lifeStage
-      ? toArray(filter.lifeStage)
-      : [];
-    const selectedWeights = filter.weightGrams
-      ? toArray(filter.weightGrams)
-      : [];
+    const selectedLifeStages = filter.lifeStage ? toArray(filter.lifeStage) : [];
+    const selectedWeights = filter.weightGrams ? toArray(filter.weightGrams) : [];
     const priceCondition = {
       active: true,
       sku: { not: null },
@@ -401,15 +476,19 @@ export class PrismaCatalogRepository implements CatalogRepository {
     const records = await this.prisma.product.findMany({
       where: {
         status: 'ACTIVE',
-        ...(searchWhere ?? {}),
-        ...(filter.species
+        ...(searchWhere || filter.species
           ? {
               AND: [
-                {
-                  OR: speciesAliases(filter.species).map((species) => ({
-                    species: { equals: species, mode: 'insensitive' },
-                  })),
-                },
+                ...(searchWhere ? [searchWhere] : []),
+                ...(filter.species
+                  ? [
+                      {
+                        OR: speciesAliases(filter.species).map((species) => ({
+                          species: { equals: species, mode: 'insensitive' as const },
+                        })),
+                      },
+                    ]
+                  : []),
               ],
             }
           : {}),
@@ -436,37 +515,19 @@ export class PrismaCatalogRepository implements CatalogRepository {
     });
 
     const brandCounts = new Map<string, number>();
-    const categoryCounts = new Map<
-      string,
-      { count: number; species: Set<string> }
-    >();
+    const categoryCounts = new Map<string, { count: number; species: Set<string> }>();
     const lifeStageCounts = new Map<string, number>();
     const weightCounts = new Map<number, number>();
     records.forEach((record) => {
-      const recordWeights = new Set(
-        record.variants
-          .map((variant) => variant.weightGrams)
-          .filter((value): value is number => value !== null),
-      );
-      const matchesBrand =
-        !selectedBrands.length || selectedBrands.includes(record.brand.slug);
-      const matchesLifeStage =
-        !selectedLifeStages.length ||
-        (record.lifeStage !== null &&
-          selectedLifeStages.includes(record.lifeStage));
-      const matchesWeight =
-        !selectedWeights.length ||
-        selectedWeights.some((weight) => recordWeights.has(weight));
+      const recordWeights = new Set(record.variants.map((variant) => variant.weightGrams).filter((value): value is number => value !== null));
+      const matchesBrand = !selectedBrands.length || selectedBrands.includes(record.brand.slug);
+      const matchesLifeStage = !selectedLifeStages.length || (record.lifeStage !== null && selectedLifeStages.includes(record.lifeStage));
+      const matchesWeight = !selectedWeights.length || selectedWeights.some((weight) => recordWeights.has(weight));
 
       if (matchesLifeStage && matchesWeight) {
         increment(brandCounts, record.brand.slug);
       }
-      if (
-        record.category &&
-        matchesBrand &&
-        matchesLifeStage &&
-        matchesWeight
-      ) {
+      if (record.category && matchesBrand && matchesLifeStage && matchesWeight) {
         const category = categoryCounts.get(record.category.slug) ?? {
           count: 0,
           species: new Set<string>(),
@@ -518,8 +579,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     });
     return products.map((product) => ({
       ...product,
-      estimatedDailyGramsPerKg:
-        product.estimatedDailyGramsPerKg?.toString() ?? null,
+      estimatedDailyGramsPerKg: product.estimatedDailyGramsPerKg?.toString() ?? null,
     }));
   }
 
@@ -547,21 +607,15 @@ export class PrismaCatalogRepository implements CatalogRepository {
     return product ? onlySellableVariants(mapProduct(product)) : null;
   }
 
-  public async listMobileProducts(
-    filter: MobileProductFilter,
-  ): Promise<CursorPage<Product>> {
-    const categoryIds = filter.category
-      ? await this.resolveCategoryIds(filter.category)
-      : undefined;
+  public async listMobileProducts(filter: MobileProductFilter): Promise<CursorPage<Product>> {
+    const categoryIds = filter.category ? await this.resolveCategoryIds(filter.category) : undefined;
     const searchWhere = publicSearchWhere(filter.query);
     const priceCondition = {
       active: true,
       sku: { not: null },
       salePrice: { gt: 0 },
     };
-    const purchasedCondition = filter.purchasedVariantIds
-      ? { id: { in: filter.purchasedVariantIds } }
-      : {};
+    const purchasedCondition = filter.purchasedVariantIds ? { id: { in: filter.purchasedVariantIds } } : {};
     const where: Prisma.ProductWhereInput = {
       status: 'ACTIVE',
       ...(searchWhere ?? {}),
@@ -620,10 +674,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     return lines.map((line) => line.variantId);
   }
 
-  public async listRelatedPublicProducts(
-    product: Product,
-    limit: number,
-  ): Promise<Product[]> {
+  public async listRelatedPublicProducts(product: Product, limit: number): Promise<Product[]> {
     const relationOr = [
       ...(product.categoryId ? [{ categoryId: product.categoryId }] : []),
       ...(product.species && product.lifeStage
@@ -647,16 +698,11 @@ export class PrismaCatalogRepository implements CatalogRepository {
     return candidates
       .map(mapProduct)
       .map((candidate) => onlySellableVariants(candidate))
-      .sort(
-        (left, right) =>
-          relatedScore(right, product) - relatedScore(left, product),
-      )
+      .sort((left, right) => relatedScore(right, product) - relatedScore(left, product))
       .slice(0, limit);
   }
 
-  public async findPublicCategoryBySlug(
-    slug: string,
-  ): Promise<Category | null> {
+  public async findPublicCategoryBySlug(slug: string): Promise<Category | null> {
     const categories = await this.listCategories(true);
     return categories.find((category) => category.slug === slug) ?? null;
   }
@@ -668,9 +714,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     return brand ? mapBrand(brand) : null;
   }
 
-  public async findActiveFeedingGuide(
-    productId: string,
-  ): Promise<FeedingGuide | null> {
+  public async findActiveFeedingGuide(productId: string): Promise<FeedingGuide | null> {
     const guide = await this.prisma.feedingGuide.findFirst({
       where: { productId, active: true },
       include: { entries: { orderBy: { petWeightKgMin: 'asc' } } },
@@ -685,20 +729,16 @@ export class PrismaCatalogRepository implements CatalogRepository {
       requiredDimensions: asStringArrayRecord(guide.requiredDimensions),
       entries: guide.entries.map((entry) => ({
         petWeightKgMin: Number(entry.petWeightKgMin),
-        petWeightKgMax:
-          entry.petWeightKgMax === null ? null : Number(entry.petWeightKgMax),
+        petWeightKgMax: entry.petWeightKgMax === null ? null : Number(entry.petWeightKgMax),
         lifeStage: entry.lifeStage,
         conditions: asStringRecord(entry.conditions),
         dailyGramsMin: Number(entry.dailyGramsMin),
-        dailyGramsMax:
-          entry.dailyGramsMax === null ? null : Number(entry.dailyGramsMax),
+        dailyGramsMax: entry.dailyGramsMax === null ? null : Number(entry.dailyGramsMax),
       })),
     };
   }
 
-  public async listAdminProducts(
-    filter: AdminProductFilter,
-  ): Promise<Page<Product>> {
+  public async listAdminProducts(filter: AdminProductFilter): Promise<Page<Product>> {
     const where: Prisma.ProductWhereInput = {
       ...(filter.status ? { status: filter.status } : {}),
       ...(filter.brandId ? { brandId: filter.brandId } : {}),
@@ -760,10 +800,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     return records.map(mapProduct);
   }
 
-  public async findExistingCatalogImportKeys(
-    slugs: string[],
-    skus: string[],
-  ): Promise<{ slugs: string[]; skus: string[] }> {
+  public async findExistingCatalogImportKeys(slugs: string[], skus: string[]): Promise<{ slugs: string[]; skus: string[] }> {
     const [products, variants] = await this.prisma.$transaction([
       this.prisma.product.findMany({
         where: { slug: { in: slugs } },
@@ -776,9 +813,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     ]);
     return {
       slugs: products.map((product) => product.slug),
-      skus: variants.flatMap((variant) =>
-        variant.sku === null ? [] : [variant.sku],
-      ),
+      skus: variants.flatMap((variant) => (variant.sku === null ? [] : [variant.sku])),
     };
   }
 
@@ -839,19 +874,14 @@ export class PrismaCatalogRepository implements CatalogRepository {
     };
   }
 
-  public async createProduct(
-    input: CreateProductInput & { slug: string },
-  ): Promise<Product> {
+  public async createProduct(input: CreateProductInput & { slug: string }): Promise<Product> {
     return this.write(async () =>
       mapProduct(
         await this.prisma.product.create({
           data: {
             id: randomUUID(),
             ...input,
-            analyticalComposition:
-              input.analyticalComposition === null
-                ? Prisma.JsonNull
-                : input.analyticalComposition,
+            analyticalComposition: input.analyticalComposition === null ? Prisma.JsonNull : input.analyticalComposition,
             status: 'DRAFT',
           } as never,
           include: productInclude,
@@ -860,20 +890,14 @@ export class PrismaCatalogRepository implements CatalogRepository {
     );
   }
 
-  public async updateProduct(
-    id: string,
-    input: UpdateProductInput,
-  ): Promise<Product> {
+  public async updateProduct(id: string, input: UpdateProductInput): Promise<Product> {
     return this.write(async () =>
       mapProduct(
         await this.prisma.product.update({
           where: { id },
           data: {
             ...input,
-            analyticalComposition:
-              input.analyticalComposition === null
-                ? Prisma.JsonNull
-                : input.analyticalComposition,
+            analyticalComposition: input.analyticalComposition === null ? Prisma.JsonNull : input.analyticalComposition,
           } as never,
           include: productInclude,
         }),
@@ -881,33 +905,25 @@ export class PrismaCatalogRepository implements CatalogRepository {
     );
   }
 
-  public async createVariant(
-    productId: string,
-    input: CreateVariantInput,
-  ): Promise<ProductVariant> {
+  public async createVariant(productId: string, input: CreateVariantInput): Promise<ProductVariant> {
     return this.write(async () =>
       mapVariant(
-        await this.prisma.productVariant.create({
+        (await this.prisma.productVariant.create({
           data: { id: randomUUID(), ...input, productId },
           include: { inventory: true, preferredSupplierOffer: true },
-        }),
+        })) as unknown as PersistenceVariant,
       ),
     );
   }
 
-  public async updateVariant(
-    id: string,
-    input: UpdateVariantInput,
-  ): Promise<ProductVariant> {
+  public async updateVariant(id: string, input: UpdateVariantInput): Promise<ProductVariant> {
     if (input.preferredSupplierOfferId) {
       const offer = await this.prisma.supplierOffer.findUnique({
         where: { id: input.preferredSupplierOfferId },
         select: { variantId: true },
       });
       if (!offer || offer.variantId !== id) {
-        throw new CatalogValidationError(
-          'La oferta preferida debe pertenecer a la variante.',
-        );
+        throw new CatalogValidationError('La oferta preferida debe pertenecer a la variante.');
       }
     }
     return this.write(async () =>
@@ -921,10 +937,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     );
   }
 
-  public async createProductMedia(
-    productId: string,
-    input: CreateProductMediaInput,
-  ): Promise<ProductMedia> {
+  public async createProductMedia(productId: string, input: CreateProductMediaInput): Promise<ProductMedia> {
     return this.write(async () => {
       const media = await this.prisma.productMedia.create({
         data: {
@@ -940,10 +953,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     });
   }
 
-  public async updateProductMedia(
-    id: string,
-    input: Partial<CreateProductMediaInput>,
-  ): Promise<ProductMedia> {
+  public async updateProductMedia(id: string, input: Partial<CreateProductMediaInput>): Promise<ProductMedia> {
     return this.write(async () =>
       mapMedia(
         await this.prisma.productMedia.update({
@@ -955,15 +965,10 @@ export class PrismaCatalogRepository implements CatalogRepository {
   }
 
   public async deleteProductMedia(id: string): Promise<void> {
-    await this.write(() =>
-      this.prisma.productMedia.delete({ where: { id } }).then(() => undefined),
-    );
+    await this.write(() => this.prisma.productMedia.delete({ where: { id } }).then(() => undefined));
   }
 
-  public async replaceFeedingGuide(
-    productId: string,
-    input: ReplaceFeedingGuideInput,
-  ): Promise<FeedingGuide> {
+  public async replaceFeedingGuide(productId: string, input: ReplaceFeedingGuideInput): Promise<FeedingGuide> {
     return this.write(() =>
       this.prisma.$transaction(async (transaction) => {
         const latest = await transaction.feedingGuide.findFirst({
@@ -1000,10 +1005,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     );
   }
 
-  public async setInventory(
-    variantId: string,
-    input: SetInventoryInput,
-  ): Promise<InventoryItem> {
+  public async setInventory(variantId: string, input: SetInventoryInput): Promise<InventoryItem> {
     return this.write(() =>
       this.prisma.$transaction(async (transaction) => {
         const current = await transaction.inventoryItem.findUnique({
@@ -1030,9 +1032,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     );
   }
 
-  public async listInventoryMovements(
-    variantId: string,
-  ): Promise<InventoryMovement[]> {
+  public async listInventoryMovements(variantId: string): Promise<InventoryMovement[]> {
     const movements = await this.prisma.inventoryMovement.findMany({
       where: { variantId },
       orderBy: { createdAt: 'desc' },
@@ -1048,9 +1048,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     }));
   }
 
-  public async listCompetitivePriceObservations(
-    variantId: string,
-  ): Promise<CompetitivePriceObservation[]> {
+  public async listCompetitivePriceObservations(variantId: string): Promise<CompetitivePriceObservation[]> {
     const observations = await this.prisma.retailPriceObservation.findMany({
       where: { variantId },
       orderBy: { observedAt: 'desc' },
@@ -1093,31 +1091,20 @@ export class PrismaCatalogRepository implements CatalogRepository {
     }
     return categories.filter((category) => visible.has(category.id));
   }
-  public createCategory(
-    input: CreateReferenceInput & { slug: string },
-  ): Promise<Category> {
-    return this.write(async () =>
-      mapCategory(await this.prisma.category.create({ data: input })),
-    );
+  public createCategory(input: CreateReferenceInput & { slug: string }): Promise<Category> {
+    return this.write(async () => mapCategory(await this.prisma.category.create({ data: input })));
   }
-  public updateCategory(
-    id: string,
-    input: UpdateReferenceInput,
-  ): Promise<Category> {
+  public updateCategory(id: string, input: UpdateReferenceInput): Promise<Category> {
     return this.write(async () => {
       if (input.active === false) {
         const activeProducts = await this.prisma.product.count({
           where: { categoryId: id, status: 'ACTIVE' },
         });
         if (activeProducts > 0) {
-          throw new CatalogValidationError(
-            'No se puede desactivar una categoría con productos publicados.',
-          );
+          throw new CatalogValidationError('No se puede desactivar una categoría con productos publicados.');
         }
       }
-      return mapCategory(
-        await this.prisma.category.update({ where: { id }, data: input }),
-      );
+      return mapCategory(await this.prisma.category.update({ where: { id }, data: input }));
     });
   }
   public async listBrands(publicOnly: boolean): Promise<Brand[]> {
@@ -1132,12 +1119,8 @@ export class PrismaCatalogRepository implements CatalogRepository {
     });
     return brands.map(mapBrand);
   }
-  public createBrand(
-    input: CreateReferenceInput & { slug: string },
-  ): Promise<Brand> {
-    return this.write(async () =>
-      mapBrand(await this.prisma.brand.create({ data: input })),
-    );
+  public createBrand(input: CreateReferenceInput & { slug: string }): Promise<Brand> {
+    return this.write(async () => mapBrand(await this.prisma.brand.create({ data: input })));
   }
   public updateBrand(id: string, input: UpdateReferenceInput): Promise<Brand> {
     return this.write(async () => {
@@ -1146,14 +1129,10 @@ export class PrismaCatalogRepository implements CatalogRepository {
           where: { brandId: id, status: 'ACTIVE' },
         });
         if (activeProducts > 0) {
-          throw new CatalogValidationError(
-            'No se puede desactivar una marca con productos publicados.',
-          );
+          throw new CatalogValidationError('No se puede desactivar una marca con productos publicados.');
         }
       }
-      return mapBrand(
-        await this.prisma.brand.update({ where: { id }, data: input }),
-      );
+      return mapBrand(await this.prisma.brand.update({ where: { id }, data: input }));
     });
   }
 
@@ -1169,11 +1148,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     while (changed) {
       changed = false;
       for (const candidate of categories) {
-        if (
-          candidate.parentId &&
-          descendants.has(candidate.parentId) &&
-          !descendants.has(candidate.id)
-        ) {
+        if (candidate.parentId && descendants.has(candidate.parentId) && !descendants.has(candidate.id)) {
           descendants.add(candidate.id);
           changed = true;
         }
@@ -1186,24 +1161,13 @@ export class PrismaCatalogRepository implements CatalogRepository {
     try {
       return await operation();
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new CatalogConflictError(
-          'Ya existe un registro con ese slug o SKU.',
-        );
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new CatalogConflictError('Ya existe un registro con ese slug o SKU.');
       }
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2003'
-      ) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
         throw new CatalogValidationError('La relación referenciada no existe.');
       }
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         throw new CatalogNotFoundError('El registro');
       }
       throw error;
@@ -1245,29 +1209,17 @@ const mapVariant = (value: PersistenceVariant): ProductVariant => ({
   revision: value.revision,
   salePrice: value.salePrice?.toString() ?? null,
   compareAtPrice: value.compareAtPrice?.toString() ?? null,
-  availableQuantity: Math.max(
-    0,
-    (value.inventory?.onHand ?? 0) - (value.inventory?.reserved ?? 0),
-  ),
+  availableQuantity: Math.max(0, (value.inventory?.onHand ?? 0) - (value.inventory?.reserved ?? 0)),
   supplierStockStatus: (value.preferredSupplierOffer?.active
     ? value.preferredSupplierOffer.stockStatus
     : null) as ProductVariant['supplierStockStatus'],
-  supplierLeadTimeHours: value.preferredSupplierOffer?.active
-    ? value.preferredSupplierOffer.leadTimeHours
-    : null,
+  supplierLeadTimeHours: value.preferredSupplierOffer?.active ? value.preferredSupplierOffer.leadTimeHours : null,
   supplierFulfillmentMode: value.preferredSupplierOffer?.active
-    ? (value.preferredSupplierOffer
-        .fulfillmentMode as ProductVariant['supplierFulfillmentMode'])
+    ? (value.preferredSupplierOffer.fulfillmentMode as ProductVariant['supplierFulfillmentMode'])
     : null,
-  supplierCutoff: value.preferredSupplierOffer?.active
-    ? value.preferredSupplierOffer.supplierCutoff
-    : null,
-  supplierToDepotMinutes: value.preferredSupplierOffer?.active
-    ? value.preferredSupplierOffer.supplierToDepotMinutes
-    : null,
-  supplierFulfillmentCost: value.preferredSupplierOffer?.active
-    ? value.preferredSupplierOffer.fulfillmentCost.toString()
-    : null,
+  supplierCutoff: value.preferredSupplierOffer?.active ? value.preferredSupplierOffer.supplierCutoff : null,
+  supplierToDepotMinutes: value.preferredSupplierOffer?.active ? value.preferredSupplierOffer.supplierToDepotMinutes : null,
+  supplierFulfillmentCost: value.preferredSupplierOffer?.active ? value.preferredSupplierOffer.fulfillmentCost.toString() : null,
   onHand: value.inventory?.onHand ?? 0,
   reserved: value.inventory?.reserved ?? 0,
 });
@@ -1325,20 +1277,15 @@ const onlySellableVariants = (
   return {
     ...product,
     variants,
-    media: product.media.filter(
-      (media) => !media.variantId || visibleVariantIds.has(media.variantId),
-    ),
+    media: product.media.filter((media) => !media.variantId || visibleVariantIds.has(media.variantId)),
   };
 };
 const relatedScore = (candidate: Product, product: Product): number =>
-  (candidate.categoryId && candidate.categoryId === product.categoryId
-    ? 4
-    : 0) +
+  (candidate.categoryId && candidate.categoryId === product.categoryId ? 4 : 0) +
   (candidate.species && candidate.species === product.species ? 2 : 0) +
   (candidate.lifeStage && candidate.lifeStage === product.lifeStage ? 2 : 0) +
   (candidate.brandId === product.brandId ? 1 : 0);
-const toArray = <T>(value: T | T[]): T[] =>
-  Array.isArray(value) ? value : [value];
+const toArray = <T>(value: T | T[]): T[] => (Array.isArray(value) ? value : [value]);
 
 const increment = <T>(counts: Map<T, number>, value: T): void => {
   counts.set(value, (counts.get(value) ?? 0) + 1);
@@ -1348,6 +1295,9 @@ const countedValues = (counts: Map<string, number>) =>
   Array.from(counts.entries())
     .map(([value, count]) => ({ value, count }))
     .sort((left, right) => left.value.localeCompare(right.value));
+
+const escapeLikePrefix = (value: string): string => value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+
 const sellableProductWhere = {
   status: 'ACTIVE' as const,
   brand: { active: true },
@@ -1358,52 +1308,33 @@ const sellableProductWhere = {
 };
 const asStringRecord = (value: unknown): Record<string, string> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
-  return Object.fromEntries(
-    Object.entries(value).filter(
-      (entry): entry is [string, string] => typeof entry[1] === 'string',
-    ),
-  );
+  return Object.fromEntries(Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
 };
 const asStringArrayRecord = (value: unknown): Record<string, string[]> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return Object.fromEntries(
     Object.entries(value).filter(
-      (entry): entry is [string, string[]] =>
-        Array.isArray(entry[1]) &&
-        entry[1].every((item) => typeof item === 'string'),
+      (entry): entry is [string, string[]] => Array.isArray(entry[1]) && entry[1].every((item) => typeof item === 'string'),
     ),
   );
 };
 
 const asObjectRecord = (value: unknown): Record<string, unknown> | null =>
-  value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 
-const encodeMobileCursor = (offset: number): string =>
-  Buffer.from(JSON.stringify({ offset }), 'utf8').toString('base64url');
+const encodeMobileCursor = (offset: number): string => Buffer.from(JSON.stringify({ offset }), 'utf8').toString('base64url');
 
 const decodeMobileCursor = (cursor?: string): number => {
   if (!cursor) return 0;
   try {
-    const value = JSON.parse(
-      Buffer.from(cursor, 'base64url').toString('utf8'),
-    ) as { offset?: unknown };
-    return Number.isInteger(value.offset) && Number(value.offset) >= 0
-      ? Number(value.offset)
-      : 0;
+    const value = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as { offset?: unknown };
+    return Number.isInteger(value.offset) && Number(value.offset) >= 0 ? Number(value.offset) : 0;
   } catch {
     return 0;
   }
 };
 
-const mapMedia = (media: {
-  id: string;
-  url: string;
-  altText: string;
-  displayOrder: number;
-  variantId: string | null;
-}): ProductMedia => ({
+const mapMedia = (media: { id: string; url: string; altText: string; displayOrder: number; variantId: string | null }): ProductMedia => ({
   id: media.id,
   url: media.url,
   altText: media.altText,
@@ -1433,13 +1364,11 @@ const mapFeedingGuide = (guide: {
   requiredDimensions: asStringArrayRecord(guide.requiredDimensions),
   entries: guide.entries.map((entry) => ({
     petWeightKgMin: Number(entry.petWeightKgMin),
-    petWeightKgMax:
-      entry.petWeightKgMax === null ? null : Number(entry.petWeightKgMax),
+    petWeightKgMax: entry.petWeightKgMax === null ? null : Number(entry.petWeightKgMax),
     lifeStage: entry.lifeStage,
     conditions: asStringRecord(entry.conditions),
     dailyGramsMin: Number(entry.dailyGramsMin),
-    dailyGramsMax:
-      entry.dailyGramsMax === null ? null : Number(entry.dailyGramsMax),
+    dailyGramsMax: entry.dailyGramsMax === null ? null : Number(entry.dailyGramsMax),
   })),
 });
 

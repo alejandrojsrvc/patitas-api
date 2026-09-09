@@ -10,7 +10,7 @@ export class ResendEmailConfirmationUseCase {
   ) {}
 
   public async execute(email: string): Promise<void> {
-    if (await this.accounts.findIdentityByEmail(email)) return;
+    if ((await this.accounts.findIdentityByEmail(email))?.emailVerified) return;
     const action = await this.identityProvider.createEmailConfirmation(email);
     if (action) await this.emails.sendConfirmation(email, action);
   }

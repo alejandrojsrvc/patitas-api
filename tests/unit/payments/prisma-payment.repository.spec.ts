@@ -6,10 +6,7 @@
 /* eslint-disable @typescript-eslint/require-await */
 
 import { PrismaService } from '../../../src/infrastructure/database/prisma.service';
-import {
-  PrismaPaymentRepository,
-  applyWebhookResult,
-} from '../../../src/modules/payments/infrastructure/prisma-payment.repository';
+import { PrismaPaymentRepository, applyWebhookResult } from '../../../src/modules/payments/infrastructure/prisma-payment.repository';
 import { PaymentConflictError } from '../../../src/modules/payments/application/payment.service';
 import type { PaymentProvider } from '../../../src/shared/application/ports/payment-provider.interface';
 import type { TokenizedCardPayment } from '../../../src/shared/domain/payment.types';
@@ -55,35 +52,27 @@ describe('PrismaPaymentRepository consistency', () => {
     const repository = createRepository(state, provider);
 
     await repository.initiate('order-1', owner(), card, 'key-1');
-    await expect(
-      repository.initiate(
-        'order-1',
-        owner(),
-        { ...card, installments: 3 },
-        'key-1',
-      ),
-    ).rejects.toBeInstanceOf(PaymentConflictError);
+    await expect(repository.initiate('order-1', owner(), { ...card, installments: 3 }, 'key-1')).rejects.toBeInstanceOf(PaymentConflictError);
     expect(provider.initiatePayment).toHaveBeenCalledTimes(1);
   });
 
-  it('allows a new operation only with a new key after rejection', async () => {
+  it('does not leave a Payway order pending after rejection', async () => {
     const state = createState('PAYWAY');
     const provider = createProvider('payway');
-    provider.initiatePayment = jest
-      .fn()
-      .mockResolvedValueOnce({ provider: 'payway', status: 'REJECTED' })
-      .mockResolvedValueOnce({ provider: 'payway', status: 'PENDING' });
+    provider.initiatePayment = jest.fn().mockResolvedValue({ provider: 'payway', status: 'REJECTED' });
     const repository = createRepository(state, provider);
 
     await repository.initiate('order-1', owner(), card, 'key-1');
-    await repository.initiate(
-      'order-1',
-      owner(),
-      { ...card, token: 'token-2' },
-      'key-2',
+    expect(state.tx.order.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'CANCELLED',
+          paymentStatus: 'FAILED',
+        }),
+      }),
     );
-
-    expect(provider.initiatePayment).toHaveBeenCalledTimes(2);
+    await expect(repository.initiate('order-1', owner(), { ...card, token: 'token-2' }, 'key-2')).rejects.toThrow('pago pendiente reintentable');
+    expect(provider.initiatePayment).toHaveBeenCalledTimes(1);
   });
 
   it('does not regress a paid order when an older attempt is rejected', async () => {
@@ -110,9 +99,7 @@ describe('PrismaPaymentRepository consistency', () => {
         data: expect.objectContaining({ paymentStatus: 'PAID' }),
       }),
     );
-    expect(
-      transaction.order.update.mock.calls[0]?.[0].data.status,
-    ).toBeUndefined();
+    expect(transaction.order.update.mock.calls[0]?.[0].data.status).toBeUndefined();
   });
 
   it('creates an idempotent full refund movement', async () => {
@@ -120,13 +107,7 @@ describe('PrismaPaymentRepository consistency', () => {
     const attempt = paymentAttempt('APPROVED');
     const transaction = createWebhookTransaction(order, attempt);
 
-    await applyWebhookResult(
-      transaction,
-      order,
-      attempt,
-      refundEvent('REFUNDED', 'refund-1', '100.00'),
-      'payway',
-    );
+    await applyWebhookResult(transaction, order, attempt, refundEvent('REFUNDED', 'refund-1', '100.00'), 'payway');
 
     expect(transaction.orderPayment.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -145,22 +126,14 @@ describe('PrismaPaymentRepository consistency', () => {
     const attempt = paymentAttempt('APPROVED');
     const transaction = createWebhookTransaction(order, attempt);
 
-    await applyWebhookResult(
-      transaction,
-      order,
-      attempt,
-      refundEvent('CHARGED_BACK', 'chargeback-1', '100.00'),
-      'mercadopago',
-    );
+    await applyWebhookResult(transaction, order, attempt, refundEvent('CHARGED_BACK', 'chargeback-1', '100.00'), 'mercadopago');
 
     expect(transaction.orderPayment.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ kind: 'CHARGEBACK' }),
       }),
     );
-    expect(
-      transaction.order.update.mock.calls[0]?.[0].data.status,
-    ).toBeUndefined();
+    expect(transaction.order.update.mock.calls[0]?.[0].data.status).toBeUndefined();
     expect(transaction.order.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ paymentStatus: 'CHARGED_BACK' }),
@@ -193,13 +166,7 @@ describe('PrismaPaymentRepository consistency', () => {
     const attempt = paymentAttempt('APPROVED');
     const transaction = createWebhookTransaction(order, attempt);
 
-    const result = await applyWebhookResult(
-      transaction,
-      order,
-      attempt,
-      refundEvent('REFUNDED', 'refund-over', '150.00'),
-      'payway',
-    );
+    const result = await applyWebhookResult(transaction, order, attempt, refundEvent('REFUNDED', 'refund-over', '150.00'), 'payway');
 
     expect(result.reconciliationRequired).toBe(true);
     expect(transaction.orderPayment.create).toHaveBeenCalledWith(
@@ -214,13 +181,7 @@ describe('PrismaPaymentRepository consistency', () => {
     const attempt = paymentAttempt('APPROVED');
     const transaction = createWebhookTransaction(order, attempt);
 
-    await applyWebhookResult(
-      transaction,
-      order,
-      attempt,
-      refundEvent('REFUNDED', 'refund-partial', '25.00'),
-      'payway',
-    );
+    await applyWebhookResult(transaction, order, attempt, refundEvent('REFUNDED', 'refund-partial', '25.00'), 'payway');
 
     expect(transaction.order.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -234,17 +195,9 @@ describe('PrismaPaymentRepository consistency', () => {
     const attempt = paymentAttempt('APPROVED');
     const transaction = createWebhookTransaction(order, attempt);
 
-    await applyWebhookResult(
-      transaction,
-      order,
-      attempt,
-      refundEvent('REFUNDED', 'refund-processing-order', '100.00'),
-      'payway',
-    );
+    await applyWebhookResult(transaction, order, attempt, refundEvent('REFUNDED', 'refund-processing-order', '100.00'), 'payway');
 
-    expect(
-      transaction.order.update.mock.calls[0]?.[0].data.status,
-    ).toBeUndefined();
+    expect(transaction.order.update.mock.calls[0]?.[0].data.status).toBeUndefined();
   });
 });
 
@@ -253,17 +206,12 @@ const owner = () => ({ customerId: 'customer-1' });
 const createProvider = (name: 'payway' | 'mercadopago'): PaymentProvider => ({
   name,
   createExternalReference: ({ attemptId }) => `external-${attemptId}`,
-  initiatePayment: jest
-    .fn()
-    .mockResolvedValue({ provider: name, status: 'PENDING' }),
+  initiatePayment: jest.fn().mockResolvedValue({ provider: name, status: 'PENDING' }),
   parseWebhook: jest.fn(),
   resolveWebhook: jest.fn(),
 });
 
-const createRepository = (
-  state: ReturnType<typeof createState>,
-  provider: PaymentProvider,
-) =>
+const createRepository = (state: ReturnType<typeof createState>, provider: PaymentProvider) =>
   new PrismaPaymentRepository(state.prisma as unknown as PrismaService, {
     resolve: () => provider,
   });
@@ -284,26 +232,36 @@ const createState = (paymentMethod: string) => {
         return order;
       }),
     },
+    inventoryItem: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      update: jest.fn(),
+    },
+    inventoryMovement: {
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn(),
+    },
+    couponRedemption: {
+      findMany: jest.fn().mockResolvedValue([]),
+      delete: jest.fn(),
+    },
+    coupon: {
+      update: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
+    },
+    promotion: { update: jest.fn() },
+    purchaseSchedule: { updateMany: jest.fn() },
+    orderBenefit: {
+      findFirst: jest.fn().mockResolvedValue(null),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
     paymentAttempt: {
       findUnique: jest
         .fn()
-        .mockImplementation(({ where }) =>
-          Promise.resolve(
-            attempts.find(
-              (item) => item.idempotencyKey === where.idempotencyKey,
-            ) ?? null,
-          ),
-        ),
+        .mockImplementation(({ where }) => Promise.resolve(attempts.find((item) => item.idempotencyKey === where.idempotencyKey) ?? null)),
       findFirst: jest
         .fn()
         .mockImplementation(() =>
-          Promise.resolve(
-            attempts.find((item) =>
-              ['CREATED', 'PROCESSING', 'PENDING'].includes(
-                String(item.status),
-              ),
-            ) ?? null,
-          ),
+          Promise.resolve(attempts.find((item) => ['CREATED', 'PROCESSING', 'PENDING'].includes(String(item.status))) ?? null),
         ),
       create: jest.fn().mockImplementation(({ data }) => {
         attempts.push(data);
@@ -311,16 +269,11 @@ const createState = (paymentMethod: string) => {
       }),
       updateMany: jest.fn().mockImplementation(({ where, data }) => {
         const item = attempts.find((candidate) => candidate.id === where.id);
-        if (!item || item.status !== where.status)
-          return Promise.resolve({ count: 0 });
+        if (!item || item.status !== where.status) return Promise.resolve({ count: 0 });
         Object.assign(item, data);
         return Promise.resolve({ count: 1 });
       }),
-      findUniqueOrThrow: jest
-        .fn()
-        .mockImplementation(({ where }) =>
-          Promise.resolve(attempts.find((item) => item.id === where.id)),
-        ),
+      findUniqueOrThrow: jest.fn().mockImplementation(({ where }) => Promise.resolve(attempts.find((item) => item.id === where.id))),
     },
     orderPayment: {
       create: jest.fn().mockImplementation(({ data }) => {
@@ -336,9 +289,7 @@ const createState = (paymentMethod: string) => {
   };
   return {
     prisma: {
-      $transaction: jest.fn(async (callback: (value: typeof tx) => unknown) =>
-        callback(tx),
-      ),
+      $transaction: jest.fn(async (callback: (value: typeof tx) => unknown) => callback(tx)),
     },
     tx,
   };
@@ -354,6 +305,7 @@ const paymentOrder = (status: string, paymentStatus: string) => ({
   currency: 'ARS',
   contactEmail: 'buyer@example.com',
   payments: [],
+  lines: [],
 });
 
 const paymentAttempt = (status: string) => ({
@@ -374,11 +326,7 @@ const paymentAttempt = (status: string) => ({
   processingLeaseUntil: null,
 });
 
-const createWebhookTransaction = (
-  order: ReturnType<typeof paymentOrder>,
-  attempt: ReturnType<typeof paymentAttempt>,
-  withCapture = true,
-) => {
+const createWebhookTransaction = (order: ReturnType<typeof paymentOrder>, attempt: ReturnType<typeof paymentAttempt>, withCapture = true) => {
   const payments = withCapture
     ? [
         {
@@ -402,19 +350,13 @@ const createWebhookTransaction = (
           Promise.resolve(
             payments.find(
               (payment) =>
-                (where.externalOperationId &&
-                  payment.externalOperationId === where.externalOperationId) ||
-                (where.paymentAttemptId &&
-                  payment.paymentAttemptId === where.paymentAttemptId) ||
+                (where.externalOperationId && payment.externalOperationId === where.externalOperationId) ||
+                (where.paymentAttemptId && payment.paymentAttemptId === where.paymentAttemptId) ||
                 (where.provider &&
                   where.externalPaymentId &&
                   payment.provider === where.provider &&
                   payment.externalPaymentId === where.externalPaymentId) ||
-                (where.OR &&
-                  where.OR.some(
-                    (condition: { paymentAttemptId?: string }) =>
-                      condition.paymentAttemptId === payment.paymentAttemptId,
-                  )),
+                (where.OR && where.OR.some((condition: { paymentAttemptId?: string }) => condition.paymentAttemptId === payment.paymentAttemptId)),
             ) ?? null,
           ),
         ),
@@ -427,14 +369,14 @@ const createWebhookTransaction = (
     order: {
       update: jest.fn().mockResolvedValue(order),
     },
+    orderBenefit: {
+      findFirst: jest.fn().mockResolvedValue(null),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
   } as unknown as Prisma.TransactionClient;
 };
 
-const refundEvent = (
-  status: 'REFUNDED' | 'CHARGED_BACK',
-  operation: string,
-  amount: string,
-) => ({
+const refundEvent = (status: 'REFUNDED' | 'CHARGED_BACK', operation: string, amount: string) => ({
   externalEventId: operation,
   eventType: 'payment',
   externalPaymentId: 'payment-1',
@@ -446,6 +388,5 @@ const refundEvent = (
 });
 
 const waitFor = async (condition: () => boolean) => {
-  for (let index = 0; index < 20 && !condition(); index += 1)
-    await new Promise((resolve) => setImmediate(resolve));
+  for (let index = 0; index < 20 && !condition(); index += 1) await new Promise((resolve) => setImmediate(resolve));
 };

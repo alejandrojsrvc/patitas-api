@@ -17,10 +17,7 @@ export class MobileOffersController {
 
   @Get()
   @ApiOkResponse({ type: MobileCursorPageResponseDto })
-  public list(
-    @Query() query: MobileCatalogQueryDto,
-    @CurrentUser() user?: AuthenticatedUser,
-  ) {
+  public list(@Query() query: MobileCatalogQueryDto, @CurrentUser() user?: AuthenticatedUser) {
     return this.mobileCatalog.listOffers(query, user?.userId).then((page) => ({
       ...page,
       items: page.items.map(toMobileOffer),

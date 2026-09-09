@@ -4,7 +4,7 @@ import type { IdentityProvider } from '../../../src/shared/application/ports/ide
 import { User } from '../../../src/modules/users/domain/entities/user.entity';
 
 const identity = {
-  provider: 'supabase',
+  provider: 'patitas',
   providerUserId: 'provider-user-1',
   email: 'customer@example.com',
   emailVerified: true,

@@ -36,10 +36,10 @@ export interface IdentityProvider {
   refresh(refreshToken: string): Promise<IdentitySession>;
   verifyToken(accessToken: string): Promise<ProviderIdentity>;
   createEmailConfirmation(email: string): Promise<IdentityEmailAction | null>;
-  confirmEmail(
-    token: string,
-    type: EmailConfirmationType,
-  ): Promise<IdentitySession>;
+  confirmEmail(token: string, type: EmailConfirmationType): Promise<IdentitySession>;
   createPasswordRecovery(email: string): Promise<IdentityEmailAction | null>;
   resetPassword(token: string, password: string): Promise<void>;
+  acceptInvitation(token: string, password: string): Promise<void>;
+  logout(accessToken: string): Promise<void>;
+  logoutAll(accessToken: string): Promise<void>;
 }

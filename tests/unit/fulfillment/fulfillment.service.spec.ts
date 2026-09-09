@@ -35,13 +35,7 @@ const variant = (input: Partial<ProductVariant>): ProductVariant => ({
 
 describe('FulfillmentService', () => {
   it('uses own stock and the depot cutoff for same-day availability', () => {
-    expect(
-      calculateVariantFulfillment(
-        variant({ availableQuantity: 2 }),
-        settings,
-        new Date('2026-08-31T15:00:00.000Z'),
-      ),
-    ).toMatchObject({
+    expect(calculateVariantFulfillment(variant({ availableQuantity: 2 }), settings, new Date('2026-08-31T15:00:00.000Z'))).toMatchObject({
       status: 'IN_STOCK',
       availability: 'TODAY',
       label: 'Entrega hoy',
@@ -50,13 +44,7 @@ describe('FulfillmentService', () => {
   });
 
   it('uses express supplier only when the depot has enough remaining time', () => {
-    expect(
-      calculateVariantFulfillment(
-        variant({ availableQuantity: 0 }),
-        settings,
-        new Date('2026-08-31T15:00:00.000Z'),
-      ),
-    ).toMatchObject({
+    expect(calculateVariantFulfillment(variant({ availableQuantity: 0 }), settings, new Date('2026-08-31T15:00:00.000Z'))).toMatchObject({
       status: 'SUPPLIER_EXPRESS',
       purchasable: true,
       availability: 'TODAY',
@@ -65,13 +53,7 @@ describe('FulfillmentService', () => {
   });
 
   it('does not promise express delivery after the supplier cutoff', () => {
-    expect(
-      calculateVariantFulfillment(
-        variant({ supplierCutoff: '11:00' }),
-        settings,
-        new Date('2026-08-31T15:00:00.000Z'),
-      ),
-    ).toMatchObject({
+    expect(calculateVariantFulfillment(variant({ supplierCutoff: '11:00' }), settings, new Date('2026-08-31T15:00:00.000Z'))).toMatchObject({
       status: 'SUPPLIER_STANDARD',
       availability: 'TOMORROW',
       purchasable: true,

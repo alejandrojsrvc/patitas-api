@@ -10,114 +10,32 @@ export class PrismaAuthAccountRepository implements AuthAccountRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
   public async resolve(identity: ProviderIdentity): Promise<User | null> {
-    const linked = await this.prisma.externalIdentity.findUnique({
-      where: {
-        provider_providerUserId: {
-          provider: identity.provider,
-          providerUserId: identity.providerUserId,
-        },
-      },
-      include: { user: true },
+    if (identity.provider !== 'patitas') return null;
+    const account = await this.prisma.user.findUnique({
+      where: { id: identity.providerUserId },
+      include: { credential: true },
     });
-    return linked ? toDomainUser(linked.user) : null;
+    if (!account?.credential?.emailVerifiedAt || account.status !== 'ACTIVE') return null;
+    return toDomainUser(account);
   }
 
   public async provision(identity: ProviderIdentity): Promise<User> {
-    if (!identity.email) {
-      throw new ExternalIdentityConflictError();
-    }
-
-    return this.prisma.$transaction(async (transaction) => {
-      const linked = await transaction.externalIdentity.findUnique({
-        where: {
-          provider_providerUserId: {
-            provider: identity.provider,
-            providerUserId: identity.providerUserId,
-          },
-        },
-        include: { user: true },
-      });
-      if (linked) {
-        if (linked.user.role === 'CUSTOMER') {
-          const customer = await transaction.customer.findUnique({
-            where: { userId: linked.user.id },
-          });
-          if (!customer) {
-            await transaction.customer.create({
-              data: {
-                userId: linked.user.id,
-                fullName: identity.displayName ?? linked.user.email,
-                email: linked.user.email,
-              },
-            });
-          }
-        }
-        return toDomainUser(linked.user);
-      }
-
-      const normalizedEmail = identity.email!.trim().toLowerCase();
-      const existingUser = await transaction.user.findUnique({
-        where: { email: normalizedEmail },
-        include: { externalIdentities: true, customer: true },
-      });
-      if (existingUser && !identity.emailVerified) {
-        throw new ExternalIdentityConflictError();
-      }
-
-      let user = existingUser;
-      if (!user) {
-        const domainUser = User.create(normalizedEmail);
-        user = await transaction.user.create({
-          data: {
-            id: domainUser.id,
-            email: domainUser.email,
-            role: domainUser.role,
-            customer: {
-              create: {
-                fullName: identity.displayName ?? domainUser.email,
-                email: domainUser.email,
-              },
-            },
-          },
-          include: { externalIdentities: true, customer: true },
-        });
-      } else if (user.role === 'CUSTOMER' && !user.customer) {
-        await transaction.customer.create({
-          data: {
-            userId: user.id,
-            fullName: identity.displayName ?? user.email,
-            email: user.email,
-          },
-        });
-      }
-
-      await transaction.externalIdentity.create({
-        data: {
-          provider: identity.provider,
-          providerUserId: identity.providerUserId,
-          userId: user.id,
-        },
-      });
-      return toDomainUser(user);
-    });
+    const account = await this.resolve(identity);
+    if (!account) throw new ExternalIdentityConflictError();
+    return account;
   }
 
-  public async findIdentityByEmail(
-    email: string,
-  ): Promise<ProviderIdentity | null> {
+  public async findIdentityByEmail(email: string): Promise<ProviderIdentity | null> {
     const account = await this.prisma.user.findUnique({
       where: { email: email.trim().toLowerCase() },
-      include: { externalIdentities: true },
+      include: { credential: true },
     });
-    const identity = account?.externalIdentities.find(
-      (candidate) => candidate.provider === 'supabase',
-    );
-    if (!account || !identity) return null;
+    if (!account?.credential) return null;
     return {
-      provider: identity.provider,
-      providerUserId: identity.providerUserId,
+      provider: 'patitas',
+      providerUserId: account.id,
       email: account.email,
-      emailVerified: true,
+      emailVerified: Boolean(account.credential.emailVerifiedAt),
     };
   }
 
@@ -125,9 +43,9 @@ export class PrismaAuthAccountRepository implements AuthAccountRepository {
     const normalizedEmail = email.trim().toLowerCase();
     const existing = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
-      include: { externalIdentities: true },
+      include: { credential: true },
     });
-    if (!existing || existing.externalIdentities.length === 0) {
+    if (!existing?.credential) {
       return null;
     }
     const updated = await this.prisma.user.update({
@@ -138,13 +56,7 @@ export class PrismaAuthAccountRepository implements AuthAccountRepository {
   }
 }
 
-const toDomainUser = (user: {
-  id: string;
-  email: string;
-  role: string;
-  createdAt: Date;
-  updatedAt: Date;
-}) =>
+const toDomainUser = (user: { id: string; email: string; role: string; createdAt: Date; updatedAt: Date }) =>
   User.reconstitute(user.id, {
     email: user.email,
     role: user.role as UserRole,

@@ -25,15 +25,9 @@ export interface PricingRepository {
   }>;
   updateDraft(input: Partial<PricingRuleValues>): Promise<PricingRules>;
   activateDraft(): Promise<PricingRules>;
-  getContext(
-    variantId: string,
-    supplierOfferId?: string,
-  ): Promise<PricingContext | null>;
+  getContext(variantId: string, supplierOfferId?: string): Promise<PricingContext | null>;
   listContextsForBulkRecalculation(): Promise<PricingContext[]>;
-  setPreferredSupplierOffer(
-    variantId: string,
-    supplierOfferId: string,
-  ): Promise<void>;
+  setPreferredSupplierOffer(variantId: string, supplierOfferId: string): Promise<void>;
   saveReview(
     context: PricingContext,
     rules: PricingRules,
@@ -42,39 +36,19 @@ export interface PricingRepository {
   ): Promise<PricingReview>;
   saveReviews(inputs: PricingReviewSaveInput[]): Promise<PricingReview[]>;
   listReviews(variantId: string): Promise<PricingReview[]>;
-  listAllReviews(filter: {
-    status?: PricingReview['status'];
-    q?: string;
-    page: number;
-    perPage: number;
-  }): Promise<PricingReviewPage>;
+  listAllReviews(filter: { status?: PricingReview['status']; q?: string; page: number; perPage: number }): Promise<PricingReviewPage>;
   listRuleHistory(): Promise<PricingRules[]>;
-  applyReview(
-    variantId: string,
-    reviewId: string,
-    options?: { activateProduct?: boolean },
-  ): Promise<PricingReview>;
+  applyReview(variantId: string, reviewId: string, options?: { activateProduct?: boolean }): Promise<PricingReview>;
   listPaymentFeeSchedules(active?: boolean): Promise<PaymentFeeSchedule[]>;
   getPaymentFeeSchedule(id: string): Promise<PaymentFeeSchedule | null>;
-  createPaymentFeeSchedule(
-    input: PaymentFeeScheduleInput,
-  ): Promise<PaymentFeeSchedule>;
-  updatePaymentFeeSchedule(
-    id: string,
-    input: Partial<PaymentFeeScheduleInput>,
-  ): Promise<PaymentFeeSchedule>;
+  createPaymentFeeSchedule(input: PaymentFeeScheduleInput): Promise<PaymentFeeSchedule>;
+  updatePaymentFeeSchedule(id: string, input: Partial<PaymentFeeScheduleInput>): Promise<PaymentFeeSchedule>;
   listOperatingCosts(active?: boolean): Promise<OperatingCost[]>;
   createOperatingCost(input: OperatingCostInput): Promise<OperatingCost>;
-  updateOperatingCost(
-    id: string,
-    input: Partial<OperatingCostInput>,
-  ): Promise<OperatingCost>;
+  updateOperatingCost(id: string, input: Partial<OperatingCostInput>): Promise<OperatingCost>;
   listPricingScenarios(): Promise<PricingScenario[]>;
   createPricingScenario(input: PricingScenarioInput): Promise<PricingScenario>;
-  updatePricingScenario(
-    id: string,
-    input: Partial<PricingScenarioInput>,
-  ): Promise<PricingScenario>;
+  updatePricingScenario(id: string, input: Partial<PricingScenarioInput>): Promise<PricingScenario>;
   analyzePricingScenario(id: string): Promise<PricingScenarioAnalysis>;
   getPricingScenarioAllocation(id: string): Promise<PricingScenarioAllocation>;
 }

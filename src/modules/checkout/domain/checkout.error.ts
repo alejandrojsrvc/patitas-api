@@ -10,8 +10,9 @@ export class CheckoutConflictError extends DomainError {
   public constructor(
     message: string,
     public readonly currentState?: unknown,
+    code: string = 'CHECKOUT_CONFLICT',
   ) {
-    super(message, 'CHECKOUT_CONFLICT');
+    super(message, code);
   }
 }
 

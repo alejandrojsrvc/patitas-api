@@ -9,11 +9,7 @@ import { CatalogNotFoundError } from '../../catalog/domain/errors/catalog.error'
 export class PrismaAnalyticsRepository implements AnalyticsRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  public async recordProductView(
-    slug: string,
-    viewerKey: string,
-    customerId?: string,
-  ): Promise<void> {
+  public async recordProductView(slug: string, viewerKey: string, customerId?: string): Promise<void> {
     await this.prisma.$transaction(async (transaction) => {
       const product = await transaction.product.findFirst({
         where: { slug, status: 'ACTIVE' },
@@ -31,16 +27,15 @@ export class PrismaAnalyticsRepository implements AnalyticsRepository {
         },
         update: { totalViews: { increment: 1 } },
       });
-      const visitorInsert =
-        await transaction.productViewVisitorDaily.createMany({
-          data: {
-            productId: product.id,
-            viewDate: day,
-            visitorHash: viewerKey,
-            lastViewedAt: new Date(),
-          },
-          skipDuplicates: true,
-        });
+      const visitorInsert = await transaction.productViewVisitorDaily.createMany({
+        data: {
+          productId: product.id,
+          viewDate: day,
+          visitorHash: viewerKey,
+          lastViewedAt: new Date(),
+        },
+        skipDuplicates: true,
+      });
       const unique = visitorInsert.count > 0;
       if (!unique) {
         await transaction.productViewVisitorDaily.update({
@@ -73,10 +68,7 @@ export class PrismaAnalyticsRepository implements AnalyticsRepository {
     });
   }
 
-  public async listRecentlyViewed(
-    viewerKey: string,
-    limit: number,
-  ): Promise<RecentlyViewedProduct[]> {
+  public async listRecentlyViewed(viewerKey: string, limit: number): Promise<RecentlyViewedProduct[]> {
     const rows = await this.prisma.recentProductView.findMany({
       where: { viewerKey },
       orderBy: { lastViewedAt: 'desc' },
@@ -120,22 +112,14 @@ export class PrismaAnalyticsRepository implements AnalyticsRepository {
             id: variant.id,
             presentation: variant.presentation,
             salePrice: variant.salePrice.toString(),
-            availableQuantity: Math.max(
-              0,
-              (variant.inventory?.onHand ?? 0) -
-                (variant.inventory?.reserved ?? 0),
-            ),
+            availableQuantity: Math.max(0, (variant.inventory?.onHand ?? 0) - (variant.inventory?.reserved ?? 0)),
           },
         ];
       }),
     }));
   }
 
-  public async getProductStats(
-    productId: string,
-    from: Date,
-    to: Date,
-  ): Promise<ProductViewStats> {
+  public async getProductStats(productId: string, from: Date, to: Date): Promise<ProductViewStats> {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
       select: { id: true },
@@ -163,7 +147,4 @@ export class PrismaAnalyticsRepository implements AnalyticsRepository {
   }
 }
 
-const startOfDay = (date: Date) =>
-  new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  );
+const startOfDay = (date: Date) => new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));

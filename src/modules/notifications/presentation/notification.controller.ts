@@ -1,19 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Headers,
-  Patch,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiHeader,
-  ApiProperty,
-  ApiTags,
-} from '@nestjs/swagger';
+import { Body, Controller, Get, Headers, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiHeader, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import type { Request } from 'express';
 import { OptionalAuthGuard } from '../../auth/presentation/guards/optional-auth.guard';
@@ -64,37 +50,25 @@ export class NotificationController {
   ) {}
   @Patch('notification-preferences')
   @UseGuards(AuthGuard)
-  public async preferences(
-    @Req() request: Request,
-    @Body() input: PreferencesDto,
-  ) {
+  public async preferences(@Req() request: Request, @Body() input: PreferencesDto) {
     const customerId = await authenticatedCustomerId(request, this.customers);
     return this.notifications.updatePreferences(customerId, input);
   }
   @Get('notification-preferences')
   @UseGuards(AuthGuard)
   public async getPreferences(@Req() request: Request) {
-    return this.notifications.getPreferences(
-      await authenticatedCustomerId(request, this.customers),
-    );
+    return this.notifications.getPreferences(await authenticatedCustomerId(request, this.customers));
   }
   @Post('device-tokens')
   @UseGuards(AuthGuard)
-  public async deviceToken(
-    @Req() request: Request,
-    @Body() input: DeviceTokenDto,
-  ) {
+  public async deviceToken(@Req() request: Request, @Body() input: DeviceTokenDto) {
     await this.notifications.registerDeviceToken({
       customerId: await authenticatedCustomerId(request, this.customers),
       ...input,
     });
     return { registered: true };
   }
-  @Post('consents') public async consent(
-    @Req() request: Request,
-    @Headers('x-order-token') token: string | undefined,
-    @Body() input: ConsentDto,
-  ) {
+  @Post('consents') public async consent(@Req() request: Request, @Headers('x-order-token') token: string | undefined, @Body() input: ConsentDto) {
     const owner = await ownerFromRequest(request, this.customers, token);
     return this.notifications.recordConsent({ ...owner, ...input });
   }
@@ -108,24 +82,13 @@ export class NotificationController {
   }
 }
 
-const authenticatedCustomerId = async (
-  request: Request,
-  customers: CustomerService,
-) => {
-  const userId = (request as Request & { user?: { userId: string } }).user
-    ?.userId;
+const authenticatedCustomerId = async (request: Request, customers: CustomerService) => {
+  const userId = (request as Request & { user?: { userId: string } }).user?.userId;
   if (!userId) throw new Error('Se requiere autenticación.');
   return (await customers.findByUserId(userId)).id;
 };
 
-const ownerFromRequest = async (
-  request: Request,
-  customers: CustomerService,
-  token?: string,
-) => {
-  const userId = (request as Request & { user?: { userId: string } }).user
-    ?.userId;
-  return userId
-    ? { customerId: (await customers.findByUserId(userId)).id }
-    : { guestTokenHash: token ? hashAnonymousToken(token) : undefined };
+const ownerFromRequest = async (request: Request, customers: CustomerService, token?: string) => {
+  const userId = (request as Request & { user?: { userId: string } }).user?.userId;
+  return userId ? { customerId: (await customers.findByUserId(userId)).id } : { guestTokenHash: token ? hashAnonymousToken(token) : undefined };
 };

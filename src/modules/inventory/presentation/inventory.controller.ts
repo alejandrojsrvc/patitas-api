@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Param,
-  Post,
-  Get,
-  Query,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, Controller, Param, Post, Get, Query, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../../auth/presentation/guards/auth.guard';
 import { RolesGuard } from '../../auth/presentation/guards/roles.guard';
@@ -69,11 +60,7 @@ export class InventoryController {
       },
     },
   })
-  public adjust(
-    @Param('variantId') variantId: string,
-    @Body() input: InventoryAdjustmentDto,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  public adjust(@Param('variantId') variantId: string, @Body() input: InventoryAdjustmentDto, @CurrentUser() user: AuthenticatedUser) {
     return this.inventory.adjust({ ...input, variantId }, user.userId);
   }
 }

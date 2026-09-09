@@ -8,9 +8,10 @@ producción.
 
 - `POST /api/v1/checkout/sessions/:id/confirm` recalcula precio, descuentos,
   envío y stock en servidor.
-- `SIMULATED_*` crea un pedido de demostración pagado.
 - `MERCADO_PAGO` crea un pedido `PENDING_PAYMENT`, reserva stock y devuelve un
   enlace de pago. El navegador nunca confirma el pago.
+- `PAYWAY` procesa el pago de forma síncrona: solo `APPROVED` confirma la orden;
+  cualquier otro estado cancela la orden y libera la reserva.
 - `POST /api/v1/payments/orders/:id/link` permite reintentar un enlace pendiente.
 - `POST /api/v1/payments/webhooks/mercadopago` procesa eventos firmados e
   idempotentes.
@@ -24,8 +25,8 @@ pedido o esperar la actualización del webhook.
 - `GET /api/v1/shipping/quote` devuelve disponibilidad, costo final y plazo
   según localidad, subtotal y peso. La respuesta pública no expone el costo
   logístico ni el subsidio.
-- `GET /api/v1/checkout/sessions/:id/shipping-options` devuelve las opciones
-  disponibles para la sesión con `id`, `name` y `cost` final para el cliente.
+- `GET /api/v1/checkout/sessions/:id/shipping-options` devuelve una única
+  modalidad genérica de entrega con zona, tarifa, costo final, fechas y franja.
 - Admin configura opciones en `/api/v1/admin/shipping-options` y zonas en
   `/api/v1/admin/shipping-options/zones`.
 - `GET /api/v1/admin/shipping-options/quote` devuelve el desglose interno de
@@ -127,7 +128,7 @@ POST /api/v1/internal/jobs/abandoned-carts
 POST /api/v1/internal/jobs/replenishment-reminders
 ```
 
-El proveedor de mensajes por defecto es `noop`. Para un proveedor HTTP:
+En desarrollo, el proveedor de email recomendado es SMTP contra MailHog (`SMTP_HOST=127.0.0.1`, `SMTP_PORT=1025`) y la bandeja queda disponible en `http://127.0.0.1:8025`. En producción, el proveedor es Resend. Para un proveedor HTTP:
 `NOTIFICATION_PROVIDER=http`, `NOTIFICATION_PROVIDER_URL` y
 `NOTIFICATION_PROVIDER_TOKEN`.
 
@@ -153,13 +154,15 @@ Los proveedores habilitados y su prioridad se administran en la tabla
 `payment_provider_configurations`. Mercado Pago usa
 `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`,
 `MERCADOPAGO_WEBHOOK_SECRET` y opcionalmente
-`MERCADOPAGO_NOTIFICATION_URL`. Payway API Payments usa `PAYWAY_SITE_ID`,
-`PAYWAY_PUBLIC_API_KEY`, `PAYWAY_PRIVATE_API_KEY`, `PAYWAY_API_BASE_URL` y
-`PAYWAY_WEBHOOK_SECRET`, además de opcionalmente `PAYWAY_NOTIFICATION_URL`. La URL de notificación Payway debe
-configurarse también en el portal como
-`/api/v1/payments/webhooks/payway`. La public key y el Site ID se entregan al
-frontend por su configuración de despliegue; la private key permanece en la
-API. La activación del proveedor simulado también se administra desde la BD.
+`MERCADOPAGO_NOTIFICATION_URL`. Payway API Payments usa
+`PAYWAY_SITE_ID_VISA`, `PAYWAY_SITE_ID_MASTERCARD`,
+`PAYWAY_SITE_ID_AMERICAN_EXPRESS`, `PAYWAY_SITE_ID_DISCOVER` y
+`PAYWAY_SITE_ID_CABAL` para seleccionar el establecimiento según el medio,
+además de `PAYWAY_PRIVATE_API_KEY`, `PAYWAY_API_BASE_URL` y
+`PAYWAY_WEBHOOK_SECRET`. La URL de notificación Payway debe configurarse en el portal como
+`/api/v1/payments/webhooks/payway`. La public key se entrega al frontend por su
+configuración de despliegue; la private key y los Site ID permanecen en la API.
+La activación del proveedor simulado también se administra desde la BD.
 
 Para sandbox de Mercado Pago se debe usar la `Public Key` y el access token
 `TEST-...` de una cuenta de prueba propia y habilitarlo explícitamente en

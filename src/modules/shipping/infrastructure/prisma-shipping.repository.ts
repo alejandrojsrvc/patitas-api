@@ -4,13 +4,7 @@ import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { ShippingValidationError } from '../application/shipping.service';
 import { calculateShipping } from '../domain/shipping-calculator';
 import type { ShippingRepository } from '../domain/shipping.repository';
-import type {
-  ShippingOption,
-  ShippingOptionInput,
-  ShippingQuote,
-  ShippingZone,
-  ShippingZoneInput,
-} from '../domain/shipping.types';
+import type { ShippingOption, ShippingOptionInput, ShippingQuote, ShippingZone, ShippingZoneInput } from '../domain/shipping.types';
 
 @Injectable()
 export class PrismaShippingRepository implements ShippingRepository {
@@ -31,14 +25,9 @@ export class PrismaShippingRepository implements ShippingRepository {
   }
   public async update(id: string, input: Partial<ShippingOptionInput>) {
     try {
-      return mapOption(
-        await this.prisma.shippingOption.update({ where: { id }, data: input }),
-      );
+      return mapOption(await this.prisma.shippingOption.update({ where: { id }, data: input }));
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      )
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025')
         throw new ShippingValidationError('La opción de envío no existe.');
       throw error;
     }
@@ -74,15 +63,10 @@ export class PrismaShippingRepository implements ShippingRepository {
         select: { subsidizedShippingCost: true },
       }),
     ]);
-    const quote = calculateShipping(
-      zones.map(mapZone),
-      input,
-      rules?.subsidizedShippingCost?.toString() ?? '0.00',
-    );
-    return options.map((option) => ({
-      ...mapOption(option),
-      ...quote,
-    }));
+    const quote = calculateShipping(zones.map(mapZone), input, rules?.subsidizedShippingCost?.toString() ?? '0.00');
+    if (options.length === 0) return [];
+    if (options.length !== 1) throw new ShippingValidationError('La configuración debe tener una única modalidad de entrega activa.');
+    return [{ ...mapOption(options[0]), ...quote }];
   }
   public async createZone(input: ShippingZoneInput) {
     const { polygon, deliveryWindows, ...rest } = input;
@@ -91,9 +75,7 @@ export class PrismaShippingRepository implements ShippingRepository {
         data: {
           ...rest,
           ...(polygon !== undefined ? { polygon: toJsonInput(polygon) } : {}),
-          ...(deliveryWindows !== undefined
-            ? { deliveryWindows: toJsonInput(deliveryWindows) }
-            : {}),
+          ...(deliveryWindows !== undefined ? { deliveryWindows: toJsonInput(deliveryWindows) } : {}),
         },
       }),
     );
@@ -107,17 +89,12 @@ export class PrismaShippingRepository implements ShippingRepository {
           data: {
             ...rest,
             ...(polygon !== undefined ? { polygon: toJsonInput(polygon) } : {}),
-            ...(deliveryWindows !== undefined
-              ? { deliveryWindows: toJsonInput(deliveryWindows) }
-              : {}),
+            ...(deliveryWindows !== undefined ? { deliveryWindows: toJsonInput(deliveryWindows) } : {}),
           },
         }),
       );
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      )
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025')
         throw new ShippingValidationError('La zona de cobertura no existe.');
       throw error;
     }
@@ -140,16 +117,10 @@ export class PrismaShippingRepository implements ShippingRepository {
       orderBy: { version: 'desc' },
       select: { subsidizedShippingCost: true },
     });
-    return calculateShipping(
-      zones.map(mapZone),
-      input,
-      rules?.subsidizedShippingCost?.toString() ?? '0.00',
-    );
+    return calculateShipping(zones.map(mapZone), input, rules?.subsidizedShippingCost?.toString() ?? '0.00');
   }
 }
-const mapOption = (
-  value: Prisma.ShippingOptionGetPayload<Prisma.ShippingOptionDefaultArgs>,
-): ShippingOption => ({
+const mapOption = (value: Prisma.ShippingOptionGetPayload<Prisma.ShippingOptionDefaultArgs>): ShippingOption => ({
   id: value.id,
   name: value.name,
   description: value.description,
@@ -158,13 +129,9 @@ const mapOption = (
   displayOrder: value.displayOrder,
 });
 
-const toJsonInput = (
-  value: unknown,
-): Prisma.InputJsonValue | typeof Prisma.JsonNull =>
+const toJsonInput = (value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull =>
   value === null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
-const mapZone = (
-  value: Prisma.ShippingZoneGetPayload<Prisma.ShippingZoneDefaultArgs>,
-): ShippingZone => ({
+const mapZone = (value: Prisma.ShippingZoneGetPayload<Prisma.ShippingZoneDefaultArgs>): ShippingZone => ({
   id: value.id,
   name: value.name,
   type: value.type,
@@ -178,5 +145,6 @@ const mapZone = (
   maxWeightGrams: value.maxWeightGrams ?? null,
   estimatedDaysMin: value.estimatedDaysMin,
   estimatedDaysMax: value.estimatedDaysMax,
+  region: value.region,
   deliveryWindows: value.deliveryWindows ?? null,
 });

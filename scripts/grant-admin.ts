@@ -10,16 +10,12 @@ if (!connectionString) {
 }
 
 const emailIndex = process.argv.indexOf('--email');
-const email =
-  emailIndex >= 0
-    ? process.argv[emailIndex + 1]?.trim().toLowerCase()
-    : undefined;
+const email = emailIndex >= 0 ? process.argv[emailIndex + 1]?.trim().toLowerCase() : undefined;
 if (!email) {
   throw new Error('Uso: pnpm user:grant-admin -- --email persona@example.com');
 }
 const confirmationIndex = process.argv.indexOf('--confirm');
-const confirmation =
-  confirmationIndex >= 0 ? process.argv[confirmationIndex + 1] : undefined;
+const confirmation = confirmationIndex >= 0 ? process.argv[confirmationIndex + 1] : undefined;
 if (process.env['NODE_ENV'] === 'production') {
   if (confirmation !== email) {
     throw new Error('En producción debes repetir el email con --confirm.');
@@ -35,12 +31,10 @@ const main = async (): Promise<void> => {
   try {
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { externalIdentities: true },
+      include: { credential: true },
     });
-    if (!user || user.externalIdentities.length === 0) {
-      throw new Error(
-        'El usuario debe registrarse y vincular su identidad primero.',
-      );
+    if (!user?.credential?.emailVerifiedAt) {
+      throw new Error('El usuario debe registrar y verificar su cuenta primero.');
     }
     await prisma.user.update({
       where: { id: user.id },

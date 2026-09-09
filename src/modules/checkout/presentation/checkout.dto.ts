@@ -1,17 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsEmail,
-  IsIn,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Matches,
-  MaxLength,
-  Min,
-  ValidateNested,
-} from 'class-validator';
+import { IsEmail, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { StorefrontShellResponseDto } from '../../storefront/presentation/storefront-response.dto';
 
@@ -85,35 +73,22 @@ export class ShippingAddressStepDto {
 
 export class ShippingOptionStepDto {
   @ApiProperty({ format: 'uuid' }) @IsUUID() public shippingOptionId!: string;
-  @ApiPropertyOptional({ example: 'MORNING' })
+  @ApiPropertyOptional({ example: 'STANDARD_13_19' })
   @IsOptional()
   @IsString()
   @MaxLength(40)
   public deliverySlotId?: string;
+  @ApiPropertyOptional({ example: '2026-09-08' })
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  public deliveryDate?: string;
 }
 export class PaymentMethodStepDto {
   @ApiProperty({
-    enum: [
-      'SIMULATED_CARD',
-      'SIMULATED_TRANSFER',
-      'SIMULATED_CASH',
-      'MERCADO_PAGO',
-      'PAYWAY',
-    ],
+    enum: ['BANK_TRANSFER', 'MERCADO_PAGO', 'PAYWAY'],
   })
-  @IsIn([
-    'SIMULATED_CARD',
-    'SIMULATED_TRANSFER',
-    'SIMULATED_CASH',
-    'MERCADO_PAGO',
-    'PAYWAY',
-  ])
-  public paymentMethod!:
-    | 'SIMULATED_CARD'
-    | 'SIMULATED_TRANSFER'
-    | 'SIMULATED_CASH'
-    | 'MERCADO_PAGO'
-    | 'PAYWAY';
+  @IsIn(['BANK_TRANSFER', 'MERCADO_PAGO', 'PAYWAY'])
+  public paymentMethod!: 'BANK_TRANSFER' | 'MERCADO_PAGO' | 'PAYWAY';
 }
 export class PaywayPaymentDto {
   @ApiProperty()
@@ -141,9 +116,20 @@ export class CouponDto {
 export class CheckoutShippingOptionResponseDto {
   @ApiProperty() public id!: string;
   @ApiProperty({ example: '0.00' }) public cost!: string;
-  @ApiProperty({ type: [Object] }) public deliverySlots!: Array<
-    Record<string, unknown>
-  >;
+  @ApiProperty({ example: '3711.00' }) public tariff!: string;
+  @ApiProperty() public deliveryCount!: number;
+  @ApiPropertyOptional({ nullable: true }) public zoneId?: string | null;
+  @ApiPropertyOptional({ nullable: true }) public zoneName?: string | null;
+  @ApiPropertyOptional({ nullable: true }) public estimate?: string | null;
+  @ApiProperty() public available!: boolean;
+  @ApiProperty() public message!: string;
+  @ApiPropertyOptional({ nullable: true }) public reasonCode?: string | null;
+  @ApiProperty({ type: [Object] }) public deliverySlots!: Array<Record<string, unknown>>;
+  @ApiPropertyOptional({ nullable: true }) public freeShippingFrom?: string | null;
+  @ApiPropertyOptional() public eligibleAmount?: string;
+  @ApiPropertyOptional({ nullable: true }) public remainingForFreeShipping?: string | null;
+  @ApiPropertyOptional({ nullable: true, type: Object })
+  public benefit?: Record<string, string> | null;
 }
 
 export class CheckoutMutationResponseDto {

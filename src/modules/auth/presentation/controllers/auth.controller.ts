@@ -1,18 +1,6 @@
-import {
-  BadRequestException,
-  Body,
-  ConflictException,
-  Controller,
-  HttpCode,
-  Logger,
-  Post,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import {
-  ProviderAuthenticationError,
-  ProviderOperationError,
-} from '../../../../shared/application/provider-error';
+import { BadRequestException, Body, ConflictException, Controller, Headers, HttpCode, Logger, Post, UnauthorizedException } from '@nestjs/common';
+import { ApiHeader, ApiTags } from '@nestjs/swagger';
+import { ProviderAuthenticationError, ProviderOperationError } from '../../../../shared/application/provider-error';
 import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { ConfirmEmailUseCase } from '../../application/use-cases/confirm-email.use-case';
 import { RequestPasswordRecoveryUseCase } from '../../application/use-cases/request-password-recovery.use-case';
@@ -20,17 +8,15 @@ import { ResendEmailConfirmationUseCase } from '../../application/use-cases/rese
 import { ResetPasswordUseCase } from '../../application/use-cases/reset-password.use-case';
 import { RefreshSessionUseCase } from '../../application/use-cases/refresh-session.use-case';
 import { RegisterUseCase } from '../../application/use-cases/register.use-case';
+import { LogoutUseCase } from '../../application/use-cases/logout.use-case';
 import { ExternalIdentityConflictError } from '../../domain/errors/external-identity-conflict.error';
 import { AuthCredentialsDto } from '../dto/auth-credentials.dto';
 import { AuthResponseDto } from '../dto/auth-response.dto';
 import { RefreshSessionDto } from '../dto/refresh-session.dto';
-import {
-  AuthEmailDto,
-  ConfirmEmailDto,
-  ResetPasswordDto,
-} from '../dto/auth-email-action.dto';
+import { AcceptInvitationDto, AuthEmailDto, ConfirmEmailDto, ResetPasswordDto } from '../dto/auth-email-action.dto';
 
 @ApiTags('Auth')
+@ApiHeader({ name: 'X-Turnstile-Token', required: false })
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
@@ -43,6 +29,7 @@ export class AuthController {
     private readonly resendEmailConfirmation: ResendEmailConfirmationUseCase,
     private readonly requestPasswordRecovery: RequestPasswordRecoveryUseCase,
     private readonly resetUserPassword: ResetPasswordUseCase,
+    private readonly logoutUser: LogoutUseCase,
   ) {}
 
   @Post('register')
@@ -64,14 +51,10 @@ export class AuthController {
   @HttpCode(200)
   public async confirmEmail(@Body() input: ConfirmEmailDto) {
     try {
-      return AuthResponseDto.authenticated(
-        await this.confirmUserEmail.execute(input.token, input.type),
-      );
+      return AuthResponseDto.authenticated(await this.confirmUserEmail.execute(input.token, input.type));
     } catch (error) {
       if (error instanceof ProviderAuthenticationError) {
-        throw new UnauthorizedException(
-          'El enlace de confirmación no es válido o venció.',
-        );
+        throw new UnauthorizedException('El enlace de confirmación no es válido o venció.');
       }
       throw error;
     }
@@ -83,10 +66,7 @@ export class AuthController {
     try {
       await this.resendEmailConfirmation.execute(input.email);
     } catch (error) {
-      this.logger.error(
-        'No fue posible procesar un reenvío de confirmación.',
-        error instanceof Error ? error.stack : undefined,
-      );
+      this.logger.error('No fue posible procesar un reenvío de confirmación.', error instanceof Error ? error.stack : undefined);
     }
     return {
       message: 'Si la cuenta requiere confirmación, enviaremos un correo.',
@@ -99,10 +79,7 @@ export class AuthController {
     try {
       await this.requestPasswordRecovery.execute(input.email);
     } catch (error) {
-      this.logger.error(
-        'No fue posible procesar una recuperación de contraseña.',
-        error instanceof Error ? error.stack : undefined,
-      );
+      this.logger.error('No fue posible procesar una recuperación de contraseña.', error instanceof Error ? error.stack : undefined);
     }
     return {
       message: 'Si la cuenta existe, enviaremos un correo de recuperación.',
@@ -116,9 +93,20 @@ export class AuthController {
       await this.resetUserPassword.execute(input.token, input.newPassword);
     } catch (error) {
       if (error instanceof ProviderAuthenticationError) {
-        throw new UnauthorizedException(
-          'El enlace de recuperación no es válido o venció.',
-        );
+        throw new UnauthorizedException('El enlace de recuperación no es válido o venció.');
+      }
+      throw error;
+    }
+  }
+
+  @Post('invitation/accept')
+  @HttpCode(204)
+  public async acceptInvitation(@Body() input: AcceptInvitationDto): Promise<void> {
+    try {
+      await this.resetUserPassword.acceptInvitation(input.token, input.newPassword);
+    } catch (error) {
+      if (error instanceof ProviderAuthenticationError) {
+        throw new UnauthorizedException('La invitación no es válida o venció.');
       }
       throw error;
     }
@@ -141,9 +129,7 @@ export class AuthController {
   @HttpCode(200)
   public async refresh(@Body() input: RefreshSessionDto) {
     try {
-      return AuthResponseDto.authenticated(
-        await this.refreshSession.execute(input.refreshToken),
-      );
+      return AuthResponseDto.authenticated(await this.refreshSession.execute(input.refreshToken));
     } catch (error) {
       if (error instanceof ProviderAuthenticationError) {
         throw new UnauthorizedException('La sesión no puede renovarse.');
@@ -151,4 +137,22 @@ export class AuthController {
       throw error;
     }
   }
+
+  @Post('logout')
+  @HttpCode(204)
+  public logout(@Headers('authorization') authorization?: string): Promise<void> {
+    return this.logoutUser.execute(readBearerToken(authorization));
+  }
+
+  @Post('logout-all')
+  @HttpCode(204)
+  public logoutAll(@Headers('authorization') authorization?: string): Promise<void> {
+    return this.logoutUser.execute(readBearerToken(authorization), true);
+  }
 }
+
+const readBearerToken = (authorization?: string): string => {
+  const [scheme, token] = authorization?.split(' ') ?? [];
+  if (scheme !== 'Bearer' || !token) throw new UnauthorizedException('Se requiere un bearer token válido.');
+  return token;
+};

@@ -28,13 +28,9 @@ describe('PrismaPricingRepository', () => {
         },
       },
     } as unknown as PricingScenarioAnalysis;
-    jest
-      .spyOn(repository, 'analyzePricingScenario')
-      .mockResolvedValue(analysis);
+    jest.spyOn(repository, 'analyzePricingScenario').mockResolvedValue(analysis);
 
-    await expect(
-      repository.getPricingScenarioAllocation('scenario-id'),
-    ).resolves.toMatchObject({
+    await expect(repository.getPricingScenarioAllocation('scenario-id')).resolves.toMatchObject({
       paymentFeeOverrides: {
         paymentFixedCost: '0.00',
         paymentFeePercent: '3.10',

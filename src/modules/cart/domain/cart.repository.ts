@@ -1,10 +1,4 @@
-import type {
-  Cart,
-  CartItemContext,
-  CartOwner,
-  CartPage,
-  CartSummary,
-} from './cart.types';
+import type { Cart, CartItemContext, CartOwner, CartPage, CartSummary } from './cart.types';
 
 export const CART_REPOSITORY = Symbol('CART_REPOSITORY');
 
@@ -12,23 +6,11 @@ export interface CartRepository {
   findActive(owner: CartOwner): Promise<Cart | null>;
   findActiveSummary(owner: CartOwner): Promise<CartSummary | null>;
   create(owner: CartOwner): Promise<Cart>;
-  setItem(
-    owner: CartOwner,
-    variantId: string,
-    quantity: number,
-    context?: CartItemContext,
-  ): Promise<Cart>;
-  reorderItem(
-    owner: CartOwner,
-    variantId: string,
-    quantity: number,
-    context: CartItemContext,
-  ): Promise<Cart>;
+  setItem(owner: CartOwner, variantId: string, quantity: number, context?: CartItemContext): Promise<Cart>;
+  setItemQuantity(owner: CartOwner, itemId: string, quantity: number): Promise<Cart>;
+  reorderItem(owner: CartOwner, variantId: string, quantity: number, context: CartItemContext): Promise<Cart>;
   removeItem(owner: CartOwner, variantId: string): Promise<Cart>;
-  merge(
-    tokenHash: string,
-    customerId: string,
-    source?: CartOwner['source'],
-  ): Promise<Cart>;
+  removeItemById(owner: CartOwner, itemId: string): Promise<Cart>;
+  merge(tokenHash: string, customerId: string, source?: CartOwner['source']): Promise<Cart>;
   listAbandoned(page: number, perPage: number): Promise<CartPage>;
 }

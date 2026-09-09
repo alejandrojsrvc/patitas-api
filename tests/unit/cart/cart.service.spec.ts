@@ -22,18 +22,13 @@ describe('CartService Mobile context', () => {
     } as unknown as CartRepository;
     const service = new CartService(repository);
 
-    await service.reorder(
-      { customerId: 'customer-1', source: 'MOBILE' },
-      'variant-1',
-      { role: 'MAIN', petId: 'pet-1', planId: 'plan-1' },
-    );
+    await service.reorder({ customerId: 'customer-1', source: 'MOBILE' }, 'variant-1', { role: 'MAIN', petId: 'pet-1', planId: 'plan-1' });
 
-    expect(reorderItem).toHaveBeenCalledWith(
-      { customerId: 'customer-1', source: 'MOBILE' },
-      'variant-1',
-      1,
-      { role: 'MAIN', petId: 'pet-1', planId: 'plan-1' },
-    );
+    expect(reorderItem).toHaveBeenCalledWith({ customerId: 'customer-1', source: 'MOBILE' }, 'variant-1', 1, {
+      role: 'MAIN',
+      petId: 'pet-1',
+      planId: 'plan-1',
+    });
   });
 
   it('keeps Web cart operations on the STORE source by default', async () => {

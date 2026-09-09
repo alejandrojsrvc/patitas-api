@@ -13,6 +13,7 @@ import type {
   InventoryMovement,
   Page,
   Product,
+  ProductAutocompleteItem,
   ProductMedia,
   ProductVariant,
   MobileProductFilter,
@@ -35,9 +36,8 @@ export interface ExistingCatalogImportKeys {
 
 export interface CatalogRepository {
   listPublicProducts(filter: PublicProductFilter): Promise<Page<Product>>;
-  listPublicProductFacets(
-    filter: PublicProductFilter,
-  ): Promise<PublicProductFacets>;
+  autocompleteProductVariants(query: string, limit: number): Promise<ProductAutocompleteItem[]>;
+  listPublicProductFacets(filter: PublicProductFilter): Promise<PublicProductFacets>;
   listCalculatorProjection(): Promise<
     Array<{
       id: string;
@@ -55,10 +55,7 @@ export interface CatalogRepository {
   >;
   listSitemapProjection(): Promise<Array<{ slug: string; updatedAt: Date }>>;
   findPublicProductBySlug(slug: string): Promise<Product | null>;
-  listRelatedPublicProducts(
-    product: Product,
-    limit: number,
-  ): Promise<Product[]>;
+  listRelatedPublicProducts(product: Product, limit: number): Promise<Product[]>;
   findPublicCategoryBySlug(slug: string): Promise<Category | null>;
   findPublicBrandBySlug(slug: string): Promise<Brand | null>;
   listMobileProducts(filter: MobileProductFilter): Promise<CursorPage<Product>>;
@@ -66,10 +63,7 @@ export interface CatalogRepository {
   findActiveFeedingGuide(productId: string): Promise<FeedingGuide | null>;
   listAdminProducts(filter: AdminProductFilter): Promise<Page<Product>>;
   listAllAdminProducts(): Promise<Product[]>;
-  findExistingCatalogImportKeys(
-    slugs: string[],
-    skus: string[],
-  ): Promise<ExistingCatalogImportKeys>;
+  findExistingCatalogImportKeys(slugs: string[], skus: string[]): Promise<ExistingCatalogImportKeys>;
   findProductById(id: string): Promise<Product | null>;
   findProductBySlug(slug: string): Promise<Product | null>;
   findProductByVariantId(id: string): Promise<Product | null>;
@@ -84,36 +78,17 @@ export interface CatalogRepository {
   } | null>;
   createProduct(input: CreateProductInput & { slug: string }): Promise<Product>;
   updateProduct(id: string, input: UpdateProductInput): Promise<Product>;
-  createVariant(
-    productId: string,
-    input: CreateVariantInput,
-  ): Promise<ProductVariant>;
+  createVariant(productId: string, input: CreateVariantInput): Promise<ProductVariant>;
   updateVariant(id: string, input: UpdateVariantInput): Promise<ProductVariant>;
-  createProductMedia(
-    productId: string,
-    input: CreateProductMediaInput,
-  ): Promise<ProductMedia>;
-  updateProductMedia(
-    id: string,
-    input: Partial<CreateProductMediaInput>,
-  ): Promise<ProductMedia>;
+  createProductMedia(productId: string, input: CreateProductMediaInput): Promise<ProductMedia>;
+  updateProductMedia(id: string, input: Partial<CreateProductMediaInput>): Promise<ProductMedia>;
   deleteProductMedia(id: string): Promise<void>;
-  replaceFeedingGuide(
-    productId: string,
-    input: ReplaceFeedingGuideInput,
-  ): Promise<FeedingGuide>;
-  setInventory(
-    variantId: string,
-    input: SetInventoryInput,
-  ): Promise<InventoryItem>;
+  replaceFeedingGuide(productId: string, input: ReplaceFeedingGuideInput): Promise<FeedingGuide>;
+  setInventory(variantId: string, input: SetInventoryInput): Promise<InventoryItem>;
   listInventoryMovements(variantId: string): Promise<InventoryMovement[]>;
-  listCompetitivePriceObservations(
-    variantId: string,
-  ): Promise<CompetitivePriceObservation[]>;
+  listCompetitivePriceObservations(variantId: string): Promise<CompetitivePriceObservation[]>;
   listCategories(publicOnly: boolean): Promise<Category[]>;
-  createCategory(
-    input: CreateReferenceInput & { slug: string },
-  ): Promise<Category>;
+  createCategory(input: CreateReferenceInput & { slug: string }): Promise<Category>;
   updateCategory(id: string, input: UpdateReferenceInput): Promise<Category>;
   listBrands(publicOnly: boolean): Promise<Brand[]>;
   createBrand(input: CreateReferenceInput & { slug: string }): Promise<Brand>;

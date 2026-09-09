@@ -7,11 +7,7 @@ import { UserRole } from '../../../src/modules/users/domain/entities/user.entity
 describe('StorefrontQueryService', () => {
   it('does not create or search an anonymous cart without a token', async () => {
     const findActiveSummary = jest.fn();
-    const service = new StorefrontQueryService(
-      {} as CustomerService,
-      {} as CustomerAddressService,
-      { findActiveSummary } as unknown as CartService,
-    );
+    const service = new StorefrontQueryService({} as CustomerService, {} as CustomerAddressService, { findActiveSummary } as unknown as CartService);
 
     const result = await service.bootstrap({});
 
@@ -79,9 +75,7 @@ describe('StorefrontQueryService', () => {
         displayName: 'Cliente Uno',
       }),
     );
-    expect(result.location).toEqual(
-      expect.objectContaining({ label: 'Casa', street: 'Calle' }),
-    );
+    expect(result.location).toEqual(expect.objectContaining({ label: 'Casa', street: 'Calle' }));
     expect(result.cart).toEqual({
       id: 'cart-1',
       itemCount: 3,
@@ -92,11 +86,7 @@ describe('StorefrontQueryService', () => {
 
   it('returns a null full cart without creating one in the cart screen', async () => {
     const findActive = jest.fn().mockResolvedValue(null);
-    const service = new StorefrontQueryService(
-      {} as CustomerService,
-      {} as CustomerAddressService,
-      { findActive } as unknown as CartService,
-    );
+    const service = new StorefrontQueryService({} as CustomerService, {} as CustomerAddressService, { findActive } as unknown as CartService);
 
     const result = await service.cartScreen({ cartToken: 'guest-token' });
 

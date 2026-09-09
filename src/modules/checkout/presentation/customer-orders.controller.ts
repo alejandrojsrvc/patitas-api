@@ -18,28 +18,14 @@ export class CustomerOrdersController {
     private readonly customers: CustomerService,
   ) {}
   @Get() public async list(@CurrentUser() user: AuthenticatedUser) {
-    return this.checkout.customerOrders(
-      (await this.customers.findByUserId(user.userId)).id,
-    );
+    return this.checkout.customerOrders((await this.customers.findByUserId(user.userId)).id);
   }
-  @Get(':id') public async find(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-  ) {
-    return this.checkout.customerOrder(
-      (await this.customers.findByUserId(user.userId)).id,
-      id,
-    );
+  @Get(':id') public async find(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.checkout.customerOrder((await this.customers.findByUserId(user.userId)).id, id);
   }
 
   @Get('/pets/:petId/purchase-history')
-  public async history(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('petId') petId: string,
-  ) {
-    return this.checkout.petPurchaseHistory(
-      (await this.customers.findByUserId(user.userId)).id,
-      petId,
-    );
+  public async history(@CurrentUser() user: AuthenticatedUser, @Param('petId') petId: string) {
+    return this.checkout.petPurchaseHistory((await this.customers.findByUserId(user.userId)).id, petId);
   }
 }

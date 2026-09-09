@@ -1,14 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsInt,
-  IsNotEmpty,
-  IsNumberString,
-  IsOptional,
-  IsString,
-  Matches,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsInt, IsNotEmpty, IsNumberString, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
 
 export class InitiatePaywayPaymentDto {
   @ApiProperty()

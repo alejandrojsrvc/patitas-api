@@ -18,6 +18,17 @@ enum UserRole {
   ADMIN
 }
 
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum AuthActionType {
+  EMAIL_CONFIRMATION
+  PASSWORD_RECOVERY
+  ADMIN_INVITATION
+}
+
 enum ProductStatus {
   DRAFT
   ACTIVE
@@ -135,6 +146,21 @@ enum ReplenishmentPlanStatus {
   COMPLETED
 }
 
+enum ReplenishmentReminderStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+enum PurchaseScheduleStatus {
+  DRAFT
+  PENDING_PAYMENT
+  ACTIVE
+  AWAITING_CONFIRMATION
+  PAUSED
+  CANCELLED
+}
+
 enum NotificationChannel {
   EMAIL
   WHATSAPP
@@ -156,6 +182,7 @@ enum PaymentAttemptStatus {
   CREATED
   PROCESSING
   PENDING
+  REPORTED
   APPROVED
   REJECTED
   CANCELLED
@@ -170,6 +197,22 @@ enum OrderPaymentKind {
   PAYMENT
   REFUND
   CHARGEBACK
+}
+
+enum OrderBenefitType {
+  SCHEDULED_PURCHASE
+  COUPON
+  AUTOMATIC_PROMOTION
+  PAYMENT_METHOD
+  SHIPPING
+  CUSTOMER_CREDIT
+}
+
+enum OrderBenefitScope {
+  PRODUCT
+  ORDER
+  PAYMENT
+  SHIPPING
 }
 
 enum PaymentWebhookEventStatus {
@@ -187,7 +230,6 @@ enum PaymentRefundStatus {
 }
 
 enum PaymentProviderConfigurationName {
-  SIMULATED
   MERCADO_PAGO
   PAYWAY
 }
@@ -196,6 +238,11 @@ enum ShippingCoverageType {
   POSTAL_CODE
   NEIGHBORHOOD
   POLYGON
+}
+
+enum ShippingOperatingRegion {
+  AMBA
+  CABA
 }
 
 enum MarketingEventStatus {
@@ -296,6 +343,7 @@ model Product {
   recentViews              RecentProductView[]
   replenishmentEstimates   ReplenishmentEstimate[]
   replenishmentPlans       ReplenishmentPlan[]
+  currentFoodPets          Pet[]                     @relation("PetCurrentFoodProduct")
 
   @@index([brandId], map: "idx_products_brand_id")
   @@index([categoryId], map: "idx_products_category_id")
@@ -332,6 +380,8 @@ model ProductVariant {
   bundleItems              PromotionBundleItem[]
   replenishmentEstimates   ReplenishmentEstimate[]
   replenishmentPlans       ReplenishmentPlan[]
+  purchaseSchedules        PurchaseSchedule[]
+  currentFoodPets          Pet[]                    @relation("PetCurrentFoodVariant")
 
   @@unique([productId, weightGrams], map: "product_variants_product_id_weight_grams_key")
   @@unique([id, productId], map: "product_variants_id_product_id_key")
@@ -447,12 +497,15 @@ model InventoryItem {
 }
 
 model User {
-  id                 String              @id @default(uuid()) @db.Uuid
-  email              String              @unique(map: "users_email_key") @db.VarChar(320)
-  role               UserRole            @default(CUSTOMER)
-  createdAt          DateTime            @default(now()) @map("created_at")
-  updatedAt          DateTime            @updatedAt @map("updated_at")
-  externalIdentities ExternalIdentity[]
+  id                 String            @id @default(uuid()) @db.Uuid
+  email              String            @unique(map: "users_email_key") @db.VarChar(320)
+  role               UserRole          @default(CUSTOMER)
+  status             UserStatus        @default(ACTIVE)
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  credential         AuthCredential?
+  authSessions       AuthSession[]
+  authActionTokens   AuthActionToken[]
   customer           Customer?
   auditLogs          AdminAuditLog[]
   inventoryMovements InventoryMovement[]
@@ -532,6 +585,8 @@ model Customer {
   replenishmentPlans     ReplenishmentPlan[]
   pets                   Pet[]
   replenishmentEstimates ReplenishmentEstimate[]
+  replenishmentReminders ReplenishmentReminder[]
+  purchaseSchedules       PurchaseSchedule[]
   communicationConsents  CommunicationConsent[]
   notificationPreference CustomerNotificationPreference?
   deviceTokens           DeviceToken[]
@@ -579,7 +634,10 @@ model Order {
   shippingOptionId      String?                @map("shipping_option_id") @db.Uuid
   shippingMethod        String?                @map("shipping_method")
   shippingZoneId        String?                @map("shipping_zone_id") @db.Uuid
+  shippingZoneName      String?                @map("shipping_zone_name")
+  shippingTariff        Decimal                @default(0) @map("shipping_tariff") @db.Decimal(14, 2)
   shippingEstimate      String?                @map("shipping_estimate")
+  shippingDeliverySlotLabel String?           @map("shipping_delivery_slot_label")
   publicAccessTokenHash String?                @unique(map: "orders_public_access_token_key") @map("public_access_token_hash")
   contactName           String                 @map("contact_name")
   contactEmail          String                 @map("contact_email") @db.VarChar(320)
@@ -603,6 +661,7 @@ model Order {
   shippingOption        ShippingOption?        @relation(fields: [shippingOptionId], references: [id], onDelete: SetNull)
   checkoutSession       CheckoutSession?
   replenishmentPlans    ReplenishmentPlan[]
+  purchaseSchedules     PurchaseSchedule[] @relation("PurchaseScheduleInitialOrder")
   paymentAttempts       PaymentAttempt[]
   refunds               PaymentRefund[]
   couponRedemptions     CouponRedemption[]
@@ -613,10 +672,33 @@ model Order {
   referralLedgerEntries ReferralLedgerEntry[]
   referralAttributions  ReferralAttribution[]
   statusEvents          OrderStatusEvent[]
+  benefits              OrderBenefit[]
 
   @@index([status, createdAt], map: "idx_orders_status_created")
   @@index([customerId], map: "idx_orders_customer_id")
   @@map("orders")
+}
+
+model OrderBenefit {
+  id          String            @id @default(uuid()) @db.Uuid
+  orderId     String            @map("order_id") @db.Uuid
+  type        OrderBenefitType
+  scope       OrderBenefitScope
+  origin      String
+  sourceId    String?           @map("source_id") @db.Uuid
+  sourceCode  String?           @map("source_code")
+  description String
+  percentage  Decimal?          @db.Decimal(5, 2)
+  amount      Decimal           @db.Decimal(14, 2)
+  currency    String            @default("ARS") @db.VarChar(3)
+  metadata    Json?
+  claimKey    String?           @unique(map: "order_benefits_claim_key") @map("claim_key")
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  order       Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt], map: "idx_order_benefits_order_created")
+  @@index([type, createdAt], map: "idx_order_benefits_type_created")
+  @@map("order_benefits")
 }
 
 model OrderLine {
@@ -637,6 +719,7 @@ model OrderLine {
   variant      ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
   pet          Pet?           @relation(fields: [petId], references: [id], onDelete: SetNull)
   plan         ReplenishmentPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  purchaseSchedule PurchaseSchedule?
 
   @@index([orderId], map: "idx_order_lines_order_id")
   @@index([variantId], map: "idx_order_lines_variant_id")
@@ -676,6 +759,7 @@ model PaymentRefund {
   amount             Decimal            @db.Decimal(14, 2)
   currency           String             @db.VarChar(3)
   idempotencyKey     String             @unique @map("idempotency_key")
+  requestFingerprint String             @map("request_fingerprint") @db.Char(64)
   status             PaymentRefundStatus @default(PROCESSING)
   failureReason     String?             @map("failure_reason")
   rawResponse       Json?               @map("raw_response")
@@ -805,6 +889,7 @@ model CartItem {
   role      String         @default("EXTRA")
   petId     String?        @map("pet_id") @db.Uuid
   planId    String?        @map("plan_id") @db.Uuid
+  contextKey String        @default("CASUAL") @map("context_key")
   createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
   cart      Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
@@ -812,7 +897,7 @@ model CartItem {
   pet       Pet?           @relation(fields: [petId], references: [id], onDelete: SetNull)
   plan      ReplenishmentPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
 
-  @@unique([cartId, variantId], map: "cart_items_cart_variant_key")
+  @@unique([cartId, variantId, contextKey], map: "cart_items_cart_variant_context_key")
   @@index([variantId], map: "idx_cart_items_variant_id")
   @@map("cart_items")
 }
@@ -855,6 +940,7 @@ model CheckoutSession {
   notifications    NotificationDelivery[]
   marketingEvents  MarketingEvent[]
   savedPaymentMethod SavedPaymentMethod?  @relation(fields: [savedPaymentMethodId], references: [id], onDelete: SetNull)
+  purchaseSchedule   PurchaseSchedule?
 
   @@index([status, expiresAt], map: "idx_checkout_sessions_status_expiry")
   @@map("checkout_sessions")
@@ -1062,17 +1148,25 @@ model Pet {
   sex         String?
   birthDate   DateTime? @map("birth_date") @db.Date
   avatarUrl   String?  @map("avatar_url")
+  currentFoodProductId String? @map("current_food_product_id") @db.Uuid
+  currentFoodVariantId String? @map("current_food_variant_id") @db.Uuid
+  currentFoodBrand String? @map("current_food_brand")
+  currentFoodName String? @map("current_food_name")
+  currentFoodWeightGrams Int? @map("current_food_weight_grams")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   plans       ReplenishmentPlan[]
   estimates   ReplenishmentEstimate[]
   breedReference PetBreed? @relation(fields: [breedId], references: [id], onDelete: SetNull)
+  currentFoodProduct Product? @relation("PetCurrentFoodProduct", fields: [currentFoodProductId], references: [id], onDelete: SetNull)
+  currentFoodVariant ProductVariant? @relation("PetCurrentFoodVariant", fields: [currentFoodVariantId], references: [id], onDelete: SetNull)
   cartItems   CartItem[]
   orderLines  OrderLine[]
 
   @@index([customerId, createdAt], map: "idx_pets_customer_created")
   @@index([breedId], map: "idx_pets_breed_id")
+  @@index([currentFoodProductId], map: "idx_pets_current_food_product")
   @@map("pets")
 }
 
@@ -1093,6 +1187,7 @@ model PetBreed {
 model ReplenishmentEstimate {
   id                     String   @id @default(uuid()) @db.Uuid
   customerId             String?  @map("customer_id") @db.Uuid
+  guestAccessTokenHash   String?  @map("guest_access_token_hash")
   petId                  String?  @map("pet_id") @db.Uuid
   petName                String   @map("pet_name")
   petSpecies             String   @map("pet_species")
@@ -1119,9 +1214,74 @@ model ReplenishmentEstimate {
   product                Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
   variant                ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   plan                   ReplenishmentPlan?
+  reminders              ReplenishmentReminder[]
 
   @@index([customerId, createdAt], map: "idx_replenishment_estimates_customer_created")
+  @@index([guestAccessTokenHash], map: "idx_replenishment_estimates_guest_token")
   @@map("replenishment_estimates")
+}
+
+model ReplenishmentReminder {
+  id                   String                     @id @default(uuid()) @db.Uuid
+  customerId           String?                    @map("customer_id") @db.Uuid
+  guestAccessTokenHash String?                    @map("guest_access_token_hash")
+  estimateId           String                     @map("estimate_id") @db.Uuid
+  email                String                     @db.VarChar(320)
+  consentAt            DateTime                   @map("consent_at") @db.Timestamptz(6)
+  consentVersion       String                     @map("consent_version")
+  nextReminderAt       DateTime                   @map("next_reminder_at") @db.Timestamptz(6)
+  status               ReplenishmentReminderStatus @default(ACTIVE)
+  unsubscribedAt      DateTime?                   @map("unsubscribed_at") @db.Timestamptz(6)
+  createdAt            DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  customer             Customer?                  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  estimate             ReplenishmentEstimate     @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  notifications        NotificationDelivery[]
+
+  @@index([customerId, status], map: "idx_replenishment_reminders_customer_status")
+  @@index([guestAccessTokenHash], map: "idx_replenishment_reminders_guest_token")
+  @@index([status, nextReminderAt], map: "idx_replenishment_reminders_due")
+  @@map("replenishment_reminders")
+}
+
+model PurchaseSchedule {
+  id                String                @id @default(uuid()) @db.Uuid
+  customerId        String                @map("customer_id") @db.Uuid
+  checkoutSessionId String?               @unique @map("checkout_session_id") @db.Uuid
+  initialOrderId    String?               @unique @map("initial_order_id") @db.Uuid
+  orderLineId       String?               @unique @map("order_line_id") @db.Uuid
+  variantId         String                @map("variant_id") @db.Uuid
+  quantity          Int                   @default(1)
+  frequencyDays     Int                   @map("frequency_days")
+  discountPercent   Decimal               @default(10) @map("discount_percent") @db.Decimal(5, 2)
+  leadDays          Int                   @default(5) @map("lead_days")
+  status            PurchaseScheduleStatus @default(DRAFT)
+  nextOrderAt       DateTime?             @map("next_order_at") @db.Timestamptz(6)
+  nextReminderAt    DateTime?             @map("next_reminder_at") @db.Timestamptz(6)
+  lastConfirmedAt   DateTime?             @map("last_confirmed_at") @db.Timestamptz(6)
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  customer          Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  checkoutSession   CheckoutSession?     @relation(fields: [checkoutSessionId], references: [id], onDelete: SetNull)
+  initialOrder      Order?               @relation("PurchaseScheduleInitialOrder", fields: [initialOrderId], references: [id], onDelete: SetNull)
+  orderLine         OrderLine?           @relation(fields: [orderLineId], references: [id], onDelete: SetNull)
+  variant           ProductVariant       @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@index([customerId, status], map: "idx_purchase_schedules_customer_status")
+  @@index([status, nextReminderAt], map: "idx_purchase_schedules_reminder")
+  @@map("purchase_schedules")
+}
+
+model PurchaseScheduleConfiguration {
+  id              String   @id @default(uuid()) @db.Uuid
+  singletonKey    String   @unique @default("DEFAULT") @map("singleton_key")
+  enabled         Boolean  @default(true)
+  discountPercent Decimal  @default(10) @map("discount_percent") @db.Decimal(5, 2)
+  leadDays        Int      @default(5) @map("lead_days")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("purchase_schedule_configurations")
 }
 
 model CustomerNotificationPreference {
@@ -1256,6 +1416,10 @@ model PaymentAttempt {
   processingLeaseToken  String?              @map("processing_lease_token")
   attemptCount          Int                  @default(0) @map("attempt_count")
   lastError             String?              @map("last_error")
+  reportedAt            DateTime?            @map("reported_at") @db.Timestamptz(6)
+  reportedReference     String?              @map("reported_reference")
+  proofUrl              String?              @map("proof_url")
+  confirmedAt           DateTime?            @map("confirmed_at") @db.Timestamptz(6)
   requestFingerprint    String               @map("request_fingerprint")
   rawResponse           Json?                @map("raw_response")
   createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -1302,6 +1466,7 @@ model ShippingZone {
   id               String               @id @default(uuid()) @db.Uuid
   name             String
   type             ShippingCoverageType @map("coverage_type")
+  region           ShippingOperatingRegion @default(AMBA)
   active           Boolean              @default(true)
   priority         Int                  @default(0)
   postalCodes      String[]             @default([]) @map("postal_codes")
@@ -1360,6 +1525,7 @@ model NotificationDelivery {
   cartId            String?                    @map("cart_id") @db.Uuid
   checkoutSessionId String?                    @map("checkout_session_id") @db.Uuid
   planId            String?                    @map("plan_id") @db.Uuid
+  replenishmentReminderId String?              @map("replenishment_reminder_id") @db.Uuid
   createdAt         DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(6)
   customer          Customer?                  @relation(fields: [customerId], references: [id], onDelete: SetNull)
@@ -1367,9 +1533,11 @@ model NotificationDelivery {
   cart              Cart?                      @relation(fields: [cartId], references: [id], onDelete: SetNull)
   checkoutSession   CheckoutSession?           @relation(fields: [checkoutSessionId], references: [id], onDelete: SetNull)
   plan              ReplenishmentPlan?         @relation(fields: [planId], references: [id], onDelete: SetNull)
+  replenishmentReminder ReplenishmentReminder? @relation(fields: [replenishmentReminderId], references: [id], onDelete: SetNull)
 
   @@index([status, nextAttemptAt], map: "idx_notification_deliveries_status_attempt")
   @@index([planId, createdAt], map: "idx_notification_deliveries_plan_created")
+  @@index([replenishmentReminderId, createdAt], map: "idx_notification_deliveries_reminder_created")
   @@map("notification_deliveries")
 }
 
@@ -1509,6 +1677,20 @@ model PaymentProviderConfiguration {
   @@map("payment_provider_configurations")
 }
 
+model PaymentMethodBenefitConfiguration {
+  id                String   @id @default(uuid()) @db.Uuid
+  paymentMethod     String   @unique @map("payment_method")
+  enabled           Boolean  @default(false)
+  discountPercent   Decimal  @default(0) @map("discount_percent") @db.Decimal(5, 2)
+  expirationMinutes Int      @default(120) @map("expiration_minutes")
+  instructions      Json?
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([paymentMethod, enabled], map: "idx_payment_method_benefits_method_enabled")
+  @@map("payment_method_benefit_configurations")
+}
+
 model PaymentFeeSchedule {
   id               String             @id @default(uuid()) @db.Uuid
   provider         PaymentFeeProvider
@@ -1592,16 +1774,51 @@ model PricingReview {
   @@map("pricing_reviews")
 }
 
-model ExternalIdentity {
-  id             String   @id @default(uuid()) @db.Uuid
-  userId         String   @map("user_id") @db.Uuid
-  provider       String   @db.VarChar(64)
-  providerUserId String   @map("provider_user_id") @db.VarChar(255)
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model AuthCredential {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @unique(map: "auth_credentials_user_id_key") @map("user_id") @db.Uuid
+  passwordHash      String?   @map("password_hash")
+  emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  passwordChangedAt DateTime? @map("password_changed_at") @db.Timestamptz(6)
+  failedLoginCount  Int       @default(0) @map("failed_login_count")
+  lockedUntil       DateTime? @map("locked_until") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerUserId], map: "external_identities_provider_user_key")
-  @@index([userId], map: "external_identities_user_id_idx")
-  @@map("external_identities")
+  @@map("auth_credentials")
+}
+
+model AuthSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  tokenFamilyId    String    @map("token_family_id") @db.Uuid
+  refreshTokenHash String    @unique(map: "auth_sessions_refresh_token_hash_key") @map("refresh_token_hash") @db.Char(64)
+  accessTokenJti   String    @unique(map: "auth_sessions_access_token_jti_key") @map("access_token_jti") @db.Uuid
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastUsedAt       DateTime? @map("last_used_at") @db.Timestamptz(6)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(6)
+  ipHash           String?   @map("ip_hash") @db.Char(64)
+  userAgent        String?   @map("user_agent") @db.VarChar(512)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt, expiresAt], map: "idx_auth_sessions_user_active")
+  @@index([tokenFamilyId], map: "idx_auth_sessions_token_family")
+  @@map("auth_sessions")
+}
+
+model AuthActionToken {
+  id        String         @id @default(uuid()) @db.Uuid
+  userId    String         @map("user_id") @db.Uuid
+  type      AuthActionType
+  tokenHash String         @unique(map: "auth_action_tokens_token_hash_key") @map("token_hash") @db.Char(64)
+  expiresAt DateTime       @map("expires_at") @db.Timestamptz(6)
+  consumedAt DateTime?     @map("consumed_at") @db.Timestamptz(6)
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, createdAt], map: "idx_auth_action_tokens_user_type_created")
+  @@index([expiresAt], map: "idx_auth_action_tokens_expires_at")
+  @@map("auth_action_tokens")
 }

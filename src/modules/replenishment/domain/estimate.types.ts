@@ -1,11 +1,6 @@
 export interface CreateEstimateInput {
   bagStartedAt?: Date;
-  remainingBucket?:
-    | 'ALMOST_FULL'
-    | 'MORE_THAN_HALF'
-    | 'ABOUT_HALF'
-    | 'ALMOST_EMPTY'
-    | 'FINISHED';
+  remainingBucket?: 'ALMOST_FULL' | 'MORE_THAN_HALF' | 'ABOUT_HALF' | 'ALMOST_EMPTY' | 'FINISHED';
   pet: {
     id?: string;
     name: string;

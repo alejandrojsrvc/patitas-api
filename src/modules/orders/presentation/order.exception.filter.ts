@@ -1,9 +1,4 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpStatus,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
 import type { Response } from 'express';
 import { DomainError } from '../../../shared/domain/domain-error';
 import { OrderConflictError, OrderNotFoundError } from '../domain/order.error';

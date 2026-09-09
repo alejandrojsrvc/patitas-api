@@ -2,15 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '../../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
-import {
-  SupplierConflictError,
-  SupplierNotFoundError,
-  SupplierValidationError,
-} from '../../application/supplier.service';
-import type {
-  SupplierOfferImportOptions,
-  SupplierRepository,
-} from '../../domain/repositories/supplier.repository';
+import { SupplierConflictError, SupplierNotFoundError, SupplierValidationError } from '../../application/supplier.service';
+import type { SupplierOfferImportOptions, SupplierRepository } from '../../domain/repositories/supplier.repository';
 import type {
   CreateSupplierInput,
   CreateSupplierOfferInput,
@@ -55,9 +48,7 @@ export class PrismaSupplierRepository implements SupplierRepository {
   public async listSuppliers(filter: SupplierFilter): Promise<SupplierPage> {
     const where: Prisma.SupplierWhereInput = {
       ...(filter.active === undefined ? {} : { active: filter.active }),
-      ...(filter.q
-        ? { name: { contains: filter.q, mode: 'insensitive' } }
-        : {}),
+      ...(filter.q ? { name: { contains: filter.q, mode: 'insensitive' } } : {}),
     };
     const [suppliers, total] = await this.prisma.$transaction([
       this.prisma.supplier.findMany({
@@ -86,25 +77,12 @@ export class PrismaSupplierRepository implements SupplierRepository {
     return supplier ? mapSupplier(supplier) : null;
   }
   public createSupplier(input: CreateSupplierInput): Promise<Supplier> {
-    return this.write(async () =>
-      mapSupplier(await this.prisma.supplier.create({ data: input })),
-    );
+    return this.write(async () => mapSupplier(await this.prisma.supplier.create({ data: input })));
   }
-  public updateSupplier(
-    id: string,
-    input: UpdateSupplierInput,
-  ): Promise<Supplier> {
-    return this.write(async () =>
-      mapSupplier(
-        await this.prisma.supplier.update({ where: { id }, data: input }),
-      ),
-    );
+  public updateSupplier(id: string, input: UpdateSupplierInput): Promise<Supplier> {
+    return this.write(async () => mapSupplier(await this.prisma.supplier.update({ where: { id }, data: input })));
   }
-  public async listOffers(filter: {
-    supplierId?: string;
-    variantId?: string;
-    active?: boolean;
-  }): Promise<SupplierOffer[]> {
+  public async listOffers(filter: { supplierId?: string; variantId?: string; active?: boolean }): Promise<SupplierOffer[]> {
     const offers = await this.prisma.supplierOffer.findMany({
       where: filter,
       orderBy: [{ unitCost: 'asc' }, { updatedAt: 'desc' }],
@@ -125,11 +103,7 @@ export class PrismaSupplierRepository implements SupplierRepository {
         supplier: true,
         variant: { select: { sku: true, product: { select: { name: true } } } },
       },
-      orderBy: [
-        { supplier: { name: 'asc' } },
-        { updatedAt: 'desc' },
-        { id: 'asc' },
-      ],
+      orderBy: [{ supplier: { name: 'asc' } }, { updatedAt: 'desc' }, { id: 'asc' }],
     });
     return offers.map((offer: PersistenceExportOffer) => ({
       ...mapOffer(offer),
@@ -142,9 +116,7 @@ export class PrismaSupplierRepository implements SupplierRepository {
     const offer = await this.prisma.supplierOffer.findUnique({ where: { id } });
     return offer ? mapOffer(offer) : null;
   }
-  public async createOffer(
-    input: CreateSupplierOfferInput,
-  ): Promise<SupplierOffer> {
+  public async createOffer(input: CreateSupplierOfferInput): Promise<SupplierOffer> {
     return this.write(async () =>
       mapOffer(
         await this.prisma.supplierOffer.create({
@@ -153,10 +125,7 @@ export class PrismaSupplierRepository implements SupplierRepository {
       ),
     );
   }
-  public async updateOffer(
-    id: string,
-    input: UpdateSupplierOfferInput,
-  ): Promise<SupplierOffer> {
+  public async updateOffer(id: string, input: UpdateSupplierOfferInput): Promise<SupplierOffer> {
     return this.write(async () =>
       mapOffer(
         await this.prisma.supplierOffer.update({
@@ -167,10 +136,7 @@ export class PrismaSupplierRepository implements SupplierRepository {
     );
   }
 
-  public async importOffers(
-    rows: SupplierOfferImportRow[],
-    options: SupplierOfferImportOptions,
-  ): Promise<SupplierOfferImportResult> {
+  public async importOffers(rows: SupplierOfferImportRow[], options: SupplierOfferImportOptions): Promise<SupplierOfferImportResult> {
     return this.prisma.$transaction(
       async (transaction) => {
         const suppliers = await transaction.supplier.findMany({
@@ -185,20 +151,13 @@ export class PrismaSupplierRepository implements SupplierRepository {
             }
           }
           for (const [key, name] of names) {
-            if (
-              suppliers.some(
-                (supplier) => normalizeReference(supplier.name) === key,
-              )
-            )
-              continue;
+            if (suppliers.some((supplier) => normalizeReference(supplier.name) === key)) continue;
             const pending = { id: randomUUID(), name };
             suppliers.push(pending);
             pendingSuppliers.push(pending);
           }
         }
-        const supplierById = new Map(
-          suppliers.map((supplier) => [supplier.id, supplier]),
-        );
+        const supplierById = new Map(suppliers.map((supplier) => [supplier.id, supplier]));
         const suppliersByName = new Map<string, typeof suppliers>();
         for (const supplier of suppliers) {
           const key = normalizeReference(supplier.name);
@@ -208,15 +167,9 @@ export class PrismaSupplierRepository implements SupplierRepository {
         }
 
         const variantFilters: Prisma.ProductVariantWhereInput[] = [];
-        const variantIds = rows
-          .map((row) => row.variantId)
-          .filter((value): value is string => value !== null);
-        const skus = rows
-          .map((row) => row.sku)
-          .filter((value): value is string => value !== null);
-        const barcodes = rows
-          .map((row) => row.barcode)
-          .filter((value): value is string => value !== null);
+        const variantIds = rows.map((row) => row.variantId).filter((value): value is string => value !== null);
+        const skus = rows.map((row) => row.sku).filter((value): value is string => value !== null);
+        const barcodes = rows.map((row) => row.barcode).filter((value): value is string => value !== null);
         if (variantIds.length) variantFilters.push({ id: { in: variantIds } });
         if (skus.length) variantFilters.push({ sku: { in: skus } });
         if (barcodes.length) variantFilters.push({ barcode: { in: barcodes } });
@@ -226,19 +179,9 @@ export class PrismaSupplierRepository implements SupplierRepository {
               select: { id: true, sku: true, barcode: true },
             })
           : [];
-        const variantById = new Map(
-          variants.map((variant) => [variant.id, variant]),
-        );
-        const variantBySku = new Map(
-          variants
-            .filter((variant) => variant.sku)
-            .map((variant) => [variant.sku!, variant]),
-        );
-        const variantByBarcode = new Map(
-          variants
-            .filter((variant) => variant.barcode)
-            .map((variant) => [variant.barcode!, variant]),
-        );
+        const variantById = new Map(variants.map((variant) => [variant.id, variant]));
+        const variantBySku = new Map(variants.filter((variant) => variant.sku).map((variant) => [variant.sku!, variant]));
+        const variantByBarcode = new Map(variants.filter((variant) => variant.barcode).map((variant) => [variant.barcode!, variant]));
         const errors: SupplierOfferImportError[] = [];
         const resolved: Array<{
           row: SupplierOfferImportRow;
@@ -257,12 +200,9 @@ export class PrismaSupplierRepository implements SupplierRepository {
             continue;
           }
           const variantIdsForRow = new Set<string>();
-          if (row.variantId && variantById.has(row.variantId))
-            variantIdsForRow.add(row.variantId);
-          if (row.sku && variantBySku.has(row.sku))
-            variantIdsForRow.add(variantBySku.get(row.sku)!.id);
-          if (row.barcode && variantByBarcode.has(row.barcode))
-            variantIdsForRow.add(variantByBarcode.get(row.barcode)!.id);
+          if (row.variantId && variantById.has(row.variantId)) variantIdsForRow.add(row.variantId);
+          if (row.sku && variantBySku.has(row.sku)) variantIdsForRow.add(variantBySku.get(row.sku)!.id);
+          if (row.barcode && variantByBarcode.has(row.barcode)) variantIdsForRow.add(variantByBarcode.get(row.barcode)!.id);
           if (variantIdsForRow.size === 0) {
             errors.push({
               row: row.rowNumber,
@@ -273,8 +213,7 @@ export class PrismaSupplierRepository implements SupplierRepository {
           if (variantIdsForRow.size > 1) {
             errors.push({
               row: row.rowNumber,
-              message:
-                'El ID, SKU y barcode de la fila apuntan a variantes distintas.',
+              message: 'El ID, SKU y barcode de la fila apuntan a variantes distintas.',
             });
             continue;
           }
@@ -317,16 +256,10 @@ export class PrismaSupplierRepository implements SupplierRepository {
               select: { supplierId: true, variantId: true },
             })
           : [];
-        const existingKeys = new Set(
-          existing.map((offer) => `${offer.supplierId}:${offer.variantId}`),
-        );
-        const created = resolved.filter(
-          ({ supplierId, variantId }) =>
-            !existingKeys.has(`${supplierId}:${variantId}`),
-        ).length;
+        const existingKeys = new Set(existing.map((offer) => `${offer.supplierId}:${offer.variantId}`));
+        const created = resolved.filter(({ supplierId, variantId }) => !existingKeys.has(`${supplierId}:${variantId}`)).length;
         const updated = resolved.length - created;
-        if (options.dryRun)
-          return { total: rows.length, created, updated, errors, dryRun: true };
+        if (options.dryRun) return { total: rows.length, created, updated, errors, dryRun: true };
 
         for (const { row, supplierId, variantId } of resolved) {
           await transaction.supplierOffer.upsert({
@@ -368,17 +301,13 @@ export class PrismaSupplierRepository implements SupplierRepository {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new SupplierConflictError(
-            'Ya existe una oferta para ese proveedor y variante.',
-          );
+          throw new SupplierConflictError('Ya existe una oferta para ese proveedor y variante.');
         }
         if (error.code === 'P2025') {
           throw new SupplierNotFoundError('El registro no existe.');
         }
         if (error.code === 'P2003') {
-          throw new SupplierValidationError(
-            'El proveedor o la variante no existe.',
-          );
+          throw new SupplierValidationError('El proveedor o la variante no existe.');
         }
       }
       throw error;
@@ -386,8 +315,7 @@ export class PrismaSupplierRepository implements SupplierRepository {
   }
 }
 
-const normalizeReference = (value: string): string =>
-  value.trim().toLocaleLowerCase('es');
+const normalizeReference = (value: string): string => value.trim().toLocaleLowerCase('es');
 
 const resolveSupplier = (
   row: SupplierOfferImportRow,
@@ -395,17 +323,11 @@ const resolveSupplier = (
   byName: Map<string, Array<{ id: string; name: string }>>,
 ) => {
   if (row.supplierId) return byId.get(row.supplierId) ?? null;
-  const matches = row.supplierName
-    ? (byName.get(normalizeReference(row.supplierName)) ?? [])
-    : [];
+  const matches = row.supplierName ? (byName.get(normalizeReference(row.supplierName)) ?? []) : [];
   return matches.length === 1 ? matches[0] : null;
 };
 
-const mapSupplier = (supplier: {
-  id: string;
-  name: string;
-  active: boolean;
-}): Supplier => ({
+const mapSupplier = (supplier: { id: string; name: string; active: boolean }): Supplier => ({
   id: supplier.id,
   name: supplier.name,
   active: supplier.active,

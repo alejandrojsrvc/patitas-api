@@ -80,9 +80,7 @@ describe('PricingScenarioCalculator', () => {
       productStatusFilterApplied: false,
     });
     expect(result.costBreakdown.totals.fixedMonthly).toBe('300000.00');
-    expect(result.costBreakdown.rules.paymentFeeEffectivePercent).toBe(
-      '7.6109',
-    );
+    expect(result.costBreakdown.rules.paymentFeeEffectivePercent).toBe('7.6109');
     expect(result.costBreakdown.averages.costsPerOrder).toBe('4700.00');
     expect(result.costBreakdown.averages.contributionPerOrder).toBe('3777.82');
   });

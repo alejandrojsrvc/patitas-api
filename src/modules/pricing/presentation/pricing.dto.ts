@@ -169,9 +169,7 @@ export class CreatePaymentFeeScheduleDto {
   public effectiveTo?: string;
 }
 
-export class UpdatePaymentFeeScheduleDto extends PartialType(
-  CreatePaymentFeeScheduleDto,
-) {}
+export class UpdatePaymentFeeScheduleDto extends PartialType(CreatePaymentFeeScheduleDto) {}
 
 export class CreateOperatingCostDto {
   @ApiProperty() @IsString() public name!: string;
@@ -202,9 +200,7 @@ export class CreateOperatingCostDto {
   public effectiveTo?: string;
 }
 
-export class UpdateOperatingCostDto extends PartialType(
-  CreateOperatingCostDto,
-) {}
+export class UpdateOperatingCostDto extends PartialType(CreateOperatingCostDto) {}
 
 export class CreatePricingScenarioDto {
   @ApiProperty() @IsString() public name!: string;
@@ -237,6 +233,4 @@ export class CreatePricingScenarioDto {
   public active = true;
 }
 
-export class UpdatePricingScenarioDto extends PartialType(
-  CreatePricingScenarioDto,
-) {}
+export class UpdatePricingScenarioDto extends PartialType(CreatePricingScenarioDto) {}

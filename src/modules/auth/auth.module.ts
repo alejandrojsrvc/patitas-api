@@ -2,11 +2,8 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../infrastructure/database/prisma.module';
 import { IdentityModule } from '../../infrastructure/identity/identity.module';
 import { NotificationInfrastructureModule } from '../../infrastructure/notifications/notification.module';
-import { ResendNotificationAdapter } from '../../infrastructure/notifications/resend-notification.adapter';
-import {
-  IDENTITY_PROVIDER,
-  type IdentityProvider,
-} from '../../shared/application/ports/identity-provider.interface';
+import { IDENTITY_PROVIDER, type IdentityProvider } from '../../shared/application/ports/identity-provider.interface';
+import { NOTIFICATION_PROVIDER, type NotificationProvider } from '../../shared/application/ports/notification-provider.interface';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { AuthEmailService } from './application/auth-email.service';
 import { ConfirmEmailUseCase } from './application/use-cases/confirm-email.use-case';
@@ -16,17 +13,14 @@ import { ResetPasswordUseCase } from './application/use-cases/reset-password.use
 import { RefreshSessionUseCase } from './application/use-cases/refresh-session.use-case';
 import { RegisterUseCase } from './application/use-cases/register.use-case';
 import { ResolveAccessTokenUseCase } from './application/use-cases/resolve-access-token.use-case';
-import {
-  AUTH_ACCOUNT_REPOSITORY,
-  type AuthAccountRepository,
-} from './domain/repositories/auth-account.repository';
+import { LogoutUseCase } from './application/use-cases/logout.use-case';
+import { AUTH_ACCOUNT_REPOSITORY, type AuthAccountRepository } from './domain/repositories/auth-account.repository';
 import { PrismaAuthAccountRepository } from './infrastructure/persistence/prisma-auth-account.repository';
 import { AuthController } from './presentation/controllers/auth.controller';
 import { MeController } from './presentation/controllers/me.controller';
 import { AuthGuard } from './presentation/guards/auth.guard';
 import { RolesGuard } from './presentation/guards/roles.guard';
 import { OptionalAuthGuard } from './presentation/guards/optional-auth.guard';
-import type { NotificationProvider } from '../../shared/application/ports/notification-provider.interface';
 
 @Module({
   imports: [IdentityModule, PrismaModule, NotificationInfrastructureModule],
@@ -35,74 +29,56 @@ import type { NotificationProvider } from '../../shared/application/ports/notifi
     { provide: AUTH_ACCOUNT_REPOSITORY, useClass: PrismaAuthAccountRepository },
     {
       provide: AuthEmailService,
-      inject: [ResendNotificationAdapter],
-      useFactory: (notifications: NotificationProvider) =>
-        new AuthEmailService(notifications),
+      inject: [NOTIFICATION_PROVIDER],
+      useFactory: (notifications: NotificationProvider) => new AuthEmailService(notifications),
     },
     {
       provide: RegisterUseCase,
       inject: [IDENTITY_PROVIDER, AUTH_ACCOUNT_REPOSITORY, AuthEmailService],
-      useFactory: (
-        identity: IdentityProvider,
-        accounts: AuthAccountRepository,
-        emails: AuthEmailService,
-      ) => new RegisterUseCase(identity, accounts, emails),
+      useFactory: (identity: IdentityProvider, accounts: AuthAccountRepository, emails: AuthEmailService) =>
+        new RegisterUseCase(identity, accounts, emails),
     },
     {
       provide: ConfirmEmailUseCase,
       inject: [IDENTITY_PROVIDER, AUTH_ACCOUNT_REPOSITORY],
-      useFactory: (
-        identity: IdentityProvider,
-        accounts: AuthAccountRepository,
-      ) => new ConfirmEmailUseCase(identity, accounts),
+      useFactory: (identity: IdentityProvider, accounts: AuthAccountRepository) => new ConfirmEmailUseCase(identity, accounts),
     },
     {
       provide: ResendEmailConfirmationUseCase,
       inject: [IDENTITY_PROVIDER, AUTH_ACCOUNT_REPOSITORY, AuthEmailService],
-      useFactory: (
-        identity: IdentityProvider,
-        accounts: AuthAccountRepository,
-        emails: AuthEmailService,
-      ) => new ResendEmailConfirmationUseCase(identity, accounts, emails),
+      useFactory: (identity: IdentityProvider, accounts: AuthAccountRepository, emails: AuthEmailService) =>
+        new ResendEmailConfirmationUseCase(identity, accounts, emails),
     },
     {
       provide: RequestPasswordRecoveryUseCase,
       inject: [IDENTITY_PROVIDER, AUTH_ACCOUNT_REPOSITORY, AuthEmailService],
-      useFactory: (
-        identity: IdentityProvider,
-        accounts: AuthAccountRepository,
-        emails: AuthEmailService,
-      ) => new RequestPasswordRecoveryUseCase(identity, accounts, emails),
+      useFactory: (identity: IdentityProvider, accounts: AuthAccountRepository, emails: AuthEmailService) =>
+        new RequestPasswordRecoveryUseCase(identity, accounts, emails),
     },
     {
       provide: ResetPasswordUseCase,
       inject: [IDENTITY_PROVIDER],
-      useFactory: (identity: IdentityProvider) =>
-        new ResetPasswordUseCase(identity),
+      useFactory: (identity: IdentityProvider) => new ResetPasswordUseCase(identity),
     },
     {
       provide: LoginUseCase,
       inject: [IDENTITY_PROVIDER, AUTH_ACCOUNT_REPOSITORY],
-      useFactory: (
-        identity: IdentityProvider,
-        accounts: AuthAccountRepository,
-      ) => new LoginUseCase(identity, accounts),
+      useFactory: (identity: IdentityProvider, accounts: AuthAccountRepository) => new LoginUseCase(identity, accounts),
     },
     {
       provide: RefreshSessionUseCase,
       inject: [IDENTITY_PROVIDER, AUTH_ACCOUNT_REPOSITORY],
-      useFactory: (
-        identity: IdentityProvider,
-        accounts: AuthAccountRepository,
-      ) => new RefreshSessionUseCase(identity, accounts),
+      useFactory: (identity: IdentityProvider, accounts: AuthAccountRepository) => new RefreshSessionUseCase(identity, accounts),
     },
     {
       provide: ResolveAccessTokenUseCase,
       inject: [IDENTITY_PROVIDER, AUTH_ACCOUNT_REPOSITORY],
-      useFactory: (
-        identity: IdentityProvider,
-        accounts: AuthAccountRepository,
-      ) => new ResolveAccessTokenUseCase(identity, accounts),
+      useFactory: (identity: IdentityProvider, accounts: AuthAccountRepository) => new ResolveAccessTokenUseCase(identity, accounts),
+    },
+    {
+      provide: LogoutUseCase,
+      inject: [IDENTITY_PROVIDER],
+      useFactory: (identity: IdentityProvider) => new LogoutUseCase(identity),
     },
     AuthGuard,
     OptionalAuthGuard,
@@ -120,6 +96,7 @@ import type { NotificationProvider } from '../../shared/application/ports/notifi
     LoginUseCase,
     RefreshSessionUseCase,
     ResolveAccessTokenUseCase,
+    LogoutUseCase,
   ],
 })
 export class AuthModule {}

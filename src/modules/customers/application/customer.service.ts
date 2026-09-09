@@ -1,14 +1,6 @@
-import {
-  CustomerNotFoundError,
-  CustomerValidationError,
-} from '../domain/customer.error';
+import { CustomerNotFoundError, CustomerValidationError } from '../domain/customer.error';
 import type { CustomerRepository } from '../domain/customer.repository';
-import type {
-  CreateCustomerInput,
-  CustomerFilter,
-  UpdateCustomerInput,
-  UpdateCustomerProfileInput,
-} from '../domain/customer.types';
+import type { CreateCustomerInput, CustomerFilter, UpdateCustomerInput, UpdateCustomerProfileInput } from '../domain/customer.types';
 
 export class CustomerService {
   public constructor(private readonly repository: CustomerRepository) {}
@@ -40,20 +32,14 @@ export class CustomerService {
     return customer;
   }
 
-  public ensureProfileByUserId(
-    userId: string,
-    input: { fullName: string; email: string },
-  ) {
+  public ensureProfileByUserId(userId: string, input: { fullName: string; email: string }) {
     return this.repository.ensureProfileByUserId(userId, {
       fullName: input.fullName.trim() || input.email,
       email: input.email.trim().toLowerCase(),
     });
   }
 
-  public async updateProfileByUserId(
-    userId: string,
-    input: UpdateCustomerProfileInput,
-  ) {
+  public async updateProfileByUserId(userId: string, input: UpdateCustomerProfileInput) {
     const customer = await this.findProfileByUserId(userId);
     validateCustomer(input);
     return this.repository.updateProfile(customer.id, normalizeCustomer(input));
@@ -71,34 +57,19 @@ export class CustomerService {
   }
 }
 
-const validateCustomer = (
-  input: CreateCustomerInput | UpdateCustomerInput | UpdateCustomerProfileInput,
-): void => {
+const validateCustomer = (input: CreateCustomerInput | UpdateCustomerInput | UpdateCustomerProfileInput): void => {
   if (input.fullName !== undefined && !input.fullName.trim()) {
     throw new CustomerValidationError('El nombre del cliente es obligatorio.');
   }
-  if (
-    'email' in input &&
-    input.email !== undefined &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email.trim())
-  ) {
+  if ('email' in input && input.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email.trim())) {
     throw new CustomerValidationError('El email del cliente no es válido.');
   }
 };
 
-const normalizeCustomer = <
-  T extends
-    CreateCustomerInput | UpdateCustomerInput | UpdateCustomerProfileInput,
->(
-  input: T,
-): T => ({
+const normalizeCustomer = <T extends CreateCustomerInput | UpdateCustomerInput | UpdateCustomerProfileInput>(input: T): T => ({
   ...input,
   ...(input.fullName !== undefined ? { fullName: input.fullName.trim() } : {}),
-  ...('email' in input && input.email !== undefined
-    ? { email: input.email.trim().toLowerCase() }
-    : {}),
+  ...('email' in input && input.email !== undefined ? { email: input.email.trim().toLowerCase() } : {}),
   ...(input.phone !== undefined ? { phone: input.phone?.trim() || null } : {}),
-  ...('avatarUrl' in input && input.avatarUrl !== undefined
-    ? { avatarUrl: input.avatarUrl?.trim() || null }
-    : {}),
+  ...('avatarUrl' in input && input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl?.trim() || null } : {}),
 });

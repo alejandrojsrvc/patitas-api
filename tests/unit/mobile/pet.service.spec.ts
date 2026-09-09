@@ -12,6 +12,8 @@ describe('PetService Mobile fields', () => {
       listProfile: jest.fn(),
       createProfile: jest.fn(),
       updateProfile: jest.fn(),
+      resolveCatalogFood: jest.fn(),
+      setCurrentFood: jest.fn(),
     };
     const breeds: jest.Mocked<PetBreedRepository> = {
       listActive: jest.fn(),
@@ -30,6 +32,7 @@ describe('PetService Mobile fields', () => {
       weightKg: '12.5',
       lifeStage: 'adult' as const,
       breed: null,
+      currentFood: null,
       breedId: 'labrador-retriever',
       sex: 'female' as const,
       birthDate: new Date('2020-01-02T00:00:00.000Z'),
@@ -54,10 +57,7 @@ describe('PetService Mobile fields', () => {
       }),
     ).resolves.toEqual(expected);
 
-    expect(breeds.findActiveForSpecies.mock.calls[0]).toEqual([
-      'labrador-retriever',
-      'dog',
-    ]);
+    expect(breeds.findActiveForSpecies.mock.calls[0]).toEqual(['labrador-retriever', 'dog']);
     expect(repository.createProfile.mock.calls[0]).toEqual([
       'customer-id',
       {
@@ -72,4 +72,102 @@ describe('PetService Mobile fields', () => {
       },
     ]);
   });
+
+  it('saves a catalog food when its species matches the pet', async () => {
+    const repository = petRepository();
+    const pet = petFixture();
+    repository.findOwned.mockResolvedValue(pet);
+    repository.resolveCatalogFood.mockResolvedValue({
+      productId: 'product-1',
+      variantId: 'variant-1',
+      brand: 'Excellent',
+      name: 'Adulto',
+      weightGrams: 15000,
+      species: 'perro',
+    });
+    repository.setCurrentFood.mockResolvedValue({
+      ...pet,
+      currentFood: {
+        source: 'catalog',
+        productId: 'product-1',
+        variantId: 'variant-1',
+        brand: 'Excellent',
+        name: 'Adulto',
+        weightGrams: 15000,
+      },
+    });
+
+    const service = new PetService(repository);
+    await expect(
+      service.setCurrentFood('pet-id', 'customer-id', {
+        source: 'catalog',
+        productId: 'product-1',
+        variantId: 'variant-1',
+      }),
+    ).resolves.toMatchObject({ currentFood: { productId: 'product-1', variantId: 'variant-1' } });
+    expect(repository.setCurrentFood.mock.calls[0]).toEqual([
+      'pet-id',
+      'customer-id',
+      {
+        productId: 'product-1',
+        variantId: 'variant-1',
+        brand: 'Excellent',
+        name: 'Adulto',
+        weightGrams: 15000,
+        species: 'perro',
+      },
+    ]);
+  });
+
+  it('rejects a catalog food for another species', async () => {
+    const repository = petRepository();
+    repository.findOwned.mockResolvedValue(petFixture());
+    repository.resolveCatalogFood.mockResolvedValue({
+      productId: 'product-1',
+      variantId: 'variant-1',
+      brand: 'Marca',
+      name: 'Alimento para gatos',
+      weightGrams: 3000,
+      species: 'cat',
+    });
+
+    const service = new PetService(repository);
+    await expect(
+      service.setCurrentFood('pet-id', 'customer-id', {
+        source: 'catalog',
+        productId: 'product-1',
+        variantId: 'variant-1',
+      }),
+    ).rejects.toThrow('no corresponde');
+    expect(repository.setCurrentFood.mock.calls).toHaveLength(0);
+  });
 });
+
+function petRepository(): jest.Mocked<PetRepository> {
+  return {
+    list: jest.fn(),
+    findOwned: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    listProfile: jest.fn(),
+    createProfile: jest.fn(),
+    updateProfile: jest.fn(),
+    resolveCatalogFood: jest.fn(),
+    setCurrentFood: jest.fn(),
+  };
+}
+
+function petFixture() {
+  return {
+    id: 'pet-id',
+    customerId: 'customer-id',
+    name: 'Luna',
+    species: 'dog' as const,
+    weightKg: '12.5',
+    lifeStage: 'adult' as const,
+    breed: null,
+    currentFood: null,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+  };
+}

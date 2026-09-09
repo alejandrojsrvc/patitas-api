@@ -20,6 +20,7 @@ const mobileOrderInclude = {
     },
   },
   payments: { orderBy: { createdAt: 'desc' as const } },
+  benefits: { orderBy: { createdAt: 'asc' as const } },
   statusEvents: { orderBy: { occurredAt: 'asc' as const } },
 } as const;
 
@@ -31,10 +32,7 @@ type MobileOrderRecord = Prisma.OrderGetPayload<{
 export class PrismaMobileOrderRepository implements MobileOrderRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  public async list(
-    customerId: string,
-    input: MobileOrderListInput,
-  ): Promise<MobileOrderPage> {
+  public async list(customerId: string, input: MobileOrderListInput): Promise<MobileOrderPage> {
     const decodedCursor = decodeCursor(input.cursor);
     const where = {
       customerId,
@@ -51,16 +49,11 @@ export class PrismaMobileOrderRepository implements MobileOrderRepository {
     const page = hasNext ? orders.slice(0, input.limit) : orders;
     return {
       items: page.map(mapMobileOrder),
-      nextCursor: hasNext
-        ? encodeCursor({ id: page[page.length - 1].id })
-        : null,
+      nextCursor: hasNext ? encodeCursor({ id: page[page.length - 1].id }) : null,
     };
   }
 
-  public async find(
-    customerId: string,
-    orderId: string,
-  ): Promise<MobileOrder | null> {
+  public async find(customerId: string, orderId: string): Promise<MobileOrder | null> {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, customerId },
       include: mobileOrderInclude,
@@ -68,10 +61,7 @@ export class PrismaMobileOrderRepository implements MobileOrderRepository {
     return order ? mapMobileOrder(order) : null;
   }
 
-  public async purchaseHistory(
-    customerId: string,
-    petId: string,
-  ): Promise<MobilePurchaseHistory> {
+  public async purchaseHistory(customerId: string, petId: string): Promise<MobilePurchaseHistory> {
     const lines = await this.prisma.orderLine.findMany({
       where: { petId, order: { customerId } },
       include: {
@@ -112,19 +102,10 @@ export class PrismaMobileOrderRepository implements MobileOrderRepository {
       .map((item) => item.bagStartedAt)
       .filter((date): date is Date => date !== null)
       .sort((left, right) => left.getTime() - right.getTime());
-    const intervals = starts
-      .slice(1)
-      .map((date, index) =>
-        Math.round((date.getTime() - starts[index].getTime()) / 86_400_000),
-      );
+    const intervals = starts.slice(1).map((date, index) => Math.round((date.getTime() - starts[index].getTime()) / 86_400_000));
     return {
       items,
-      averageConsumptionDays: intervals.length
-        ? Math.round(
-            intervals.reduce((total, days) => total + days, 0) /
-              intervals.length,
-          )
-        : null,
+      averageConsumptionDays: intervals.length ? Math.round(intervals.reduce((total, days) => total + days, 0) / intervals.length) : null,
       nextCursor: null,
     };
   }
@@ -134,15 +115,7 @@ const statusFilter = (
   filter: MobileOrderFilter,
 ): {
   status?: {
-    in: Array<
-      | 'DRAFT'
-      | 'PENDING_PAYMENT'
-      | 'PAID'
-      | 'PROCESSING'
-      | 'SHIPPED'
-      | 'DELIVERED'
-      | 'CANCELLED'
-    >;
+    in: Array<'DRAFT' | 'PENDING_PAYMENT' | 'PAID' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'>;
   };
 } => {
   if (filter === 'delivered') return { status: { in: ['DELIVERED'] } };
@@ -156,15 +129,12 @@ const statusFilter = (
   return {};
 };
 
-const encodeCursor = (value: { id: string }): string =>
-  Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
+const encodeCursor = (value: { id: string }): string => Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
 
 const decodeCursor = (cursor?: string): { id: string } | null => {
   if (!cursor) return null;
   try {
-    const value = JSON.parse(
-      Buffer.from(cursor, 'base64url').toString('utf8'),
-    ) as { id?: unknown };
+    const value = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as { id?: unknown };
     if (typeof value.id !== 'string' || !value.id) throw new Error();
     return { id: value.id };
   } catch {
@@ -240,6 +210,20 @@ const mapMobileOrder = (value: MobileOrderRecord): MobileOrder => ({
     paidAt: payment.paidAt,
     createdAt: payment.createdAt,
   })),
+  benefits: value.benefits.map((benefit) => ({
+    id: benefit.id,
+    type: benefit.type,
+    scope: benefit.scope,
+    origin: benefit.origin,
+    sourceId: benefit.sourceId,
+    sourceCode: benefit.sourceCode,
+    description: benefit.description,
+    percentage: benefit.percentage?.toString() ?? null,
+    amount: benefit.amount.toString(),
+    currency: benefit.currency,
+    metadata: benefit.metadata,
+    createdAt: benefit.createdAt,
+  })),
   statusEvents: value.statusEvents.map((event) => ({
     id: event.id,
     status: event.status,
@@ -248,11 +232,6 @@ const mapMobileOrder = (value: MobileOrderRecord): MobileOrder => ({
 });
 
 const toStringRecord = (value: Prisma.JsonValue): Record<string, string> => {
-  if (typeof value !== 'object' || value === null || Array.isArray(value))
-    return {};
-  return Object.fromEntries(
-    Object.entries(value).filter(
-      (entry): entry is [string, string] => typeof entry[1] === 'string',
-    ),
-  );
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
 };

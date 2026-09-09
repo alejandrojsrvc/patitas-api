@@ -9,46 +9,33 @@ import type { PrismaService } from '../src/infrastructure/database/prisma.servic
 
 loadProjectEnv();
 
-const scenarioArgument = process.argv.find((value) =>
-  value.startsWith('--scenario-id='),
-);
+const scenarioArgument = process.argv.find((value) => value.startsWith('--scenario-id='));
 const scenarioId = scenarioArgument?.slice('--scenario-id='.length);
 const apply = process.argv.includes('--apply');
 const publish = process.argv.includes('--publish');
-const connectionString = process.env.PRODUCTION_DATABASE_URL;
+const connectionString = process.env.DIRECT_DATABASE_URL;
 
 if (!scenarioId) {
-  throw new Error(
-    'Uso: pnpm pricing:apply-all -- --scenario-id=<uuid> [--apply] [--publish].',
-  );
+  throw new Error('Uso: pnpm pricing:apply-all -- --scenario-id=<uuid> [--apply] [--publish].');
 }
 
 if (!connectionString) {
-  throw new Error(
-    'Se requiere PRODUCTION_DATABASE_URL. PRODUCTION_SUPABASE_URL y PRODUCTION_SUPABASE_SECRET_KEY no son una conexión PostgreSQL.',
-  );
+  throw new Error('Se requiere DIRECT_DATABASE_URL con una conexión PostgreSQL directa.');
 }
 
-if (
-  connectionString.includes('127.0.0.1') ||
-  connectionString.includes('localhost')
-) {
-  throw new Error('PRODUCTION_DATABASE_URL no puede apuntar a localhost.');
+if (connectionString.includes('127.0.0.1') || connectionString.includes('localhost')) {
+  throw new Error('DIRECT_DATABASE_URL no puede apuntar a localhost.');
 }
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString }),
 });
-const repository = new PrismaPricingRepository(
-  prisma as unknown as PrismaService,
-  new PricingScenarioCalculator(),
-);
+const repository = new PrismaPricingRepository(prisma as unknown as PrismaService, new PricingScenarioCalculator());
 const pricing = new PricingService(repository, new PricingCalculator());
 
 const main = async (): Promise<void> => {
   const rules = await repository.getRules();
-  if (!rules.active)
-    throw new Error('No existe una configuración de pricing activa.');
+  if (!rules.active) throw new Error('No existe una configuración de pricing activa.');
 
   const allocation = await repository.getPricingScenarioAllocation(scenarioId);
   const contexts = await repository.listContextsForBulkRecalculation();
@@ -114,19 +101,10 @@ const main = async (): Promise<void> => {
   const productCanBeActivated = new Map<string, boolean>();
   for (const variant of variants) {
     const product = variant.product;
-    const sellable = product.variants.some(
-      (item) =>
-        item.active && Boolean(item.sku) && Number(item.salePrice ?? 0) > 0,
-    );
+    const sellable = product.variants.some((item) => item.active && Boolean(item.sku) && Number(item.salePrice ?? 0) > 0);
     productCanBeActivated.set(
       product.id,
-      Boolean(
-        product.categoryId &&
-        product.category?.active &&
-        product.brand.active &&
-        product.media.some((item) => item.url.trim()) &&
-        sellable,
-      ),
+      Boolean(product.categoryId && product.category?.active && product.brand.active && product.media.some((item) => item.url.trim()) && sellable),
     );
   }
 
@@ -134,10 +112,8 @@ const main = async (): Promise<void> => {
   const notActivated: Array<Record<string, unknown>> = [];
   for (const review of recalculated.reviews) {
     const variant = variantById.get(review.variantId);
-    if (!variant)
-      throw new Error(`No se encontró la variante ${review.variantId}.`);
-    const activateProduct =
-      publish && productCanBeActivated.get(variant.productId) === true;
+    if (!variant) throw new Error(`No se encontró la variante ${review.variantId}.`);
+    const activateProduct = publish && productCanBeActivated.get(variant.productId) === true;
     await pricing.apply(review.variantId, review.pricingReviewId, {
       activateProduct,
     });
@@ -161,8 +137,7 @@ const main = async (): Promise<void> => {
         fixedCostPerUnit: allocation.fixedCostPerUnit,
         recalculated: recalculated.processed,
         applied: applied.length,
-        activatedVariants: applied.filter((item) => item.activateProduct)
-          .length,
+        activatedVariants: applied.filter((item) => item.activateProduct).length,
         notActivated,
       },
       null,

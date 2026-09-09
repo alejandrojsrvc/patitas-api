@@ -1,18 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import type {
-  MarketingEventPersistenceInput,
-  MarketingEventRepository,
-} from '../domain/marketing.repository';
+import type { MarketingEventPersistenceInput, MarketingEventRepository } from '../domain/marketing.repository';
 
 @Injectable()
 export class PrismaMarketingRepository implements MarketingEventRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  public async create(
-    input: MarketingEventPersistenceInput,
-  ): Promise<{ id: string; duplicate: boolean }> {
+  public async create(input: MarketingEventPersistenceInput): Promise<{ id: string; duplicate: boolean }> {
     try {
       const event = await this.prisma.marketingEvent.create({
         data: {
@@ -22,9 +17,7 @@ export class PrismaMarketingRepository implements MarketingEventRepository {
           visitorHash: input.visitorHash,
           value: input.value,
           currency: input.currency,
-          payload: input.payload
-            ? (input.payload as unknown as Prisma.InputJsonValue)
-            : undefined,
+          payload: input.payload ? (input.payload as unknown as Prisma.InputJsonValue) : undefined,
           customerId: input.customerId,
           cartId: input.cartId,
           checkoutSessionId: input.checkoutSessionId,
@@ -39,10 +32,7 @@ export class PrismaMarketingRepository implements MarketingEventRepository {
       });
       return { id: event.id, duplicate: false };
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         const event = await this.prisma.marketingEvent.findFirst({
           where: { eventName: input.eventName, eventId: input.eventId },
           select: { id: true },

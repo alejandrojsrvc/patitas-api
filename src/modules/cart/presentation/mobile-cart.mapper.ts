@@ -21,8 +21,7 @@ export const toMobileCart = (cart: Cart) => ({
     quantity: item.quantity,
     lineTotal: item.lineTotal,
     purchasable: item.availableQuantity >= item.quantity,
-    availability:
-      item.availableQuantity >= item.quantity ? 'TODAY' : 'OUT_OF_STOCK',
+    availability: item.availableQuantity >= item.quantity ? 'TODAY' : 'OUT_OF_STOCK',
     context: {
       role: item.role,
       petId: item.petId,

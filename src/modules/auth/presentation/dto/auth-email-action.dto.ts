@@ -34,3 +34,5 @@ export class ResetPasswordDto {
   @MaxLength(128)
   public newPassword!: string;
 }
+
+export class AcceptInvitationDto extends ResetPasswordDto {}

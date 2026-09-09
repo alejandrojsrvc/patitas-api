@@ -1,16 +1,7 @@
-export type PaymentProviderName = 'simulated' | 'mercadopago' | 'payway';
+export type PaymentProviderName = 'mercadopago' | 'payway';
 
 export type NormalizedPaymentStatus =
-  | 'APPROVED'
-  | 'PENDING'
-  | 'PROCESSING'
-  | 'REJECTED'
-  | 'CANCELLED'
-  | 'EXPIRED'
-  | 'FAILED'
-  | 'PARTIALLY_REFUNDED'
-  | 'REFUNDED'
-  | 'CHARGED_BACK';
+  'APPROVED' | 'PENDING' | 'PROCESSING' | 'REJECTED' | 'CANCELLED' | 'EXPIRED' | 'FAILED' | 'PARTIALLY_REFUNDED' | 'REFUNDED' | 'CHARGED_BACK';
 
 export interface TokenizedCardPayment {
   type: 'TOKENIZED_CARD';

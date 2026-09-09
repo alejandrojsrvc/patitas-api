@@ -66,6 +66,8 @@ Leyenda:
 | P0        | Existe  | `POST /mobile/auth/register`                         | Crear cuenta                                   |
 | P0        | Existe  | `POST /mobile/auth/login`                            | Iniciar sesión                                 |
 | P0        | Existe  | `POST /mobile/auth/refresh`                          | Renovar sesión                                 |
+| P0        | Existe  | `POST /mobile/auth/logout`                           | Cerrar la sesión actual                        |
+| P0        | Existe  | `POST /mobile/auth/logout-all`                       | Cerrar todas las sesiones                      |
 | P0        | Existe  | `POST /mobile/auth/email-confirmation/confirm`       | Confirmar el correo y abrir sesión             |
 | P0        | Existe  | `POST /mobile/auth/email-confirmation/resend`        | Reenviar la confirmación                       |
 | P0        | Existe  | `POST /mobile/auth/password-recovery`                | Solicitar recuperación                         |
@@ -900,9 +902,7 @@ Ejemplo de cupón aplicado:
     "label": "Cupón PATITAS5000",
     "discount": "5000.00"
   },
-  "benefits": [
-    { "type": "COUPON", "label": "Ahorraste $5.000", "amount": "5000.00" }
-  ]
+  "benefits": [{ "type": "COUPON", "label": "Ahorraste $5.000", "amount": "5000.00" }]
 }
 ```
 

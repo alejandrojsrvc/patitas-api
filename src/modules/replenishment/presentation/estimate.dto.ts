@@ -1,12 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUUID,
-  MaxLength,
-  ValidateNested,
-} from 'class-validator';
+import { IsDateString, IsNumber, IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
 
 class EstimatePetDto {
   @IsOptional() @IsUUID() public id?: string;
@@ -35,4 +28,8 @@ class EstimateFoodDto {
 export class CreateEstimateDto {
   @ValidateNested() @Type(() => EstimatePetDto) public pet!: EstimatePetDto;
   @ValidateNested() @Type(() => EstimateFoodDto) public food!: EstimateFoodDto;
+  @IsOptional() @IsDateString() public bagStartedAt?: string;
+  @IsOptional()
+  @IsString()
+  public remainingBucket?: 'ALMOST_FULL' | 'MORE_THAN_HALF' | 'ABOUT_HALF' | 'ALMOST_EMPTY' | 'FINISHED';
 }

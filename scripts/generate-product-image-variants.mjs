@@ -12,19 +12,14 @@ const VARIANTS = [
 
 const args = parseArguments(process.argv.slice(2));
 const inputDirectory = resolve(args.input ?? 'exports/product-images');
-const outputDirectory = resolve(
-  args.output ?? join(inputDirectory, 'optimized'),
-);
+const outputDirectory = resolve(args.output ?? join(inputDirectory, 'optimized'));
 
 if (inputDirectory === outputDirectory) {
   throw new Error('La carpeta de salida debe ser distinta de la entrada.');
 }
 
 const files = (await readdir(inputDirectory, { withFileTypes: true }))
-  .filter(
-    (entry) =>
-      entry.isFile() && IMAGE_EXTENSIONS.has(extname(entry.name).toLowerCase()),
-  )
+  .filter((entry) => entry.isFile() && IMAGE_EXTENSIONS.has(extname(entry.name).toLowerCase()))
   .map((entry) => {
     const fileExtension = extname(entry.name).toLowerCase();
     return {
@@ -143,9 +138,7 @@ for (const entry of entries) {
     generatedVariants += 1;
   }
 
-  console.log(
-    `[${generatedVariants}/${files.length * VARIANTS.length}] ${entry.sku}`,
-  );
+  console.log(`[${generatedVariants}/${files.length * VARIANTS.length}] ${entry.sku}`);
 }
 
 const manifest = {
@@ -166,8 +159,7 @@ const manifest = {
     generatedVariants,
     sourceBytes: totalSourceBytes,
     variantBytes: totalVariantBytes,
-    savedBytesComparedWithOneVariantPerSource:
-      totalSourceBytes * VARIANTS.length - totalVariantBytes,
+    savedBytesComparedWithOneVariantPerSource: totalSourceBytes * VARIANTS.length - totalVariantBytes,
     variantBytesComparedWithAllOriginals: totalSourceBytes * VARIANTS.length,
   },
   entries: entries.map((entry) => ({
@@ -177,11 +169,7 @@ const manifest = {
   })),
 };
 
-await writeFile(
-  join(outputDirectory, 'manifest.json'),
-  `${JSON.stringify(manifest, null, 2)}\n`,
-  'utf8',
-);
+await writeFile(join(outputDirectory, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 
 console.log(
   JSON.stringify(

@@ -24,12 +24,15 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { PetsModule } from './modules/pets/pets.module';
 import { MobileModule } from './modules/mobile/mobile.module';
+import { PurchaseSchedulesModule } from './modules/purchase-schedules/purchase-schedules.module';
 import { FulfillmentModule } from './modules/fulfillment/fulfillment.module';
 import { StorefrontModule } from './modules/storefront/storefront.module';
+import { SecurityModule } from './infrastructure/security/security.module';
 
 @Module({
   imports: [
     AppConfigModule,
+    SecurityModule,
     IdentityModule,
     StorageModule,
     UsersModule,
@@ -54,6 +57,7 @@ import { StorefrontModule } from './modules/storefront/storefront.module';
     AnalyticsModule,
     PetsModule,
     MobileModule,
+    PurchaseSchedulesModule,
     FulfillmentModule,
     StorefrontModule,
   ],

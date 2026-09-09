@@ -1,17 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Post,
-  Put,
-  Req,
-  UseFilters,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Req, UseFilters, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { hashAnonymousToken } from '../../../shared/application/anonymous-token';
@@ -43,11 +30,7 @@ export class MobileCartController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   public async create(@Req() request: Request) {
-    return this.present(
-      await this.carts.getOrCreate(
-        await ownerFromRequest(request, this.customers),
-      ),
-    );
+    return this.present(await this.carts.getOrCreate(await ownerFromRequest(request, this.customers)));
   }
 
   @Get()
@@ -59,53 +42,29 @@ export class MobileCartController {
   }
 
   @Put('items/:variantId')
-  public async setItem(
-    @Req() request: Request,
-    @Param('variantId') variantId: string,
-    @Body() input: SetMobileCartItemDto,
-  ) {
+  public async setItem(@Req() request: Request, @Param('variantId') variantId: string, @Body() input: SetMobileCartItemDto) {
     const context = input.context ?? {
       role: input.role,
       petId: input.petId,
       planId: input.planId,
     };
-    const cart = await this.carts.setItem(
-      await ownerFromRequest(request, this.customers),
-      variantId,
-      input.quantity,
-      context,
-    );
+    const cart = await this.carts.setItem(await ownerFromRequest(request, this.customers), variantId, input.quantity, context);
     return this.presentCartResult(cart);
   }
 
   @Delete('items/:variantId')
-  public async removeItem(
-    @Req() request: Request,
-    @Param('variantId') variantId: string,
-  ) {
-    return this.presentCartResult(
-      await this.carts.removeItem(
-        await ownerFromRequest(request, this.customers),
-        variantId,
-      ),
-    );
+  public async removeItem(@Req() request: Request, @Param('variantId') variantId: string) {
+    return this.presentCartResult(await this.carts.removeItem(await ownerFromRequest(request, this.customers), variantId));
   }
 
   @Post('merge')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.CUSTOMER)
-  public async merge(
-    @Req() request: Request,
-    @Body() input: MergeMobileCartDto,
-  ) {
-    const userId = (request as Request & { user?: { userId: string } }).user
-      ?.userId;
-    if (!userId)
-      throw new CartValidationError('Se requiere una sesión de cliente.');
+  public async merge(@Req() request: Request, @Body() input: MergeMobileCartDto) {
+    const userId = (request as Request & { user?: { userId: string } }).user?.userId;
+    if (!userId) throw new CartValidationError('Se requiere una sesión de cliente.');
     const customer = await this.customers.findByUserId(userId);
-    return toMobileCart(
-      await this.carts.merge(input.cartToken, customer.id, 'MOBILE'),
-    );
+    return toMobileCart(await this.carts.merge(input.cartToken, customer.id, 'MOBILE'));
   }
 
   private present(result: { cart: Cart; token?: string }) {
@@ -118,26 +77,18 @@ export class MobileCartController {
   private presentCartResult(result: Cart & { cartToken?: string }) {
     return {
       ...toMobileCart(result),
-      ...('cartToken' in result && result.cartToken
-        ? { cartToken: result.cartToken }
-        : {}),
+      ...('cartToken' in result && result.cartToken ? { cartToken: result.cartToken } : {}),
     };
   }
 }
 
-const ownerFromRequest = async (
-  request: Request,
-  customers: CustomerService,
-) => {
-  const userId = (request as Request & { user?: { userId: string } }).user
-    ?.userId;
+const ownerFromRequest = async (request: Request, customers: CustomerService) => {
+  const userId = (request as Request & { user?: { userId: string } }).user?.userId;
   const token = request.headers['x-cart-token'];
   if (userId)
     return {
       customerId: (await customers.findByUserId(userId)).id,
       source: 'MOBILE' as const,
     };
-  return typeof token === 'string'
-    ? { tokenHash: hashAnonymousToken(token), source: 'MOBILE' as const }
-    : { source: 'MOBILE' as const };
+  return typeof token === 'string' ? { tokenHash: hashAnonymousToken(token), source: 'MOBILE' as const } : { source: 'MOBILE' as const };
 };

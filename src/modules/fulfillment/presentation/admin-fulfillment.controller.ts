@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Patch,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, Controller, Get, Patch, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AdminAuditInterceptor } from '../../../infrastructure/audit/admin-audit.interceptor';
 import { AuthGuard } from '../../auth/presentation/guards/auth.guard';
@@ -28,9 +21,7 @@ export class AdminFulfillmentController {
     return this.fulfillment.getSettings();
   }
 
-  @Patch('settings') public update(
-    @Body() input: UpdateFulfillmentSettingsDto,
-  ) {
+  @Patch('settings') public update(@Body() input: UpdateFulfillmentSettingsDto) {
     return this.fulfillment.updateSettings(input);
   }
 }

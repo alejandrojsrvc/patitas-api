@@ -1,35 +1,56 @@
-import { Controller, Get, Query, UseFilters } from '@nestjs/common';
+import { Controller, Get, Header, Query, UseFilters } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ShippingService } from '../application/shipping.service';
 import { ShippingExceptionFilter } from './shipping.exception.filter';
+import { PublicShippingQuoteQueryDto } from './shipping.dto';
 
 @ApiTags('Public shipping')
 @UseFilters(ShippingExceptionFilter)
 @Controller('shipping')
 export class PublicShippingController {
   public constructor(private readonly shipping: ShippingService) {}
-  @Get('quote') public quote(
-    @Query('postalCode') postalCode?: string,
-    @Query('neighborhood') neighborhood?: string,
-    @Query('city') city?: string,
-    @Query('province') province?: string,
-    @Query('subtotal') subtotal = '0',
-    @Query('weightGrams') weight?: string,
-  ) {
+  @Get('quote')
+  @Header('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300')
+  public quote(@Query() query: PublicShippingQuoteQueryDto) {
     return this.shipping
       .quote({
-        postalCode,
-        neighborhood,
-        city,
-        province,
-        subtotal,
-        weightGrams: weight ? Number(weight) : undefined,
+        postalCode: query.postalCode,
+        neighborhood: query.neighborhood,
+        city: query.city,
+        province: query.province,
+        subtotal: query.subtotal,
+        weightGrams: query.weightGrams,
       })
-      .then(({ available, cost, estimate, message }) => ({
-        available,
-        cost,
-        estimate,
-        message,
-      }));
+      .then(
+        ({
+          available,
+          cost,
+          tariff,
+          deliveryCount,
+          zoneId,
+          zoneName,
+          estimate,
+          deliverySlots,
+          freeShippingFrom,
+          eligibleAmount,
+          remainingForFreeShipping,
+          reasonCode,
+          message,
+        }) => ({
+          available,
+          cost,
+          tariff,
+          deliveryCount,
+          zoneId,
+          zoneName,
+          estimate,
+          deliverySlots,
+          freeShippingFrom,
+          eligibleAmount,
+          remainingForFreeShipping,
+          reasonCode,
+          message,
+        }),
+      );
   }
 }

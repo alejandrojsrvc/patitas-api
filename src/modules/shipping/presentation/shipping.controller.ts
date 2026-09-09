@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  UseFilters,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseFilters, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../../auth/presentation/guards/auth.guard';
 import { RolesGuard } from '../../auth/presentation/guards/roles.guard';
@@ -41,10 +30,7 @@ export class ShippingController {
   @Post() public create(@Body() input: CreateShippingOptionDto) {
     return this.shipping.create(input);
   }
-  @Patch(':id') public update(
-    @Param('id') id: string,
-    @Body() input: UpdateShippingOptionDto,
-  ) {
+  @Patch(':id') public update(@Param('id') id: string, @Body() input: UpdateShippingOptionDto) {
     return this.shipping.update(id, input);
   }
   @Get('quote') public quote(
@@ -67,19 +53,13 @@ export class ShippingController {
   @Get('zones') public zones(@Query('active') active?: string) {
     return this.shipping.listZones(active === 'true');
   }
-  @Patch('zones/:id/delivery-windows') public updateDeliveryWindows(
-    @Param('id') id: string,
-    @Body() input: ShippingDeliveryWindowsDto,
-  ) {
+  @Patch('zones/:id/delivery-windows') public updateDeliveryWindows(@Param('id') id: string, @Body() input: ShippingDeliveryWindowsDto) {
     return this.shipping.updateZone(id, { deliveryWindows: input });
   }
   @Post('zones') public createZone(@Body() input: CreateShippingZoneDto) {
     return this.shipping.createZone(input);
   }
-  @Patch('zones/:id') public updateZone(
-    @Param('id') id: string,
-    @Body() input: UpdateShippingZoneDto,
-  ) {
+  @Patch('zones/:id') public updateZone(@Param('id') id: string, @Body() input: UpdateShippingZoneDto) {
     return this.shipping.updateZone(id, input);
   }
 }

@@ -1,9 +1,6 @@
 import { CustomerValidationError } from '../domain/customer.error';
 import type { CustomerAddressRepository } from '../domain/customer-address.repository';
-import type {
-  CreateCustomerAddressInput,
-  UpdateCustomerAddressInput,
-} from '../domain/customer.types';
+import type { CreateCustomerAddressInput, UpdateCustomerAddressInput } from '../domain/customer.types';
 import type { CustomerService } from './customer.service';
 
 export class CustomerAddressService {
@@ -20,20 +17,13 @@ export class CustomerAddressService {
     return this.repository.list(customerId);
   }
 
-  public async createForUser(
-    userId: string,
-    input: CreateCustomerAddressInput,
-  ) {
+  public async createForUser(userId: string, input: CreateCustomerAddressInput) {
     const customer = await this.customers.findByUserId(userId);
     validateAddress(input);
     return this.repository.create(customer.id, normalizeAddress(input));
   }
 
-  public async updateForUser(
-    userId: string,
-    id: string,
-    input: UpdateCustomerAddressInput,
-  ) {
+  public async updateForUser(userId: string, id: string, input: UpdateCustomerAddressInput) {
     const customer = await this.customers.findByUserId(userId);
     validateAddress(input);
     return this.repository.update(id, customer.id, normalizeAddress(input));
@@ -46,45 +36,18 @@ export class CustomerAddressService {
 }
 
 const validateAddress = (input: Partial<CreateCustomerAddressInput>): void => {
-  for (const field of [
-    'label',
-    'recipientName',
-    'street',
-    'number',
-    'city',
-    'province',
-    'postalCode',
-  ] as const) {
+  for (const field of ['label', 'recipientName', 'street', 'number', 'city', 'province', 'postalCode'] as const) {
     if (input[field] !== undefined && !input[field].trim()) {
       throw new CustomerValidationError(`El campo ${field} es obligatorio.`);
     }
   }
 };
 
-const normalizeAddress = <
-  T extends CreateCustomerAddressInput | UpdateCustomerAddressInput,
->(
-  input: T,
-): T => ({
+const normalizeAddress = <T extends CreateCustomerAddressInput | UpdateCustomerAddressInput>(input: T): T => ({
   ...input,
   ...Object.fromEntries(
-    [
-      'label',
-      'recipientName',
-      'phone',
-      'street',
-      'number',
-      'apartment',
-      'neighborhood',
-      'city',
-      'province',
-      'postalCode',
-      'reference',
-    ]
+    ['label', 'recipientName', 'phone', 'street', 'number', 'apartment', 'neighborhood', 'city', 'province', 'postalCode', 'reference']
       .filter((field) => input[field as keyof T] !== undefined)
-      .map((field) => [
-        field,
-        String(input[field as keyof T] ?? '').trim() || null,
-      ]),
+      .map((field) => [field, String(input[field as keyof T] ?? '').trim() || null]),
   ),
 });

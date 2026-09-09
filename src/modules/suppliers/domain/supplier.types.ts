@@ -1,5 +1,4 @@
-export type SupplierOfferStockStatus =
-  'AVAILABLE' | 'OUT_OF_STOCK' | 'ON_REQUEST' | 'UNKNOWN';
+export type SupplierOfferStockStatus = 'AVAILABLE' | 'OUT_OF_STOCK' | 'ON_REQUEST' | 'UNKNOWN';
 export type SupplierOfferFulfillmentMode = 'STANDARD' | 'EXPRESS';
 
 export interface Supplier {
@@ -63,9 +62,7 @@ export interface CreateSupplierOfferInput {
   minimumQuantity?: number;
   active?: boolean;
 }
-export type UpdateSupplierOfferInput = Partial<
-  Omit<CreateSupplierOfferInput, 'supplierId' | 'variantId'>
->;
+export type UpdateSupplierOfferInput = Partial<Omit<CreateSupplierOfferInput, 'supplierId' | 'variantId'>>;
 
 export interface SupplierOfferImportRow {
   rowNumber: number;

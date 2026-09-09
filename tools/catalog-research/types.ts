@@ -2,8 +2,7 @@ export type SourceKind = 'MANUFACTURER' | 'RETAILER';
 
 export type ExtractionStatus = 'SUCCESS' | 'PARTIAL' | 'BLOCKED' | 'ERROR';
 
-export type MatchStatus =
-  'MATCHED' | 'MISMATCH' | 'MISSING' | 'AMBIGUOUS' | 'BLOCKED';
+export type MatchStatus = 'MATCHED' | 'MISMATCH' | 'MISSING' | 'AMBIGUOUS' | 'BLOCKED';
 
 export interface CatalogResearchManifest {
   schemaVersion: 'catalog-research.v1';

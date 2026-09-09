@@ -6,12 +6,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: [
-      'eslint.config.mjs',
-      'dist/**',
-      'coverage/**',
-      'src/infrastructure/database/generated/**',
-    ],
+    ignores: ['eslint.config.mjs', 'dist/**', 'coverage/**', 'src/infrastructure/database/generated/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -43,14 +38,7 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
-          patterns: [
-            '@nestjs/*',
-            '@prisma/*',
-            '@supabase/*',
-            '**/application/**',
-            '**/infrastructure/**',
-            '**/presentation/**',
-          ],
+          patterns: ['@nestjs/*', '@prisma/*', '**/application/**', '**/infrastructure/**', '**/presentation/**'],
         },
       ],
     },
@@ -61,13 +49,7 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
-          patterns: [
-            '@nestjs/*',
-            '@prisma/*',
-            '@supabase/*',
-            '**/infrastructure/**',
-            '**/presentation/**',
-          ],
+          patterns: ['@nestjs/*', '@prisma/*', '**/infrastructure/**', '**/presentation/**'],
         },
       ],
     },

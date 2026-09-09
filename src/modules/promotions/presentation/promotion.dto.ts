@@ -1,17 +1,6 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsBoolean,
-  IsIn,
-  IsInt,
-  IsNumberString,
-  IsOptional,
-  IsString,
-  IsUUID,
-  IsDate,
-  Min,
-  ValidateNested,
-} from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsNumberString, IsOptional, IsString, IsUUID, IsDate, Min, ValidateNested } from 'class-validator';
 
 export class PromotionTargetDto {
   @ApiPropertyOptional({ format: 'uuid' })
@@ -63,8 +52,7 @@ export class CreatePromotionDto {
   @IsOptional()
   @IsNumberString()
   public minimumSubtotal?: string | null;
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1) public maxRedemptions?:
-    number | null;
+  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1) public maxRedemptions?: number | null;
   @ApiPropertyOptional({ type: [PromotionTargetDto] })
   @IsOptional()
   @ValidateNested({ each: true })
@@ -94,8 +82,7 @@ export class CreateCouponDto {
   @Type(() => Date)
   @IsDate()
   public endsAt?: Date | null;
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1) public maxRedemptions?:
-    number | null;
+  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1) public maxRedemptions?: number | null;
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()

@@ -26,10 +26,7 @@ export class RegisterUseCase {
       if (!registration.emailConfirmation) {
         throw new Error('El proveedor no devolvió una confirmación de email.');
       }
-      await this.emails.sendConfirmation(
-        input.email,
-        registration.emailConfirmation,
-      );
+      await this.emails.sendConfirmation(input.email, registration.emailConfirmation);
       return { status: 'verification_required', user: null };
     }
     const user = await this.accounts.provision(registration.identity);

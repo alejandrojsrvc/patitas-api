@@ -7,9 +7,7 @@ export class MobilePaymentMethodError extends DomainError {
   }
 }
 
-export const MOBILE_PAYMENT_METHOD_REPOSITORY = Symbol(
-  'MOBILE_PAYMENT_METHOD_REPOSITORY',
-);
+export const MOBILE_PAYMENT_METHOD_REPOSITORY = Symbol('MOBILE_PAYMENT_METHOD_REPOSITORY');
 
 export interface MobilePaymentMethod {
   id: string;
@@ -38,13 +36,7 @@ export interface CreateMobilePaymentMethodInput {
 
 export interface MobilePaymentMethodRepository {
   list(customerId: string): Promise<MobilePaymentMethod[]>;
-  create(
-    customerId: string,
-    input: CreateMobilePaymentMethodInput,
-  ): Promise<MobilePaymentMethod>;
+  create(customerId: string, input: CreateMobilePaymentMethodInput): Promise<MobilePaymentMethod>;
   remove(id: string, customerId: string): Promise<void>;
-  findOwned(
-    id: string,
-    customerId: string,
-  ): Promise<MobilePaymentMethod | null>;
+  findOwned(id: string, customerId: string): Promise<MobilePaymentMethod | null>;
 }

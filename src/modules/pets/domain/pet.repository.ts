@@ -1,9 +1,4 @@
-import type {
-  CreatePetInput,
-  Pet,
-  PetProfile,
-  UpdatePetInput,
-} from './pet.types';
+import type { CatalogPetFood, CreatePetInput, Pet, PetCurrentFoodWrite, PetProfile, UpdatePetInput } from './pet.types';
 
 export const PET_REPOSITORY = Symbol('PET_REPOSITORY');
 
@@ -14,9 +9,7 @@ export interface PetRepository {
   update(id: string, customerId: string, input: UpdatePetInput): Promise<Pet>;
   listProfile(customerId: string): Promise<PetProfile[]>;
   createProfile(customerId: string, input: CreatePetInput): Promise<PetProfile>;
-  updateProfile(
-    id: string,
-    customerId: string,
-    input: UpdatePetInput,
-  ): Promise<PetProfile>;
+  updateProfile(id: string, customerId: string, input: UpdatePetInput): Promise<PetProfile>;
+  resolveCatalogFood(productId: string, variantId: string): Promise<CatalogPetFood | null>;
+  setCurrentFood(id: string, customerId: string, input: PetCurrentFoodWrite): Promise<Pet | null>;
 }

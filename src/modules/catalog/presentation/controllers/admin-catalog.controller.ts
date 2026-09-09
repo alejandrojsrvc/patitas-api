@@ -17,13 +17,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminAuditInterceptor } from '../../../../infrastructure/audit/admin-audit.interceptor';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
-  ApiProduces,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiProduces, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../../../auth/presentation/guards/auth.guard';
 import { RolesGuard } from '../../../auth/presentation/guards/roles.guard';
 import { Roles } from '../../../auth/presentation/decorators/roles.decorator';
@@ -125,9 +119,7 @@ export class AdminCatalogController {
     );
   }
 
-  @Get('products') public async products(
-    @Query() query: AdminProductsQueryDto,
-  ) {
+  @Get('products') public async products(@Query() query: AdminProductsQueryDto) {
     const page = await this.catalog.listAdminProducts(query);
     return {
       items: page.items,
@@ -157,40 +149,23 @@ export class AdminCatalogController {
       },
     },
   })
-  @UseInterceptors(
-    FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024 } }),
-  )
-  public importCsv(
-    @UploadedFile() file: UploadedProductImage | undefined,
-    @Body('publish') publish?: string | boolean,
-  ) {
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 0, parts: 1 } }))
+  public importCsv(@UploadedFile() file: UploadedProductImage | undefined, @Body('publish') publish?: string | boolean) {
     if (!file) throw new BadRequestException('Se requiere un archivo CSV.');
     return this.catalog.importSimpleCatalogCsv(file.buffer, {
       publish: publish === true || publish === 'true',
     });
   }
-  @Patch('products/:id') public updateProduct(
-    @Param('id') id: string,
-    @Body() input: UpdateProductDto,
-  ) {
+  @Patch('products/:id') public updateProduct(@Param('id') id: string, @Body() input: UpdateProductDto) {
     return this.catalog.updateProduct(id, input);
   }
-  @Post('products/:id/variants') public createVariant(
-    @Param('id') id: string,
-    @Body() input: CreateVariantDto,
-  ) {
+  @Post('products/:id/variants') public createVariant(@Param('id') id: string, @Body() input: CreateVariantDto) {
     return this.catalog.createVariant(id, input);
   }
-  @Patch('variants/:id') public updateVariant(
-    @Param('id') id: string,
-    @Body() input: UpdateVariantDto,
-  ) {
+  @Patch('variants/:id') public updateVariant(@Param('id') id: string, @Body() input: UpdateVariantDto) {
     return this.catalog.updateVariant(id, input);
   }
-  @Post('products/:id/media') public createMedia(
-    @Param('id') id: string,
-    @Body() input: CreateProductMediaDto,
-  ) {
+  @Post('products/:id/media') public createMedia(@Param('id') id: string, @Body() input: CreateProductMediaDto) {
     return this.catalog.createProductMedia(id, input);
   }
   @Post('products/:id/media/upload')
@@ -207,14 +182,8 @@ export class AdminCatalogController {
       },
     },
   })
-  @UseInterceptors(
-    FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
-  )
-  public uploadMedia(
-    @Param('id') id: string,
-    @UploadedFile() file: UploadedProductImage | undefined,
-    @Body() input: UploadProductMediaDto,
-  ) {
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 0, parts: 1 } }))
+  public uploadMedia(@Param('id') id: string, @UploadedFile() file: UploadedProductImage | undefined, @Body() input: UploadProductMediaDto) {
     if (!file) {
       throw new BadRequestException('Se requiere un archivo de imagen.');
     }
@@ -229,24 +198,14 @@ export class AdminCatalogController {
     });
   }
   @Patch('products/:id/media/:mediaId')
-  public updateMedia(
-    @Param('id') id: string,
-    @Param('mediaId') mediaId: string,
-    @Body() input: UpdateProductMediaDto,
-  ) {
+  public updateMedia(@Param('id') id: string, @Param('mediaId') mediaId: string, @Body() input: UpdateProductMediaDto) {
     return this.catalog.updateProductMedia(id, mediaId, input);
   }
   @Delete('products/:id/media/:mediaId')
-  public deleteMedia(
-    @Param('id') id: string,
-    @Param('mediaId') mediaId: string,
-  ) {
+  public deleteMedia(@Param('id') id: string, @Param('mediaId') mediaId: string) {
     return this.catalog.deleteProductMedia(id, mediaId);
   }
-  @Post('products/:id/feeding-guide') public replaceFeedingGuide(
-    @Param('id') id: string,
-    @Body() input: ReplaceFeedingGuideDto,
-  ) {
+  @Post('products/:id/feeding-guide') public replaceFeedingGuide(@Param('id') id: string, @Body() input: ReplaceFeedingGuideDto) {
     return this.catalog.replaceFeedingGuide(id, {
       ...input,
       entries: input.entries.map((entry: FeedingGuideEntryDto) => ({
@@ -266,10 +225,7 @@ export class AdminCatalogController {
   public competitivePrices(@Param('id') id: string) {
     return this.catalog.getCompetitivePriceAverage(id);
   }
-  @Put('variants/:id/inventory') public setInventory(
-    @Param('id') id: string,
-    @Body() input: SetInventoryDto,
-  ) {
+  @Put('variants/:id/inventory') public setInventory(@Param('id') id: string, @Body() input: SetInventoryDto) {
     return this.catalog.setInventory(id, input);
   }
   @Get('variants/:id/inventory/movements')
@@ -283,10 +239,7 @@ export class AdminCatalogController {
   @Post('categories') public createCategory(@Body() input: ReferenceDto) {
     return this.catalog.createCategory(input);
   }
-  @Patch('categories/:id') public updateCategory(
-    @Param('id') id: string,
-    @Body() input: UpdateReferenceDto,
-  ) {
+  @Patch('categories/:id') public updateCategory(@Param('id') id: string, @Body() input: UpdateReferenceDto) {
     return this.catalog.updateCategory(id, input);
   }
   @Get('brands') public brands() {
@@ -295,10 +248,7 @@ export class AdminCatalogController {
   @Post('brands') public createBrand(@Body() input: BrandReferenceDto) {
     return this.catalog.createBrand(input);
   }
-  @Patch('brands/:id') public updateBrand(
-    @Param('id') id: string,
-    @Body() input: UpdateBrandReferenceDto,
-  ) {
+  @Patch('brands/:id') public updateBrand(@Param('id') id: string, @Body() input: UpdateBrandReferenceDto) {
     return this.catalog.updateBrand(id, input);
   }
   @Post('brands/:id/logo/upload')
@@ -310,13 +260,8 @@ export class AdminCatalogController {
       properties: { file: { type: 'string', format: 'binary' } },
     },
   })
-  @UseInterceptors(
-    FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
-  )
-  public uploadBrandLogo(
-    @Param('id') id: string,
-    @UploadedFile() file: UploadedProductImage | undefined,
-  ) {
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 0, parts: 1 } }))
+  public uploadBrandLogo(@Param('id') id: string, @UploadedFile() file: UploadedProductImage | undefined) {
     if (!file) throw new BadRequestException('Se requiere un archivo de logo.');
     return this.catalog.uploadBrandLogo(id, {
       originalName: file.originalname,

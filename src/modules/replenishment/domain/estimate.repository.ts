@@ -1,15 +1,11 @@
-import type {
-  CreateEstimateInput,
-  ReplenishmentEstimate,
-} from './estimate.types';
+import type { CreateEstimateInput, ReplenishmentEstimate } from './estimate.types';
 
-export const REPLENISHMENT_ESTIMATE_REPOSITORY = Symbol(
-  'REPLENISHMENT_ESTIMATE_REPOSITORY',
-);
+export const REPLENISHMENT_ESTIMATE_REPOSITORY = Symbol('REPLENISHMENT_ESTIMATE_REPOSITORY');
 
 export interface ReplenishmentEstimateRepository {
   create(input: {
-    customerId: string;
+    customerId?: string | null;
+    guestTokenHash?: string | null;
     petId?: string | null;
     request: CreateEstimateInput;
     result: {
@@ -22,8 +18,5 @@ export interface ReplenishmentEstimateRepository {
       assumptions: string[];
     };
   }): Promise<ReplenishmentEstimate>;
-  findOwned(
-    id: string,
-    customerId: string,
-  ): Promise<ReplenishmentEstimate | null>;
+  findOwned(id: string, customerId: string): Promise<ReplenishmentEstimate | null>;
 }

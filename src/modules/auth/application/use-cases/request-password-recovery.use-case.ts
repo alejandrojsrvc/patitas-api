@@ -12,9 +12,7 @@ export class RequestPasswordRecoveryUseCase {
   public async execute(email: string): Promise<void> {
     const identity = await this.accounts.findIdentityByEmail(email);
     if (!identity?.email) return;
-    const action = await this.identityProvider.createPasswordRecovery(
-      identity.email,
-    );
+    const action = await this.identityProvider.createPasswordRecovery(identity.email);
     if (action) await this.emails.sendPasswordRecovery(identity.email, action);
   }
 }

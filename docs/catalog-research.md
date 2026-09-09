@@ -1,7 +1,7 @@
 # Investigación de catálogo
 
 La CLI `catalog:research` vive fuera del runtime de NestJS y solo genera JSON.
-No accede a Prisma, Supabase ni a la base de datos.
+No accede a Prisma, SDKs de infraestructura ni a la base de datos.
 
 ## Flujo
 

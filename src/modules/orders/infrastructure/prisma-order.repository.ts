@@ -2,11 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import {
-  OrderConflictError,
-  OrderNotFoundError,
-  OrderValidationError,
-} from '../domain/order.error';
+import { OrderConflictError, OrderNotFoundError, OrderValidationError } from '../domain/order.error';
 import type { OrderRepository } from '../domain/order.repository';
 import type {
   CreateOrderInput,
@@ -17,23 +13,17 @@ import type {
   UpdateOrderInput,
   UploadPaymentProofInput,
 } from '../domain/order.types';
+import { releaseOrderReservation, releaseFirstShippingClaim, reverseCouponRedemptions } from './prisma-order-inventory';
+import type { OrderInventoryTransaction } from './prisma-order-inventory';
 
 const orderInclude = {
   lines: { orderBy: { id: 'asc' as const } },
   payments: { orderBy: { createdAt: 'desc' as const } },
+  benefits: { orderBy: { createdAt: 'asc' as const } },
   statusEvents: { orderBy: { occurredAt: 'asc' as const } },
 } as const;
 
 type OrderRecord = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
-type OrderInventoryTransaction = Pick<
-  PrismaService,
-  | 'inventoryItem'
-  | 'inventoryMovement'
-  | 'couponRedemption'
-  | 'coupon'
-  | 'promotion'
->;
-
 @Injectable()
 export class PrismaOrderRepository implements OrderRepository {
   public constructor(private readonly prisma: PrismaService) {}
@@ -90,17 +80,11 @@ export class PrismaOrderRepository implements OrderRepository {
         },
         include: { product: true },
       });
-      if (variants.length !== new Set(variantIds).size)
-        throw new OrderValidationError(
-          'Una variante no existe o no está activa.',
-        );
+      if (variants.length !== new Set(variantIds).size) throw new OrderValidationError('Una variante no existe o no está activa.');
       const byId = new Map(variants.map((variant) => [variant.id, variant]));
       const lines = input.lines.map((line) => {
         const variant = byId.get(line.variantId);
-        if (!variant?.salePrice)
-          throw new OrderValidationError(
-            'Todas las variantes deben tener precio.',
-          );
+        if (!variant?.salePrice) throw new OrderValidationError('Todas las variantes deben tener precio.');
         const unitPrice = Number(variant.salePrice);
         return {
           variantId: line.variantId,
@@ -112,10 +96,7 @@ export class PrismaOrderRepository implements OrderRepository {
           lineTotal: (unitPrice * line.quantity).toFixed(2),
         };
       });
-      const subtotal = lines.reduce(
-        (sum, line) => sum + Number(line.lineTotal),
-        0,
-      );
+      const subtotal = lines.reduce((sum, line) => sum + Number(line.lineTotal), 0);
       const shippingCost = Number(input.shippingCost ?? '0');
       const created = await transaction.order.create({
         data: {
@@ -161,41 +142,28 @@ export class PrismaOrderRepository implements OrderRepository {
         }),
       );
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      )
-        throw new OrderNotFoundError();
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') throw new OrderNotFoundError();
       throw error;
     }
   }
 
-  public async registerPayment(
-    id: string,
-    input: RegisterPaymentInput,
-  ): Promise<Order> {
+  public async registerPayment(id: string, input: RegisterPaymentInput): Promise<Order> {
     return this.prisma.$transaction(async (transaction) => {
-      await transaction.$queryRaw(
-        Prisma.sql`SELECT id FROM orders WHERE id = ${id} FOR UPDATE`,
-      );
+      await transaction.$queryRaw(Prisma.sql`SELECT id FROM orders WHERE id = ${id} FOR UPDATE`);
       const order = await transaction.order.findUnique({
         where: { id },
         include: { payments: true },
       });
       if (!order) throw new OrderNotFoundError();
+      if (order.paymentMethod === 'BANK_TRANSFER')
+        throw new OrderConflictError('Las transferencias se confirman desde la revisión de pagos por transferencia.');
       if (!['DRAFT', 'PENDING_PAYMENT'].includes(order.status))
-        throw new OrderConflictError(
-          'No se puede registrar un pago en el estado actual del pedido.',
-        );
+        throw new OrderConflictError('No se puede registrar un pago en el estado actual del pedido.');
       const paid =
-        order.payments
-          .filter((payment) => payment.kind === 'PAYMENT' && payment.paidAt)
-          .reduce((sum, payment) => sum + Number(payment.amount), 0) +
+        order.payments.filter((payment) => payment.kind === 'PAYMENT' && payment.paidAt).reduce((sum, payment) => sum + Number(payment.amount), 0) +
         (input.paidAt ? Number(input.amount) : 0);
       if (order.paymentStatus === 'PAID' || paid > Number(order.total))
-        throw new OrderConflictError(
-          'El importe supera el saldo pendiente del pedido.',
-        );
+        throw new OrderConflictError('El importe supera el saldo pendiente del pedido.');
       await transaction.orderPayment.create({
         data: {
           id: randomUUID(),
@@ -239,14 +207,9 @@ export class PrismaOrderRepository implements OrderRepository {
             include: orderInclude,
           }),
         );
-      if (!allowedTransitions[order.status].includes(status))
-        throw new OrderConflictError(
-          `No se puede pasar de ${order.status} a ${status}.`,
-        );
+      if (!allowedTransitions[order.status].includes(status)) throw new OrderConflictError(`No se puede pasar de ${order.status} a ${status}.`);
       if (status === 'PAID' && order.paymentStatus !== 'PAID')
-        throw new OrderConflictError(
-          'El pedido debe tener un pago completo antes de marcarse como PAID.',
-        );
+        throw new OrderConflictError('El pedido debe tener un pago completo antes de marcarse como PAID.');
       const captured = order.payments
         .filter((payment) => payment.kind === 'PAYMENT' && payment.paidAt)
         .reduce((sum, payment) => sum + Number(payment.amount), 0);
@@ -257,16 +220,13 @@ export class PrismaOrderRepository implements OrderRepository {
         .filter((payment) => payment.kind === 'CHARGEBACK' && payment.paidAt)
         .reduce((sum, payment) => sum + Number(payment.amount), 0);
       if (status === 'CANCELLED' && captured - refunded - chargedBack > 0)
-        throw new OrderConflictError(
-          'El pedido tiene dinero capturado. Requiere un refund explícito antes de cancelarse.',
-        );
-      if (status === 'PAID')
-        await ensureReservation(transaction, order.lines, id);
+        throw new OrderConflictError('El pedido tiene dinero capturado. Requiere un refund explícito antes de cancelarse.');
+      if (status === 'PAID') await ensureReservation(transaction, order.lines, id);
       if (status === 'SHIPPED') await ship(transaction, order.lines, id);
       if (status === 'CANCELLED') {
-        await release(transaction, order.lines, id);
-        if (order.paymentStatus !== 'PAID')
-          await reverseCouponRedemptions(transaction, id);
+        await releaseOrderReservation(transaction, order.lines, id);
+        await releaseFirstShippingClaim(transaction, id);
+        if (order.paymentStatus !== 'PAID') await reverseCouponRedemptions(transaction, id);
       }
       await transaction.order.update({ where: { id }, data: { status } });
       await recordStatusEvent(transaction, id, status);
@@ -294,9 +254,7 @@ export class PrismaOrderRepository implements OrderRepository {
     let expired = 0;
     for (const candidate of candidates) {
       const changed = await this.prisma.$transaction(async (transaction) => {
-        await transaction.$queryRaw(
-          Prisma.sql`SELECT id FROM orders WHERE id = ${candidate.id} FOR UPDATE`,
-        );
+        await transaction.$queryRaw(Prisma.sql`SELECT id FROM orders WHERE id = ${candidate.id} FOR UPDATE`);
         const order = await transaction.order.findFirst({
           where: {
             id: candidate.id,
@@ -310,23 +268,23 @@ export class PrismaOrderRepository implements OrderRepository {
           include: { lines: true },
         });
         if (!order) return false;
-        await release(
-          transaction,
-          order.lines,
-          order.id,
-          'Expiración de reserva',
-        );
+        await releaseOrderReservation(transaction, order.lines, order.id, 'Expiración de reserva');
         await reverseCouponRedemptions(transaction, order.id);
+        await releaseFirstShippingClaim(transaction, order.id);
         await transaction.paymentAttempt.updateMany({
           where: {
             orderId: order.id,
-            status: { in: ['CREATED', 'PROCESSING', 'PENDING'] },
+            status: { in: ['CREATED', 'PROCESSING', 'PENDING', 'REPORTED'] },
           },
           data: {
             status: 'EXPIRED',
             processingLeaseToken: null,
             processingLeaseUntil: null,
           },
+        });
+        await transaction.purchaseSchedule.updateMany({
+          where: { initialOrderId: order.id, status: 'PENDING_PAYMENT' },
+          data: { status: 'CANCELLED' },
         });
         await transaction.order.update({
           where: { id: order.id },
@@ -344,17 +302,13 @@ export class PrismaOrderRepository implements OrderRepository {
     return { expired };
   }
 
-  public async uploadPaymentProof(
-    id: string,
-    input: UploadPaymentProofInput,
-  ): Promise<Order> {
+  public async uploadPaymentProof(id: string, input: UploadPaymentProofInput): Promise<Order> {
     return this.prisma.$transaction(async (transaction) => {
       const payment = await transaction.orderPayment.findUnique({
         where: { id: input.paymentId },
         select: { orderId: true },
       });
-      if (!payment || payment.orderId !== id)
-        throw new OrderConflictError('El pago no pertenece al pedido.');
+      if (!payment || payment.orderId !== id) throw new OrderConflictError('El pago no pertenece al pedido.');
       await transaction.orderPayment.update({
         where: { id: input.paymentId },
         data: { proofUrl: input.storagePath },
@@ -369,10 +323,7 @@ export class PrismaOrderRepository implements OrderRepository {
   }
 }
 
-const isUuid = (value: string): boolean =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value,
-  );
+const isUuid = (value: string): boolean => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 const allowedTransitions: Record<Order['status'], Order['status'][]> = {
   DRAFT: ['PENDING_PAYMENT', 'CANCELLED'],
@@ -384,16 +335,9 @@ const allowedTransitions: Record<Order['status'], Order['status'][]> = {
   CANCELLED: [],
 };
 
-const createOrderNumber = (): string =>
-  `PAT-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${randomUUID()
-    .slice(0, 8)
-    .toUpperCase()}`;
+const createOrderNumber = (): string => `PAT-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${randomUUID().slice(0, 8).toUpperCase()}`;
 
-const recordStatusEvent = async (
-  transaction: Prisma.TransactionClient,
-  orderId: string,
-  status: Order['status'],
-): Promise<void> => {
+const recordStatusEvent = async (transaction: Prisma.TransactionClient, orderId: string, status: Order['status']): Promise<void> => {
   const events = transaction.orderStatusEvent;
   if (!events) return;
   const existing = await events.findFirst({
@@ -406,19 +350,13 @@ const recordStatusEvent = async (
   });
 };
 
-const reserve = async (
-  transaction: OrderInventoryTransaction,
-  lines: Array<{ variantId: string; quantity: number }>,
-  orderId: string,
-) => {
+const reserve = async (transaction: OrderInventoryTransaction, lines: Array<{ variantId: string; quantity: number }>, orderId: string) => {
   for (const line of lines) {
     const inventory = await transaction.inventoryItem.findUnique({
       where: { variantId: line.variantId },
     });
     if (!inventory || inventory.onHand - inventory.reserved < line.quantity)
-      throw new OrderConflictError(
-        'No hay stock suficiente para reservar el pedido.',
-      );
+      throw new OrderConflictError('No hay stock suficiente para reservar el pedido.');
     await transaction.inventoryItem.update({
       where: { variantId: line.variantId },
       data: { reserved: { increment: line.quantity } },
@@ -436,11 +374,7 @@ const reserve = async (
   }
 };
 
-const ensureReservation = async (
-  transaction: OrderInventoryTransaction,
-  lines: Array<{ variantId: string; quantity: number }>,
-  orderId: string,
-) => {
+const ensureReservation = async (transaction: OrderInventoryTransaction, lines: Array<{ variantId: string; quantity: number }>, orderId: string) => {
   for (const line of lines) {
     const existing = await transaction.inventoryMovement.findFirst({
       where: { orderId, variantId: line.variantId, type: 'RESERVE' },
@@ -449,70 +383,13 @@ const ensureReservation = async (
   }
 };
 
-const release = async (
-  transaction: OrderInventoryTransaction,
-  lines: Array<{ variantId: string; quantity: number }>,
-  orderId: string,
-  reason = 'Cancelación de pedido',
-) => {
+const ship = async (transaction: OrderInventoryTransaction, lines: Array<{ variantId: string; quantity: number }>, orderId: string) => {
   for (const line of lines) {
     const inventory = await transaction.inventoryItem.findUnique({
       where: { variantId: line.variantId },
     });
-    const movements = await transaction.inventoryMovement.findMany({
-      where: {
-        orderId,
-        variantId: line.variantId,
-        type: { in: ['RESERVE', 'RELEASE'] },
-      },
-      select: { type: true, quantity: true },
-    });
-    const reserved = movements
-      .filter((movement) => movement.type === 'RESERVE')
-      .reduce((sum, movement) => sum + movement.quantity, 0);
-    const released = movements
-      .filter((movement) => movement.type === 'RELEASE')
-      .reduce((sum, movement) => sum + movement.quantity, 0);
-    const quantity = Math.min(
-      line.quantity,
-      Math.max(0, reserved - released),
-      inventory?.reserved ?? 0,
-    );
-    if (!quantity) continue;
-    await transaction.inventoryItem.update({
-      where: { variantId: line.variantId },
-      data: { reserved: { decrement: quantity } },
-    });
-    await transaction.inventoryMovement.create({
-      data: {
-        id: randomUUID(),
-        variantId: line.variantId,
-        orderId,
-        type: 'RELEASE',
-        quantity,
-        reason,
-      },
-    });
-  }
-};
-
-const ship = async (
-  transaction: OrderInventoryTransaction,
-  lines: Array<{ variantId: string; quantity: number }>,
-  orderId: string,
-) => {
-  for (const line of lines) {
-    const inventory = await transaction.inventoryItem.findUnique({
-      where: { variantId: line.variantId },
-    });
-    if (
-      !inventory ||
-      inventory.reserved < line.quantity ||
-      inventory.onHand < line.quantity
-    )
-      throw new OrderConflictError(
-        'El inventario reservado no permite despachar el pedido.',
-      );
+    if (!inventory || inventory.reserved < line.quantity || inventory.onHand < line.quantity)
+      throw new OrderConflictError('El inventario reservado no permite despachar el pedido.');
     await transaction.inventoryItem.update({
       where: { variantId: line.variantId },
       data: {
@@ -529,33 +406,6 @@ const ship = async (
         quantity: line.quantity,
         reason: 'Despacho de pedido',
       },
-    });
-  }
-};
-
-const reverseCouponRedemptions = async (
-  transaction: OrderInventoryTransaction,
-  orderId: string,
-) => {
-  const redemptions = await transaction.couponRedemption.findMany({
-    where: { orderId },
-    select: { id: true, couponId: true },
-  });
-  for (const redemption of redemptions) {
-    await transaction.couponRedemption.delete({
-      where: { id: redemption.id },
-    });
-    await transaction.coupon.update({
-      where: { id: redemption.couponId },
-      data: { redemptionCount: { decrement: 1 } },
-    });
-    const coupon = await transaction.coupon.findUniqueOrThrow({
-      where: { id: redemption.couponId },
-      select: { promotionId: true },
-    });
-    await transaction.promotion.update({
-      where: { id: coupon.promotionId },
-      data: { redemptionCount: { decrement: 1 } },
     });
   }
 };
@@ -631,14 +481,23 @@ const mapOrder = (value: OrderRecord): Order => ({
     paidAt: payment.paidAt,
     createdAt: payment.createdAt,
   })),
+  benefits: value.benefits.map((benefit) => ({
+    id: benefit.id,
+    type: benefit.type,
+    scope: benefit.scope,
+    origin: benefit.origin,
+    sourceId: benefit.sourceId,
+    sourceCode: benefit.sourceCode,
+    description: benefit.description,
+    percentage: benefit.percentage?.toString() ?? null,
+    amount: benefit.amount.toString(),
+    currency: benefit.currency,
+    metadata: benefit.metadata,
+    createdAt: benefit.createdAt,
+  })),
 });
 
 const toStringRecord = (value: Prisma.JsonValue): Record<string, string> => {
-  if (typeof value !== 'object' || value === null || Array.isArray(value))
-    return {};
-  return Object.fromEntries(
-    Object.entries(value).filter(
-      (entry): entry is [string, string] => typeof entry[1] === 'string',
-    ),
-  );
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
 };

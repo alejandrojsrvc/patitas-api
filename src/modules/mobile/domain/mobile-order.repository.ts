@@ -1,7 +1,4 @@
-import type {
-  OrderStatus,
-  PaymentStatus,
-} from '../../orders/domain/order.types';
+import type { OrderStatus, PaymentStatus } from '../../orders/domain/order.types';
 import { DomainError } from '../../../shared/domain/domain-error';
 
 export const MOBILE_ORDER_REPOSITORY = Symbol('MOBILE_ORDER_REPOSITORY');
@@ -52,6 +49,21 @@ export interface MobileOrderPayment {
   createdAt: Date;
 }
 
+export interface MobileOrderBenefit {
+  id: string;
+  type: string;
+  scope: string;
+  origin: string;
+  sourceId: string | null;
+  sourceCode: string | null;
+  description: string;
+  percentage: string | null;
+  amount: string;
+  currency: string;
+  metadata: unknown;
+  createdAt: Date;
+}
+
 export interface MobileOrderStatusEvent {
   id: string;
   status: OrderStatus;
@@ -94,6 +106,7 @@ export interface MobileOrder {
   updatedAt: Date;
   lines: MobileOrderLine[];
   payments: MobileOrderPayment[];
+  benefits: MobileOrderBenefit[];
   statusEvents: MobileOrderStatusEvent[];
 }
 
@@ -122,13 +135,7 @@ export interface MobilePurchaseHistory {
 }
 
 export interface MobileOrderRepository {
-  list(
-    customerId: string,
-    input: MobileOrderListInput,
-  ): Promise<MobileOrderPage>;
+  list(customerId: string, input: MobileOrderListInput): Promise<MobileOrderPage>;
   find(customerId: string, orderId: string): Promise<MobileOrder | null>;
-  purchaseHistory(
-    customerId: string,
-    petId: string,
-  ): Promise<MobilePurchaseHistory>;
+  purchaseHistory(customerId: string, petId: string): Promise<MobilePurchaseHistory>;
 }

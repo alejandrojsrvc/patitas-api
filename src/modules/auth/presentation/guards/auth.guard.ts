@@ -1,18 +1,11 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ResolveAccessTokenUseCase } from '../../application/use-cases/resolve-access-token.use-case';
 import { ProviderAuthenticationError } from '../../../../shared/application/provider-error';
 import type { AuthenticatedRequest } from '../authenticated-user';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  public constructor(
-    private readonly resolveToken: ResolveAccessTokenUseCase,
-  ) {}
+  public constructor(private readonly resolveToken: ResolveAccessTokenUseCase) {}
 
   public async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();

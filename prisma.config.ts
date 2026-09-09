@@ -3,15 +3,16 @@ import { defineConfig } from 'prisma/config';
 import { assertSafePrismaCommand } from './scripts/database-safety';
 
 loadEnv({
-  path: ['.env.supabase.local', '.env.local', '.env'],
+  path: ['.env.local', '.env'],
   quiet: true,
 });
 
 assertSafePrismaCommand(process.argv, process.env);
 
 // `generate` y `validate` no necesitan conectarse. El placeholder permite que
-// `pnpm install` genere el cliente antes de levantar Supabase local.
+// `pnpm install` genere el cliente antes de levantar PostgreSQL local.
 const databaseUrl =
+  process.env['DIRECT_DATABASE_URL']?.trim() ||
   process.env['DATABASE_URL']?.trim() ||
   'postgresql://missing:missing@127.0.0.1:1/missing';
 

@@ -2,6 +2,36 @@ export type PetSpecies = 'dog' | 'cat';
 export type PetLifeStage = 'puppy' | 'adult' | 'senior';
 export type PetSex = 'male' | 'female' | 'unknown';
 
+export interface PetCurrentFood {
+  source: 'catalog' | 'custom';
+  productId: string | null;
+  variantId: string | null;
+  brand: string;
+  name: string;
+  weightGrams: number | null;
+}
+
+export interface SetPetCurrentFoodInput {
+  source: 'catalog' | 'custom' | 'none';
+  productId?: string;
+  variantId?: string;
+  brand?: string;
+  name?: string;
+  weightGrams?: number | null;
+}
+
+export interface PetCurrentFoodWrite {
+  productId: string | null;
+  variantId: string | null;
+  brand: string | null;
+  name: string | null;
+  weightGrams: number | null;
+}
+
+export interface CatalogPetFood extends PetCurrentFoodWrite {
+  species: string | null;
+}
+
 export interface Pet {
   id: string;
   customerId: string;
@@ -10,6 +40,7 @@ export interface Pet {
   weightKg: string;
   lifeStage: PetLifeStage;
   breed: string | null;
+  currentFood: PetCurrentFood | null;
   createdAt: Date;
   updatedAt: Date;
 }

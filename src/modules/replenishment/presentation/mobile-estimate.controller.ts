@@ -29,21 +29,12 @@ export class MobileEstimateController {
 
   @Post()
   @HttpCode(200)
-  public async create(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() input: CreateMobileEstimateDto,
-  ) {
+  public async create(@CurrentUser() user: AuthenticatedUser, @Body() input: CreateMobileEstimateDto) {
     const customerId = (await this.customers.findByUserId(user.userId)).id;
-    const pet = input.petId
-      ? await this.pets.findOwned(input.petId, customerId)
-      : input.pet;
+    const pet = input.petId ? await this.pets.findOwned(input.petId, customerId) : input.pet;
     if (!pet) throw new EstimateValidationError('Se requiere una mascota.');
-    const product = input.variantId
-      ? await this.catalog.getPublicProductByVariantId(input.variantId)
-      : null;
-    const food = product
-      ? { productId: product.id, variantId: input.variantId! }
-      : input.food;
+    const product = input.variantId ? await this.catalog.getPublicProductByVariantId(input.variantId) : null;
+    const food = product ? { productId: product.id, variantId: input.variantId! } : input.food;
     if (!food) throw new EstimateValidationError('Se requiere un alimento.');
     const estimate = await this.estimates.create(customerId, {
       pet: {
@@ -55,9 +46,7 @@ export class MobileEstimateController {
         breed: pet.breed,
       },
       food,
-      bagStartedAt: input.bagStartedAt
-        ? new Date(input.bagStartedAt)
-        : undefined,
+      bagStartedAt: input.bagStartedAt ? new Date(input.bagStartedAt) : undefined,
       remainingBucket: input.remainingBucket,
     });
     return toMobileEstimate(estimate);

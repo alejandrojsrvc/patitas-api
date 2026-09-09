@@ -27,10 +27,7 @@ export class MobileOrderController {
   ) {}
 
   @Get()
-  public async list(
-    @CurrentUser() user: AuthenticatedUser,
-    @Query() query: MobileOrdersQueryDto,
-  ) {
+  public async list(@CurrentUser() user: AuthenticatedUser, @Query() query: MobileOrdersQueryDto) {
     const customerId = await this.customerId(user);
     return toMobileOrderPage(
       await this.orders.list(customerId, {
@@ -42,19 +39,13 @@ export class MobileOrderController {
   }
 
   @Get('pets/:petId/purchase-history')
-  public async history(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('petId') petId: string,
-  ) {
+  public async history(@CurrentUser() user: AuthenticatedUser, @Param('petId') petId: string) {
     const customerId = await this.customerId(user);
     return this.orders.purchaseHistory(customerId, petId);
   }
 
   @Get(':id')
-  public async find(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') orderId: string,
-  ) {
+  public async find(@CurrentUser() user: AuthenticatedUser, @Param('id') orderId: string) {
     const order = await this.orders.find(await this.customerId(user), orderId);
     if (!order) throw new CheckoutNotFoundError('El pedido no existe.');
     return toMobileOrder(order);

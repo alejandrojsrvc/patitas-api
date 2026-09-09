@@ -1,9 +1,6 @@
 import type { PaymentInitiation } from '../../payments/domain/payment.repository';
 import type { CheckoutSession } from '../../checkout/domain/checkout.types';
-import type {
-  MobileOrder,
-  MobileOrderPage,
-} from '../domain/mobile-order.repository';
+import type { MobileOrder, MobileOrderPage } from '../domain/mobile-order.repository';
 
 export const toMobileCheckout = (session: CheckoutSession) => ({
   id: session.id,
@@ -39,16 +36,16 @@ export const toMobileCheckout = (session: CheckoutSession) => ({
     shippingCost: session.shippingCost,
     total: session.total,
   },
+  pricing: session.pricing,
+  actions: session.actions,
   orderId: session.orderId,
+  scheduledPurchase: session.scheduledPurchase,
   expiresAt: session.expiresAt,
 });
 
-export const toMobilePayment = (
-  payment: PaymentInitiation | null,
-  order?: MobileOrder,
-) => ({
+export const toMobilePayment = (payment: PaymentInitiation | null, order?: MobileOrder) => ({
   orderId: payment?.orderId ?? order?.id ?? null,
-  provider: payment?.provider ?? order?.paymentProvider ?? null,
+  provider: publicPaymentProvider(payment?.provider ?? order?.paymentProvider),
   status: normalizePaymentStatus(payment?.status, order?.paymentStatus),
   paymentStatus: payment?.paymentStatus ?? order?.paymentStatus ?? 'UNPAID',
   action: payment?.action ?? 'NONE',
@@ -56,8 +53,7 @@ export const toMobilePayment = (
   externalId: payment?.externalId ?? order?.paymentExternalId ?? null,
   expiresAt: payment?.expiresAt ?? order?.paymentExpiresAt ?? null,
   canRetry: payment?.canRetry ?? order?.canRetry ?? false,
-  reconciliationRequired:
-    payment?.reconciliationRequired ?? order?.reconciliationRequired ?? false,
+  reconciliationRequired: payment?.reconciliationRequired ?? order?.reconciliationRequired ?? false,
   transactions: order?.payments ?? [],
 });
 
@@ -76,7 +72,6 @@ export const toMobileOrder = (order: MobileOrder) => ({
   delivery: {
     address: order.shippingAddress,
     instructions: order.deliveryInstructions,
-    method: order.shippingMethod,
     estimate: order.shippingEstimate,
     slot: order.shippingDeliverySlot,
     date: order.shippingDeliveryDate,
@@ -102,7 +97,7 @@ export const toMobileOrder = (order: MobileOrder) => ({
   },
   payment: {
     method: order.paymentMethod,
-    provider: order.paymentProvider,
+    provider: publicPaymentProvider(order.paymentProvider),
     reference: order.paymentReference,
     externalId: order.paymentExternalId,
     status: normalizePaymentStatus(undefined, order.paymentStatus),
@@ -117,6 +112,7 @@ export const toMobileOrder = (order: MobileOrder) => ({
     shippingCost: order.shippingCost,
     total: order.total,
   },
+  benefits: order.benefits,
   createdAt: order.createdAt,
   updatedAt: order.updatedAt,
 });
@@ -142,9 +138,7 @@ const toMobileOrderSummary = (order: MobileOrder) => {
           windowEnd: deliveryWindow(order.shippingDeliverySlot).end,
         }
       : null,
-    productSummary: firstLine
-      ? `${firstLine.productName}${additional ? ` + ${additional} productos` : ''}`
-      : '',
+    productSummary: firstLine ? `${firstLine.productName}${additional ? ` + ${additional} productos` : ''}` : '',
     total: order.total,
     currency: order.currency,
     pet: order.lines.find((line) => line.pet)?.pet ?? null,
@@ -161,24 +155,21 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
   CANCELLED: 'Cancelado',
 };
 
-const orderStatusLabel = (status: string): string =>
-  ORDER_STATUS_LABELS[status] ?? status;
+const orderStatusLabel = (status: string): string => ORDER_STATUS_LABELS[status] ?? status;
 
-const deliveryWindow = (
-  value: string | null,
-): { start: string | null; end: string | null } => {
+const deliveryWindow = (value: string | null): { start: string | null; end: string | null } => {
   if (!value) return { start: null, end: null };
+  if (value === 'STANDARD_13_19') return { start: '13:00', end: '19:00' };
   const [start, end] = value.split('-').map((part) => part.trim());
   return { start: start || null, end: end || null };
 };
 
-const normalizeOrderStatus = (status: string): string =>
-  status.trim().toUpperCase();
+const publicPaymentProvider = (value: string | null | undefined): 'mercadopago' | 'payway' | null =>
+  value === 'mercadopago' || value === 'payway' ? value : null;
 
-const normalizePaymentStatus = (
-  providerStatus?: string,
-  orderStatus?: string,
-): string => {
+const normalizeOrderStatus = (status: string): string => status.trim().toUpperCase();
+
+const normalizePaymentStatus = (providerStatus?: string, orderStatus?: string): string => {
   if (providerStatus === 'APPROVED') return 'APPROVED';
   if (providerStatus) return providerStatus.trim().toUpperCase();
   if (orderStatus === 'PAID') return 'APPROVED';

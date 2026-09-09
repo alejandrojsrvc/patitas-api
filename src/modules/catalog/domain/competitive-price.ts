@@ -1,12 +1,6 @@
-import type {
-  CompetitivePriceAverage,
-  CompetitivePriceObservation,
-} from './catalog.types';
+import type { CompetitivePriceAverage, CompetitivePriceObservation } from './catalog.types';
 
-export const calculateCompetitivePriceAverage = (
-  observations: CompetitivePriceObservation[],
-  expectedRetailerCount = 4,
-): CompetitivePriceAverage => {
+export const calculateCompetitivePriceAverage = (observations: CompetitivePriceObservation[], expectedRetailerCount = 4): CompetitivePriceAverage => {
   const latestByRetailer = new Map<string, CompetitivePriceObservation>();
   for (const observation of observations) {
     const current = latestByRetailer.get(observation.retailerCode);
@@ -30,12 +24,7 @@ export const calculateCompetitivePriceAverage = (
       Number(observation.price) > 0,
   );
   const currency = valid[0]?.currency ?? observations[0]?.currency ?? 'ARS';
-  const average = valid.length
-    ? valid.reduce(
-        (total, observation) => total + Number(observation.price),
-        0,
-      ) / valid.length
-    : null;
+  const average = valid.length ? valid.reduce((total, observation) => total + Number(observation.price), 0) / valid.length : null;
   return {
     currency,
     averagePrice: average === null ? null : average.toFixed(2),

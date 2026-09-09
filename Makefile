@@ -6,8 +6,8 @@ name ?=
 help:
 	@echo "Patitas API"
 	@echo ""
-	@echo "  make bootstrap             Instala, levanta Supabase local, migra y ejecuta el seed"
-	@echo "  make infra-up              Inicia el stack local de Supabase"
+	@echo "  make bootstrap             Instala, levanta PostgreSQL/MinIO, migra y ejecuta el seed"
+	@echo "  make infra-up              Inicia PostgreSQL y MinIO locales"
 	@echo "  make infra-down            Detiene el stack conservando los datos locales"
 	@echo "  make infra-status          Muestra URLs locales sin exponer credenciales"
 	@echo "  make db-deploy             Aplica migraciones pendientes"

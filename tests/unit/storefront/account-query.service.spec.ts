@@ -9,9 +9,7 @@ import { UserRole } from '../../../src/modules/users/domain/entities/user.entity
 
 describe('AccountQueryService', () => {
   it('reuses the address read and returns the requested account section', async () => {
-    const listAddresses = jest
-      .fn()
-      .mockResolvedValue([{ id: 'address-1', label: 'Casa', isDefault: true }]);
+    const listAddresses = jest.fn().mockResolvedValue([{ id: 'address-1', label: 'Casa', isDefault: true }]);
     const service = new AccountQueryService(
       {
         findProfileByUserId: jest.fn().mockResolvedValue({
@@ -40,9 +38,7 @@ describe('AccountQueryService', () => {
     });
 
     expect(listAddresses).toHaveBeenCalledTimes(1);
-    expect(result.shell.location).toEqual(
-      expect.objectContaining({ label: 'Casa' }),
-    );
+    expect(result.shell.location).toEqual(expect.objectContaining({ label: 'Casa' }));
     expect(result.section).toEqual({
       type: 'addresses',
       addresses: [expect.objectContaining({ id: 'address-1' })],

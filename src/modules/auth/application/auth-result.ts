@@ -12,5 +12,4 @@ export interface VerificationRequiredResult {
   user: null;
 }
 
-export type RegistrationResult =
-  AuthenticatedResult | VerificationRequiredResult;
+export type RegistrationResult = AuthenticatedResult | VerificationRequiredResult;

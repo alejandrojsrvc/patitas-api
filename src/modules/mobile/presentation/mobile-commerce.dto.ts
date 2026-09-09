@@ -17,13 +17,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-const PAYMENT_METHODS = [
-  'SIMULATED_CARD',
-  'SIMULATED_TRANSFER',
-  'SIMULATED_CASH',
-  'MERCADO_PAGO',
-  'PAYWAY',
-] as const;
+const PAYMENT_METHODS = ['BANK_TRANSFER', 'MERCADO_PAGO', 'PAYWAY'] as const;
 
 export class MobileCreateCheckoutSessionDto {
   @ApiProperty({ format: 'uuid' }) @IsUUID() public cartId!: string;
@@ -62,6 +56,10 @@ export class MobileCheckoutShippingOptionDto {
   @IsString()
   @MaxLength(40)
   public deliverySlotId?: string;
+  @ApiPropertyOptional({ example: '2026-09-08' })
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  public deliveryDate?: string;
 }
 
 export class MobileCheckoutPaymentMethodDto {
@@ -101,9 +99,9 @@ export class MobileConfirmCheckoutDto {
 }
 
 export class MobileSavedPaymentMethodDto {
-  @ApiProperty({ enum: ['mercadopago', 'payway', 'simulated'] })
-  @IsIn(['mercadopago', 'payway', 'simulated'])
-  public provider!: 'mercadopago' | 'payway' | 'simulated';
+  @ApiProperty({ enum: ['mercadopago', 'payway'] })
+  @IsIn(['mercadopago', 'payway'])
+  public provider!: 'mercadopago' | 'payway';
   @ApiProperty({ example: 'CARD' })
   @IsString()
   @MaxLength(40)

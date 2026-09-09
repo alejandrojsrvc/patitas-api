@@ -34,27 +34,14 @@ export class NotificationService {
     return this.repository.getMobilePreferences(customerId);
   }
 
-  public updateMobilePreferences(
-    customerId: string,
-    input: Partial<MobileNotificationPreferences>,
-  ) {
+  public updateMobilePreferences(customerId: string, input: Partial<MobileNotificationPreferences>) {
     return this.repository.updateMobilePreferences(customerId, input);
   }
 
-  public registerDeviceToken(input: {
-    customerId: string;
-    token: string;
-    platform: string;
-    appVersion?: string | null;
-  }) {
-    if (!input.token.trim())
-      throw new NotificationValidationError(
-        'El token del dispositivo es obligatorio.',
-      );
+  public registerDeviceToken(input: { customerId: string; token: string; platform: string; appVersion?: string | null }) {
+    if (!input.token.trim()) throw new NotificationValidationError('El token del dispositivo es obligatorio.');
     if (!['ios', 'android'].includes(input.platform.toLowerCase()))
-      throw new NotificationValidationError(
-        'La plataforma del dispositivo no es válida.',
-      );
+      throw new NotificationValidationError('La plataforma del dispositivo no es válida.');
     return this.repository.registerDeviceToken({
       ...input,
       token: input.token.trim(),
@@ -75,24 +62,16 @@ export class NotificationService {
     const provider = (input.provider ?? 'EXPO').trim().toUpperCase();
     const platform = input.platform.trim().toLowerCase();
     if (!token) {
-      throw new NotificationValidationError(
-        'El token del dispositivo es obligatorio.',
-      );
+      throw new NotificationValidationError('El token del dispositivo es obligatorio.');
     }
     if (!deviceId) {
-      throw new NotificationValidationError(
-        'El identificador del dispositivo es obligatorio.',
-      );
+      throw new NotificationValidationError('El identificador del dispositivo es obligatorio.');
     }
     if (!['ios', 'android'].includes(platform)) {
-      throw new NotificationValidationError(
-        'La plataforma del dispositivo no es válida.',
-      );
+      throw new NotificationValidationError('La plataforma del dispositivo no es válida.');
     }
     if (!provider) {
-      throw new NotificationValidationError(
-        'El proveedor del dispositivo es obligatorio.',
-      );
+      throw new NotificationValidationError('El proveedor del dispositivo es obligatorio.');
     }
     return this.repository.registerMobileDeviceToken({
       customerId: input.customerId,
@@ -115,24 +94,14 @@ export class NotificationService {
     return this.repository.listInAppNotifications(customerId, input);
   }
 
-  public async readInAppNotification(
-    customerId: string,
-    id: string,
-  ): Promise<InAppNotificationRecord> {
-    const notification = await this.repository.markInAppNotificationRead(
-      customerId,
-      id,
-    );
-    if (!notification)
-      throw new NotificationNotFoundError(
-        'La notificación no existe para este cliente.',
-      );
+  public async readInAppNotification(customerId: string, id: string): Promise<InAppNotificationRecord> {
+    const notification = await this.repository.markInAppNotificationRead(customerId, id);
+    if (!notification) throw new NotificationNotFoundError('La notificación no existe para este cliente.');
     return notification;
   }
 
   public async readAllInAppNotifications(customerId: string) {
-    const updated =
-      await this.repository.markAllInAppNotificationsRead(customerId);
+    const updated = await this.repository.markAllInAppNotificationsRead(customerId);
     return {
       updated,
       unreadCount: 0,
@@ -153,9 +122,7 @@ export class NotificationService {
       if (!preferences[input.preference]) return null;
     }
     if (!input.type.trim() || !input.title.trim() || !input.body.trim())
-      throw new NotificationValidationError(
-        'Una notificación requiere tipo, título y contenido.',
-      );
+      throw new NotificationValidationError('Una notificación requiere tipo, título y contenido.');
     return this.repository.createInAppNotification({
       customerId: input.customerId,
       type: input.type.trim(),
@@ -181,29 +148,19 @@ export class NotificationService {
     });
   }
 
-  public async unsubscribe(input: {
-    customerId?: string;
-    guestTokenHash?: string;
-    channel: 'EMAIL' | 'WHATSAPP';
-  }) {
+  public async unsubscribe(input: { customerId?: string; guestTokenHash?: string; channel: 'EMAIL' | 'WHATSAPP' }) {
     this.assertOwner(input);
     await this.repository.unsubscribe(input);
     return { unsubscribed: true };
   }
 
   public async processAbandonedCarts(windowMinutes = 120) {
-    const carts = await this.repository.listAbandonedCarts(
-      new Date(Date.now() - windowMinutes * 60_000),
-    );
+    const carts = await this.repository.listAbandonedCarts(new Date(Date.now() - windowMinutes * 60_000));
     let processed = 0;
     for (const cart of carts) {
       await this.repository.markCartAbandoned(cart.id, new Date());
       const destination = cart.contactPhone || cart.contactEmail;
-      const channel = cart.contactPhone
-        ? 'WHATSAPP'
-        : cart.contactEmail
-          ? 'EMAIL'
-          : null;
+      const channel = cart.contactPhone ? 'WHATSAPP' : cart.contactEmail ? 'EMAIL' : null;
       if (!destination || !channel) continue;
       if (!(await this.repository.findConsent(channel, destination))) continue;
       const idempotencyKey = `abandoned-cart:${cart.id}`;
@@ -227,10 +184,7 @@ export class NotificationService {
         await this.repository.markSent(deliveryId, result.providerMessageId);
         processed += 1;
       } catch (error) {
-        await this.repository.markFailed(
-          deliveryId,
-          error instanceof Error ? error.message : 'Proveedor no disponible',
-        );
+        await this.repository.markFailed(deliveryId, error instanceof Error ? error.message : 'Proveedor no disponible');
       }
     }
     return { scanned: carts.length, notified: processed };
@@ -268,28 +222,91 @@ export class NotificationService {
           idempotencyKey,
         });
         const next = new Date(plan.estimatedDepletionDate);
-        next.setDate(next.getDate() + plan.durationDaysMax - 5);
+        next.setUTCDate(next.getUTCDate() + plan.durationDaysMax - 5);
         await this.repository.markSent(deliveryId, result.providerMessageId);
         await this.repository.advancePlan(plan.id, next);
         notified += 1;
       } catch (error) {
-        await this.repository.markFailed(
-          deliveryId,
-          error instanceof Error ? error.message : 'Proveedor no disponible',
-        );
+        await this.repository.markFailed(deliveryId, error instanceof Error ? error.message : 'Proveedor no disponible');
       }
     }
     return { scanned: plans.length, notified };
   }
 
-  private assertOwner(input: {
-    customerId?: string;
-    guestTokenHash?: string;
-  }): void {
-    if (!input.customerId && !input.guestTokenHash)
-      throw new NotificationValidationError(
-        'Se requiere autenticación o token de pedido.',
-      );
+  public async processReminderSubscriptions() {
+    const reminders = await this.repository.listDueReminderSubscriptions(new Date());
+    let notified = 0;
+    for (const reminder of reminders) {
+      const cycle = reminder.nextReminderAt.toISOString().slice(0, 10);
+      const idempotencyKey = `replenishment-reminder-subscription:${reminder.id}:${cycle}`;
+      if (await this.repository.hasDelivery(idempotencyKey)) continue;
+      const deliveryId = await this.repository.createDelivery({
+        channel: 'EMAIL',
+        idempotencyKey,
+        destinationHash: hash(reminder.email),
+        replenishmentReminderId: reminder.id,
+        customerId: reminder.customerId,
+        template: 'replenishment_reminder',
+      });
+      try {
+        const result = await this.provider.send({
+          channel: 'EMAIL',
+          destination: reminder.email,
+          template: 'replenishment_reminder',
+          variables: { planId: reminder.estimateId, petName: reminder.petName },
+          idempotencyKey,
+        });
+        const next = new Date(reminder.nextReminderAt);
+        next.setUTCDate(next.getUTCDate() + reminder.durationDaysMax);
+        await this.repository.markSent(deliveryId, result.providerMessageId);
+        await this.repository.advanceReminderSubscription(reminder.id, next);
+        notified += 1;
+      } catch (error) {
+        await this.repository.markFailed(deliveryId, error instanceof Error ? error.message : 'Proveedor no disponible');
+      }
+    }
+    return { scanned: reminders.length, notified };
+  }
+
+  public async processPurchaseScheduleReminders() {
+    const schedules = await this.repository.listDuePurchaseSchedules(new Date());
+    let notified = 0;
+    for (const schedule of schedules) {
+      const consent = await this.repository.findConsentForOwner({
+        channel: 'EMAIL',
+        customerId: schedule.customerId,
+      });
+      if (!consent) continue;
+      const cycle = schedule.nextReminderAt.toISOString().slice(0, 10);
+      const idempotencyKey = `purchase-schedule-reminder:${schedule.id}:${cycle}`;
+      if (await this.repository.hasDelivery(idempotencyKey)) continue;
+      const deliveryId = await this.repository.createDelivery({
+        channel: 'EMAIL',
+        idempotencyKey,
+        destinationHash: hash(consent.destination),
+        customerId: schedule.customerId,
+        template: 'replenishment_reminder',
+      });
+      try {
+        const result = await this.provider.send({
+          channel: 'EMAIL',
+          destination: consent.destination,
+          template: 'replenishment_reminder',
+          variables: { planId: schedule.id, petName: schedule.productName },
+          idempotencyKey,
+        });
+        await this.repository.markSent(deliveryId, result.providerMessageId);
+        await this.repository.markPurchaseScheduleAwaitingConfirmation(schedule.id);
+        notified += 1;
+      } catch (error) {
+        await this.repository.markFailed(deliveryId, error instanceof Error ? error.message : 'Proveedor no disponible');
+      }
+    }
+    return { scanned: schedules.length, notified };
+  }
+
+  private assertOwner(input: { customerId?: string; guestTokenHash?: string }): void {
+    if (!input.customerId && !input.guestTokenHash) throw new NotificationValidationError('Se requiere autenticación o token de pedido.');
   }
 }
 
@@ -299,8 +316,6 @@ export class NotificationNotFoundError extends DomainError {
   }
 }
 
-const hash = (value: string) =>
-  createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
+const hash = (value: string) => createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
 
-const hashDeviceId = (value: string) =>
-  createHash('sha256').update(value.trim()).digest('hex');
+const hashDeviceId = (value: string) => createHash('sha256').update(value.trim()).digest('hex');

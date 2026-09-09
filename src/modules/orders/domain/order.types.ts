@@ -1,21 +1,6 @@
-export type OrderStatus =
-  | 'DRAFT'
-  | 'PENDING_PAYMENT'
-  | 'PAID'
-  | 'PROCESSING'
-  | 'SHIPPED'
-  | 'DELIVERED'
-  | 'CANCELLED';
+export type OrderStatus = 'DRAFT' | 'PENDING_PAYMENT' | 'PAID' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 
-export type PaymentStatus =
-  | 'UNPAID'
-  | 'PENDING'
-  | 'PROCESSING'
-  | 'PAID'
-  | 'FAILED'
-  | 'PARTIALLY_REFUNDED'
-  | 'REFUNDED'
-  | 'CHARGED_BACK';
+export type PaymentStatus = 'UNPAID' | 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED' | 'PARTIALLY_REFUNDED' | 'REFUNDED' | 'CHARGED_BACK';
 
 export type OrderPaymentKind = 'PAYMENT' | 'REFUND' | 'CHARGEBACK';
 
@@ -47,6 +32,21 @@ export interface OrderPayment {
   reference: string | null;
   proofUrl: string | null;
   paidAt: Date | null;
+  createdAt: Date;
+}
+
+export interface OrderBenefit {
+  id: string;
+  type: string;
+  scope: string;
+  origin: string;
+  sourceId: string | null;
+  sourceCode: string | null;
+  description: string;
+  percentage: string | null;
+  amount: string;
+  currency: string;
+  metadata: unknown;
   createdAt: Date;
 }
 
@@ -86,6 +86,7 @@ export interface Order {
   statusEvents: Array<{ id: string; status: OrderStatus; occurredAt: Date }>;
   lines: OrderLine[];
   payments: OrderPayment[];
+  benefits: OrderBenefit[];
 }
 
 export interface OrderFilter {

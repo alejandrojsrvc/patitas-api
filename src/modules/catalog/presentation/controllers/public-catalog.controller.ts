@@ -1,19 +1,7 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Header,
-  Param,
-  Post,
-  Query,
-  UseFilters,
-} from '@nestjs/common';
+import { Body, Controller, Get, Header, Param, Post, Query, UseFilters } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CatalogService } from '../../application/catalog.service';
-import {
-  FoodDurationQueryDto,
-  PublicProductsQueryDto,
-} from '../dto/catalog.dto';
+import { FoodDurationQueryDto, PublicProductAutocompleteQueryDto, PublicProductsQueryDto } from '../dto/catalog.dto';
 import {
   FoodDurationResponseDto,
   PublicBrandResponseDto,
@@ -21,6 +9,7 @@ import {
   PublicProductDetailResponseDto,
   PublicProductFacetsResponseDto,
   PublicProductPageResponseDto,
+  PublicProductAutocompleteResponseDto,
   PublicCalculatorProductProjectionResponseDto,
   PublicSitemapProjectionResponseDto,
 } from '../dto/public-catalog-response.dto';
@@ -39,15 +28,9 @@ export class PublicCatalogController {
 
   @Get('products')
   @ApiOkResponse({ type: PublicProductPageResponseDto })
-  @Header(
-    'Cache-Control',
-    'public, max-age=30, s-maxage=60, stale-while-revalidate=300',
-  )
+  @Header('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300')
   public async products(@Query() query: PublicProductsQueryDto) {
-    const [page, promotions] = await Promise.all([
-      this.catalog.listPublicProducts(query),
-      this.activePromotions(),
-    ]);
+    const [page, promotions] = await Promise.all([this.catalog.listPublicProducts(query), this.activePromotions()]);
     return toHttpPage({
       ...page,
       items: page.items.map((product) => toPublicProduct(product, promotions)),
@@ -56,10 +39,7 @@ export class PublicCatalogController {
 
   @Get('products/facets')
   @ApiOkResponse({ type: PublicProductFacetsResponseDto })
-  @Header(
-    'Cache-Control',
-    'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400',
-  )
+  @Header('Cache-Control', 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400')
   public async productFacets(@Query() query: PublicProductsQueryDto) {
     const [facets, brands, categories] = await Promise.all([
       this.catalog.listPublicProductFacets(query),
@@ -70,30 +50,28 @@ export class PublicCatalogController {
   }
   @Get('products/projections/calculator')
   @ApiOkResponse({ type: [PublicCalculatorProductProjectionResponseDto] })
-  @Header(
-    'Cache-Control',
-    'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400',
-  )
+  @Header('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400')
   public calculatorProjection() {
     return this.catalog.listCalculatorProjection();
   }
 
   @Get('products/projections/sitemap')
   @ApiOkResponse({ type: [PublicSitemapProjectionResponseDto] })
-  @Header(
-    'Cache-Control',
-    'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400',
-  )
+  @Header('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400')
   public sitemapProjection() {
     return this.catalog.listSitemapProjection();
   }
 
+  @Get('products/autocomplete')
+  @ApiOkResponse({ type: PublicProductAutocompleteResponseDto })
+  @Header('Cache-Control', 'public, max-age=10, s-maxage=30, stale-while-revalidate=60')
+  public async productAutocomplete(@Query() query: PublicProductAutocompleteQueryDto) {
+    return { items: await this.catalog.autocompleteProducts(query.q) };
+  }
+
   @Get('products/:slug')
   @ApiOkResponse({ type: PublicProductDetailResponseDto })
-  @Header(
-    'Cache-Control',
-    'public, max-age=30, s-maxage=60, stale-while-revalidate=300',
-  )
+  @Header('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300')
   public async product(@Param('slug') slug: string) {
     const detail = await this.catalog.getPublicProductDetail(slug);
     const promotions = await this.activePromotions();
@@ -101,19 +79,13 @@ export class PublicCatalogController {
   }
   @Get('categories')
   @ApiOkResponse({ type: [PublicCategoryResponseDto] })
-  @Header(
-    'Cache-Control',
-    'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400',
-  )
+  @Header('Cache-Control', 'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400')
   public async categories() {
     return toCategoryTree(await this.catalog.listCategories(true));
   }
   @Get('categories/:slug')
   @ApiOkResponse({ type: PublicCategoryResponseDto })
-  @Header(
-    'Cache-Control',
-    'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400',
-  )
+  @Header('Cache-Control', 'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400')
   public async category(@Param('slug') slug: string) {
     const category = await this.catalog.getPublicCategory(slug);
     const tree = toCategoryTree(await this.catalog.listCategories(true));
@@ -132,20 +104,14 @@ export class PublicCatalogController {
   }
   @Get('brands')
   @ApiOkResponse({ type: [PublicBrandResponseDto] })
-  @Header(
-    'Cache-Control',
-    'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400',
-  )
+  @Header('Cache-Control', 'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400')
   public async brands() {
     const brands = await this.catalog.listBrands(true);
     return brands.map(toPublicReference);
   }
   @Get('brands/:slug')
   @ApiOkResponse({ type: PublicBrandResponseDto })
-  @Header(
-    'Cache-Control',
-    'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400',
-  )
+  @Header('Cache-Control', 'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400')
   public brand(@Param('slug') slug: string) {
     return this.catalog.getPublicBrand(slug).then(toPublicReference);
   }
@@ -154,8 +120,7 @@ export class PublicCatalogController {
     return (await this.promotions.list(true)).filter(
       (promotion) =>
         isWithinPeriod(promotion.startsAt, promotion.endsAt) &&
-        (promotion.maxRedemptions === null ||
-          promotion.redemptionCount < promotion.maxRedemptions),
+        (promotion.maxRedemptions === null || promotion.redemptionCount < promotion.maxRedemptions),
     );
   }
 
@@ -166,12 +131,7 @@ export class PublicCatalogController {
   }
 }
 
-const toHttpPage = <T>(page: {
-  items: T[];
-  page: number;
-  perPage: number;
-  total: number;
-}) => ({
+const toHttpPage = <T>(page: { items: T[]; page: number; perPage: number; total: number }) => ({
   items: page.items,
   meta: {
     page: page.page,
@@ -250,12 +210,8 @@ const toPublicProductDetail = (
   relatedProducts: detail.relatedProducts.map(toRelatedProduct),
 });
 
-const toRelatedProduct = (
-  product: Awaited<ReturnType<CatalogService['getPublicProduct']>>,
-) => {
-  const prices = product.variants
-    .map((variant) => Number(variant.salePrice))
-    .filter((price) => Number.isFinite(price) && price > 0);
+const toRelatedProduct = (product: Awaited<ReturnType<CatalogService['getPublicProduct']>>) => {
+  const prices = product.variants.map((variant) => Number(variant.salePrice)).filter((price) => Number.isFinite(price) && price > 0);
   return {
     id: product.id,
     name: product.name,
@@ -316,18 +272,11 @@ const applicablePromotions = (
       endsAt: promotion.endsAt,
     }));
 
-const toFulfillment = (
-  variant: Awaited<
-    ReturnType<CatalogService['getPublicProduct']>
-  >['variants'][number],
-) => {
+const toFulfillment = (variant: Awaited<ReturnType<CatalogService['getPublicProduct']>>['variants'][number]) => {
   if (variant.availableQuantity > 0) {
     return { status: 'IN_STOCK' as const, purchasable: true, leadTimeHours: 0 };
   }
-  if (
-    ['AVAILABLE', 'ON_REQUEST'].includes(variant.supplierStockStatus ?? '') &&
-    variant.supplierLeadTimeHours !== null
-  ) {
+  if (['AVAILABLE', 'ON_REQUEST'].includes(variant.supplierStockStatus ?? '') && variant.supplierLeadTimeHours !== null) {
     return {
       status: 'ON_REQUEST' as const,
       purchasable: false,
@@ -341,19 +290,14 @@ const toFulfillment = (
   };
 };
 
-const toCategoryTree = (
-  categories: Awaited<ReturnType<CatalogService['listCategories']>>,
-): CategoryTreeNode[] => {
+const toCategoryTree = (categories: Awaited<ReturnType<CatalogService['listCategories']>>): CategoryTreeNode[] => {
   const byParent = new Map<string | null, typeof categories>();
   for (const category of categories) {
     const siblings = byParent.get(category.parentId) ?? [];
     siblings.push(category);
     byParent.set(category.parentId, siblings);
   }
-  const build = (
-    parentId: string | null,
-    path = new Set<string>(),
-  ): CategoryTreeNode[] =>
+  const build = (parentId: string | null, path = new Set<string>()): CategoryTreeNode[] =>
     (byParent.get(parentId) ?? []).flatMap((category) => {
       if (path.has(category.id)) return [];
       const nextPath = new Set(path).add(category.id);
@@ -378,12 +322,8 @@ const toRenderableFacets = (
   brands: Awaited<ReturnType<CatalogService['listBrands']>>,
   categories: Awaited<ReturnType<CatalogService['listCategories']>>,
 ) => {
-  const brandCounts = new Map(
-    facets.brands.map((option) => [option.value, option.count]),
-  );
-  const categoryData = new Map(
-    facets.categories.map((option) => [option.value, option]),
-  );
+  const brandCounts = new Map(facets.brands.map((option) => [option.value, option.count]));
+  const categoryData = new Map(facets.categories.map((option) => [option.value, option]));
   const categoryTree = toCategoryTree(categories);
   const decorateCategory = (category: CategoryTreeNode): CategoryFacetNode => {
     const children = category.children.map(decorateCategory);
@@ -392,23 +332,13 @@ const toRenderableFacets = (
       ...category,
       value: category.slug,
       label: category.name,
-      count:
-        (own?.count ?? 0) + children.reduce((sum, item) => sum + item.count, 0),
-      species: Array.from(
-        new Set([
-          ...(own?.species ?? []),
-          ...children.flatMap((item) => item.species),
-        ]),
-      ).sort(),
+      count: (own?.count ?? 0) + children.reduce((sum, item) => sum + item.count, 0),
+      species: Array.from(new Set([...(own?.species ?? []), ...children.flatMap((item) => item.species)])).sort(),
       children,
     };
   };
-  const lifeStageCounts = new Map(
-    facets.lifeStages.map((option) => [option.value, option.count]),
-  );
-  const weightCounts = new Map(
-    facets.weights.map((option) => [option.value, option.count]),
-  );
+  const lifeStageCounts = new Map(facets.lifeStages.map((option) => [option.value, option.count]));
+  const weightCounts = new Map(facets.weights.map((option) => [option.value, option.count]));
   const brandOptions = brands.map((brand) => ({
     value: brand.slug,
     label: brand.name,

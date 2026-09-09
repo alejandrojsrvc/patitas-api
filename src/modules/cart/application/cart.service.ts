@@ -1,7 +1,4 @@
-import {
-  createAnonymousToken,
-  hashAnonymousToken,
-} from '../../../shared/application/anonymous-token';
+import { createAnonymousToken, hashAnonymousToken } from '../../../shared/application/anonymous-token';
 import type { CartRepository } from '../domain/cart.repository';
 import type { Cart, CartItemContext, CartOwner } from '../domain/cart.types';
 import { CartValidationError } from '../domain/cart.error';
@@ -22,14 +19,9 @@ export class CartService {
     return this.repository.findActiveSummary(owner);
   }
 
-  public async getOrCreate(
-    owner: CartOwner,
-  ): Promise<{ cart: Cart; token?: string }> {
-    const token =
-      owner.customerId || owner.tokenHash ? undefined : createAnonymousToken();
-    const resolvedOwner = token
-      ? { ...owner, tokenHash: hashAnonymousToken(token) }
-      : owner;
+  public async getOrCreate(owner: CartOwner): Promise<{ cart: Cart; token?: string }> {
+    const token = owner.customerId || owner.tokenHash ? undefined : createAnonymousToken();
+    const resolvedOwner = token ? { ...owner, tokenHash: hashAnonymousToken(token) } : owner;
     const existing = await this.repository.findActive(resolvedOwner);
     if (existing)
       return {
@@ -40,79 +32,44 @@ export class CartService {
     return { cart: await this.resolveMedia(cart), ...(token ? { token } : {}) };
   }
 
-  public async setItem(
-    owner: CartOwner,
-    variantId: string,
-    quantity: number,
-    context?: CartItemContext,
-  ) {
+  public async setItem(owner: CartOwner, variantId: string, quantity: number, context?: CartItemContext) {
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
       throw new CartValidationError('La cantidad debe estar entre 1 y 99.');
     }
     const current = await this.getOrCreate(owner);
-    const resolvedOwner =
-      owner.customerId || owner.tokenHash
-        ? owner
-        : { tokenHash: hashAnonymousToken(current.token!) };
-    const cart = await this.resolveMedia(
-      await this.repository.setItem(
-        resolvedOwner,
-        variantId,
-        quantity,
-        context,
-      ),
-    );
+    const resolvedOwner = owner.customerId || owner.tokenHash ? owner : { tokenHash: hashAnonymousToken(current.token!) };
+    const cart = await this.resolveMedia(await this.repository.setItem(resolvedOwner, variantId, quantity, context));
     return { ...cart, ...(current.token ? { cartToken: current.token } : {}) };
   }
 
-  public async reorder(
-    owner: CartOwner,
-    variantId: string,
-    context: CartItemContext,
-    quantity = 1,
-  ) {
-    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99)
-      throw new CartValidationError('La cantidad debe estar entre 1 y 99.');
+  public async reorder(owner: CartOwner, variantId: string, context: CartItemContext, quantity = 1) {
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) throw new CartValidationError('La cantidad debe estar entre 1 y 99.');
     const current = await this.getOrCreate(owner);
-    const resolvedOwner =
-      owner.customerId || owner.tokenHash
-        ? owner
-        : { ...owner, tokenHash: hashAnonymousToken(current.token!) };
-    const cart = await this.resolveMedia(
-      await this.repository.reorderItem(
-        resolvedOwner,
-        variantId,
-        quantity,
-        context,
-      ),
-    );
+    const resolvedOwner = owner.customerId || owner.tokenHash ? owner : { ...owner, tokenHash: hashAnonymousToken(current.token!) };
+    const cart = await this.resolveMedia(await this.repository.reorderItem(resolvedOwner, variantId, quantity, context));
     return { ...cart, ...(current.token ? { cartToken: current.token } : {}) };
+  }
+
+  public async setItemQuantity(owner: CartOwner, itemId: string, quantity: number) {
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+      throw new CartValidationError('La cantidad debe estar entre 1 y 99.');
+    }
+    return this.resolveMedia(await this.repository.setItemQuantity(owner, itemId, quantity));
   }
 
   public async removeItem(owner: CartOwner, variantId: string) {
     const current = await this.getOrCreate(owner);
-    const resolvedOwner =
-      owner.customerId || owner.tokenHash
-        ? owner
-        : { tokenHash: hashAnonymousToken(current.token!) };
-    const cart = await this.resolveMedia(
-      await this.repository.removeItem(resolvedOwner, variantId),
-    );
+    const resolvedOwner = owner.customerId || owner.tokenHash ? owner : { tokenHash: hashAnonymousToken(current.token!) };
+    const cart = await this.resolveMedia(await this.repository.removeItem(resolvedOwner, variantId));
     return { ...cart, ...(current.token ? { cartToken: current.token } : {}) };
   }
 
-  public async merge(
-    token: string,
-    customerId: string,
-    source: CartOwner['source'] = 'STORE',
-  ) {
-    return this.resolveMedia(
-      await this.repository.merge(
-        hashAnonymousToken(token),
-        customerId,
-        source,
-      ),
-    );
+  public async removeItemById(owner: CartOwner, itemId: string) {
+    return this.resolveMedia(await this.repository.removeItemById(owner, itemId));
+  }
+
+  public async merge(token: string, customerId: string, source: CartOwner['source'] = 'STORE') {
+    return this.resolveMedia(await this.repository.merge(hashAnonymousToken(token), customerId, source));
   }
 
   public listAbandoned(page: number, perPage: number) {

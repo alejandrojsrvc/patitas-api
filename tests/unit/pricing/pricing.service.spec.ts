@@ -1,10 +1,7 @@
 import { PricingCalculator } from '../../../src/modules/pricing/domain/pricing-calculator';
 import { PricingService } from '../../../src/modules/pricing/application/pricing.service';
 import type { PricingRepository } from '../../../src/modules/pricing/domain/repositories/pricing.repository';
-import type {
-  PricingReview,
-  PricingReviewSaveInput,
-} from '../../../src/modules/pricing/domain/pricing.types';
+import type { PricingReview, PricingReviewSaveInput } from '../../../src/modules/pricing/domain/pricing.types';
 
 describe('PricingService', () => {
   it('creates pending reviews for every eligible variant in a scenario', async () => {
@@ -36,17 +33,7 @@ describe('PricingService', () => {
       supplierUnitCost: '10000.00',
     };
     const saveReviews = jest
-      .fn<
-        Promise<
-          Array<
-            Pick<
-              PricingReview,
-              'id' | 'variantId' | 'recommendedPrice' | 'commercialPrice'
-            >
-          >
-        >,
-        [PricingReviewSaveInput[]]
-      >()
+      .fn<Promise<Array<Pick<PricingReview, 'id' | 'variantId' | 'recommendedPrice' | 'commercialPrice'>>>, [PricingReviewSaveInput[]]>()
       .mockResolvedValue([
         {
           id: 'review-id',
@@ -56,9 +43,7 @@ describe('PricingService', () => {
         },
       ]);
     const repository = {
-      getRules: jest
-        .fn()
-        .mockResolvedValue({ active: activeRules, draft: null }),
+      getRules: jest.fn().mockResolvedValue({ active: activeRules, draft: null }),
       getPricingScenarioAllocation: jest.fn().mockResolvedValue({
         scenarioId: 'scenario-id',
         fixedCostPerUnit: '100.00',
@@ -98,11 +83,7 @@ describe('PricingService', () => {
       paymentFeePercent: '3.10',
       paymentFeeVatPercent: '21.00',
     });
-    expect(savedInputs[0]?.calculation.recommendedPrice).toEqual(
-      expect.any(String),
-    );
-    expect(savedInputs[0]?.calculation.commercialPrice).toEqual(
-      expect.any(String),
-    );
+    expect(savedInputs[0]?.calculation.recommendedPrice).toEqual(expect.any(String));
+    expect(savedInputs[0]?.calculation.commercialPrice).toEqual(expect.any(String));
   });
 });

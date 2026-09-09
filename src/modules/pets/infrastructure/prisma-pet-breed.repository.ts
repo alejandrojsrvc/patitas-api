@@ -10,10 +10,7 @@ type PetBreedRecord = Prisma.PetBreedGetPayload<Prisma.PetBreedDefaultArgs>;
 export class PrismaPetBreedRepository implements PetBreedRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  public async listActive(
-    species?: string,
-    query?: string,
-  ): Promise<PetBreed[]> {
+  public async listActive(species?: string, query?: string): Promise<PetBreed[]> {
     const rows = await this.prisma.petBreed.findMany({
       where: {
         active: true,
@@ -25,10 +22,7 @@ export class PrismaPetBreedRepository implements PetBreedRepository {
     return rows.map(mapBreed);
   }
 
-  public async findActiveForSpecies(
-    id: string,
-    species?: string,
-  ): Promise<PetBreed | null> {
+  public async findActiveForSpecies(id: string, species?: string): Promise<PetBreed | null> {
     const row = await this.prisma.petBreed.findFirst({
       where: {
         id,

@@ -1,8 +1,5 @@
 import type { IdentitySession } from '../../../shared/application/ports/identity-provider.interface';
-import type {
-  CustomerAddress,
-  CustomerProfile,
-} from '../../customers/domain/customer.types';
+import type { CustomerAddress, CustomerProfile } from '../../customers/domain/customer.types';
 import type { PetProfile, PetSex } from '../../pets/domain/pet.types';
 import type { User } from '../../users/domain/entities/user.entity';
 
@@ -14,10 +11,7 @@ export const toMobileCustomer = (customer: CustomerProfile) => ({
   avatarUrl: customer.avatarUrl,
 });
 
-export const toMobileUser = (
-  user: Pick<User, 'id' | 'email' | 'role'>,
-  customer: CustomerProfile,
-) => ({
+export const toMobileUser = (user: Pick<User, 'id' | 'email' | 'role'>, customer: CustomerProfile) => ({
   id: user.id,
   email: user.email,
   role: user.role,
@@ -67,46 +61,30 @@ export const toMobilePet = (pet: PetProfile) => ({
   updatedAt: pet.updatedAt.toISOString(),
 });
 
-export const toMobileBreed = (breed: {
-  id: string;
-  species: string;
-  name: string;
-  sortOrder: number;
-}) => ({
+export const toMobileBreed = (breed: { id: string; species: string; name: string; sortOrder: number }) => ({
   id: breed.id,
   species: breed.species,
   name: breed.name,
   sortOrder: breed.sortOrder,
 });
 
-export const normalizePetSex = (
-  sex: string | null | undefined,
-): PetSex | null => (sex ? (sex.toLowerCase() as PetSex) : null);
+export const normalizePetSex = (sex: string | null | undefined): PetSex | null => (sex ? (sex.toLowerCase() as PetSex) : null);
 
 export const calculateAge = (birthDate: Date | null): number | null => {
   if (!birthDate) return null;
   const today = new Date();
   let age = today.getUTCFullYear() - birthDate.getUTCFullYear();
   const birthdayNotReached =
-    today.getUTCMonth() < birthDate.getUTCMonth() ||
-    (today.getUTCMonth() === birthDate.getUTCMonth() &&
-      today.getUTCDate() < birthDate.getUTCDate());
+    today.getUTCMonth() < birthDate.getUTCMonth() || (today.getUTCMonth() === birthDate.getUTCMonth() && today.getUTCDate() < birthDate.getUTCDate());
   if (birthdayNotReached) age -= 1;
   return Math.max(0, age);
 };
 
-const toMobileAge = (
-  birthDate: Date | null,
-): { value: number; unit: 'months' | 'years' } | null => {
+const toMobileAge = (birthDate: Date | null): { value: number; unit: 'months' | 'years' } | null => {
   if (!birthDate) return null;
   const today = new Date();
-  let months =
-    (today.getUTCFullYear() - birthDate.getUTCFullYear()) * 12 +
-    today.getUTCMonth() -
-    birthDate.getUTCMonth();
+  let months = (today.getUTCFullYear() - birthDate.getUTCFullYear()) * 12 + today.getUTCMonth() - birthDate.getUTCMonth();
   if (today.getUTCDate() < birthDate.getUTCDate()) months -= 1;
   months = Math.max(0, months);
-  return months < 24
-    ? { value: months, unit: 'months' }
-    : { value: Math.floor(months / 12), unit: 'years' };
+  return months < 24 ? { value: months, unit: 'months' } : { value: Math.floor(months / 12), unit: 'years' };
 };

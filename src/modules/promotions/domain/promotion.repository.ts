@@ -1,9 +1,4 @@
-import type {
-  Coupon,
-  CouponInput,
-  Promotion,
-  PromotionInput,
-} from './promotion.types';
+import type { Coupon, CouponInput, Promotion, PromotionInput } from './promotion.types';
 
 export const PROMOTION_REPOSITORY = Symbol('PROMOTION_REPOSITORY');
 

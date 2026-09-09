@@ -1,15 +1,7 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpStatus,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
 import type { Response } from 'express';
 import { DomainError } from '../../../shared/domain/domain-error';
-import {
-  SupplierConflictError,
-  SupplierNotFoundError,
-} from '../application/supplier.service';
+import { SupplierConflictError, SupplierNotFoundError } from '../application/supplier.service';
 
 import { errorResponse } from '../../../shared/presentation/error-response';
 

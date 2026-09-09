@@ -6,20 +6,14 @@ import { ConfigService } from '@nestjs/config';
 import { assertLocalDatabaseUrl } from './database-safety';
 import { loadProjectEnv } from './load-project-env';
 import { PrismaClient } from '../src/infrastructure/database/generated/prisma/client';
-import { SupabaseAdminClient } from '../src/infrastructure/storage/supabase/supabase-admin.client';
-import { SupabaseStorageAdapter } from '../src/infrastructure/storage/supabase/supabase-storage.adapter';
+import { CloudflareR2StorageAdapter } from '../src/infrastructure/storage/cloudflare/cloudflare-r2-storage.adapter';
+import { MinioStorageAdapter } from '../src/infrastructure/storage/minio/minio-storage.adapter';
 import type { StorageProvider } from '../src/shared/application/ports/storage-provider.interface';
-import type {
-  CatalogBrandResearchResult,
-  CatalogResearchRunResult,
-  CatalogResearchProductResult,
-} from '../tools/catalog-research/types';
+import type { CatalogBrandResearchResult, CatalogResearchRunResult, CatalogResearchProductResult } from '../tools/catalog-research/types';
 
 loadProjectEnv();
 
-const scriptArgs = process.argv
-  .slice(2)
-  .filter((argument) => argument !== '--');
+const scriptArgs = process.argv.slice(2).filter((argument) => argument !== '--');
 const JSON_PATH = scriptArgs[0];
 const APPROVAL_PATH = scriptArgs[1];
 const DRY_RUN = scriptArgs.includes('--dry-run');
@@ -34,23 +28,13 @@ interface ApprovalFile {
 
 const main = async (): Promise<void> => {
   if (!JSON_PATH) {
-    throw new Error(
-      'Uso: pnpm catalog:research:import -- <resultado.json> [aprobacion.json] [--dry-run].',
-    );
+    throw new Error('Uso: pnpm catalog:research:import -- <resultado.json> [aprobacion.json] [--dry-run].');
   }
   const result = parseResult(readFileSync(resolve(JSON_PATH), 'utf8'));
-  const approved = APPROVAL_PATH
-    ? selectApprovedProducts(
-        result,
-        readFileSync(resolve(APPROVAL_PATH), 'utf8'),
-      )
-    : result.products;
-  if (approved.length === 0)
-    throw new Error('La aprobación no contiene productos del resultado.');
+  const approved = APPROVAL_PATH ? selectApprovedProducts(result, readFileSync(resolve(APPROVAL_PATH), 'utf8')) : result.products;
+  if (approved.length === 0) throw new Error('La aprobación no contiene productos del resultado.');
 
-  console.log(
-    `Resultado válido: ${approved.length} productos aprobados, ${countObservations(approved)} observaciones de retail.`,
-  );
+  console.log(`Resultado válido: ${approved.length} productos aprobados, ${countObservations(approved)} observaciones de retail.`);
   if (DRY_RUN) return;
 
   const connectionString = process.env['DATABASE_URL'];
@@ -73,9 +57,7 @@ const main = async (): Promise<void> => {
   } finally {
     await prisma.$disconnect();
   }
-  console.log(
-    `Importación aprobada completada para ${approved.length} productos en estado DRAFT.`,
-  );
+  console.log(`Importación aprobada completada para ${approved.length} productos en estado DRAFT.`);
 };
 
 const importProduct = async (
@@ -83,8 +65,7 @@ const importProduct = async (
   result: CatalogResearchProductResult,
   run: CatalogResearchRunResult,
 ): Promise<ImportedProduct> => {
-  if (!result.product)
-    throw new Error(`${result.canonicalKey} no tiene ficha canónica.`);
+  if (!result.product) throw new Error(`${result.canonicalKey} no tiene ficha canónica.`);
   const category = await tx.category.findUnique({
     where: { slug: 'alimento-seco' },
   });
@@ -107,14 +88,8 @@ const importProduct = async (
       categoryId: category.id,
       species: result.product.attributes.species ?? result.expected.species,
       line: result.product.attributes.line ?? result.expected.line ?? null,
-      lifeStage:
-        result.product.attributes.lifeStage ??
-        result.expected.lifeStage ??
-        null,
-      breedSize:
-        result.product.attributes.breedSize ??
-        result.expected.breedSize ??
-        null,
+      lifeStage: result.product.attributes.lifeStage ?? result.expected.lifeStage ?? null,
+      breedSize: result.product.attributes.breedSize ?? result.expected.breedSize ?? null,
     },
     create: {
       name,
@@ -126,21 +101,12 @@ const importProduct = async (
       categoryId: category.id,
       species: result.product.attributes.species ?? result.expected.species,
       line: result.product.attributes.line ?? result.expected.line ?? null,
-      lifeStage:
-        result.product.attributes.lifeStage ??
-        result.expected.lifeStage ??
-        null,
-      breedSize:
-        result.product.attributes.breedSize ??
-        result.expected.breedSize ??
-        null,
+      lifeStage: result.product.attributes.lifeStage ?? result.expected.lifeStage ?? null,
+      breedSize: result.product.attributes.breedSize ?? result.expected.breedSize ?? null,
       status: 'DRAFT',
     },
   });
-  const weights = uniqueNumbers([
-    ...result.product.presentations,
-    ...(result.expected.weightsGrams ?? []),
-  ]);
+  const weights = uniqueNumbers([...result.product.presentations, ...(result.expected.weightsGrams ?? [])]);
   const variants = new Map<number, string>();
   for (const weightGrams of weights) {
     const variant = await tx.productVariant.upsert({
@@ -181,8 +147,7 @@ const importProduct = async (
   });
   await importFeedingGuide(tx, product.id, result);
   for (const observation of result.retailObservations) {
-    if (observation.matchStatus === 'BLOCKED' || !observation.weightGrams)
-      continue;
+    if (observation.matchStatus === 'BLOCKED' || !observation.weightGrams) continue;
     const variantId = variants.get(observation.weightGrams);
     if (!variantId) continue;
     await tx.retailPriceObservation.create({
@@ -216,9 +181,7 @@ const importProduct = async (
 const importMedia = async (
   prisma: PrismaClient,
   productId: string,
-  image:
-    | NonNullable<CatalogResearchProductResult['product']>['images'][number]
-    | null,
+  image: NonNullable<CatalogResearchProductResult['product']>['images'][number] | null,
   storage: StorageProvider,
 ): Promise<void> => {
   if (!image) return;
@@ -254,32 +217,21 @@ const importMedia = async (
 
 interface ImportedProduct {
   productId: string;
-  image:
-    | NonNullable<CatalogResearchProductResult['product']>['images'][number]
-    | null;
+  image: NonNullable<CatalogResearchProductResult['product']>['images'][number] | null;
 }
 
-const createStorageProvider = (): StorageProvider =>
-  new SupabaseStorageAdapter(new SupabaseAdminClient(new ConfigService()));
+const createStorageProvider = (): StorageProvider => {
+  const config = new ConfigService();
+  return config.get<string>('STORAGE_PROVIDER') === 'r2' ? new CloudflareR2StorageAdapter(config) : new MinioStorageAdapter(config);
+};
 
-const downloadImage = async (
-  sourceUrl: string,
-): Promise<{ data: Uint8Array; contentType: string }> => {
+const downloadImage = async (sourceUrl: string): Promise<{ data: Uint8Array; contentType: string }> => {
   const response = await fetch(sourceUrl, { redirect: 'follow' });
-  if (!response.ok)
-    throw new Error(`HTTP ${response.status} al descargar ${sourceUrl}.`);
-  const contentType = (response.headers.get('content-type') ?? '').split(
-    ';',
-  )[0];
-  if (
-    !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(
-      contentType,
-    )
-  )
-    throw new Error(`Tipo de imagen no permitido en ${sourceUrl}.`);
+  if (!response.ok) throw new Error(`HTTP ${response.status} al descargar ${sourceUrl}.`);
+  const contentType = (response.headers.get('content-type') ?? '').split(';')[0];
+  if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(contentType)) throw new Error(`Tipo de imagen no permitido en ${sourceUrl}.`);
   const data = new Uint8Array(await response.arrayBuffer());
-  if (data.byteLength === 0 || data.byteLength > MAX_IMAGE_BYTES)
-    throw new Error(`Tamaño de imagen inválido en ${sourceUrl}.`);
+  if (data.byteLength === 0 || data.byteLength > MAX_IMAGE_BYTES) throw new Error(`Tamaño de imagen inválido en ${sourceUrl}.`);
   return { data, contentType };
 };
 
@@ -329,23 +281,15 @@ const importFeedingGuide = async (
 };
 
 const parseResult = (value: string): CatalogResearchRunResult => {
-  const result = JSON.parse(value) as
-    CatalogResearchRunResult | CatalogBrandResearchResult;
-  if (result.schemaVersion === 'catalog-research.brand-result.v1')
-    return normalizeBrandResult(result);
-  if (
-    result.schemaVersion !== 'catalog-research.v1' ||
-    !result.runId ||
-    !Array.isArray(result.products)
-  ) {
+  const result = JSON.parse(value) as CatalogResearchRunResult | CatalogBrandResearchResult;
+  if (result.schemaVersion === 'catalog-research.brand-result.v1') return normalizeBrandResult(result);
+  if (result.schemaVersion !== 'catalog-research.v1' || !result.runId || !Array.isArray(result.products)) {
     throw new Error('El resultado no cumple catalog-research.v1.');
   }
   return result;
 };
 
-const normalizeBrandResult = (
-  result: CatalogBrandResearchResult,
-): CatalogResearchRunResult => ({
+const normalizeBrandResult = (result: CatalogBrandResearchResult): CatalogResearchRunResult => ({
   schemaVersion: 'catalog-research.v1',
   runId: result.runId,
   extractorVersion: 'catalog-research.brand-result.v1',
@@ -364,9 +308,7 @@ const normalizeBrandResult = (
       source: {
         url: product.sourceUrl,
         fetchedAt: new Date().toISOString(),
-        contentHash: createHash('sha256')
-          .update(JSON.stringify(product))
-          .digest('hex'),
+        contentHash: createHash('sha256').update(JSON.stringify(product)).digest('hex'),
         status: 'SUCCESS',
         warnings: [],
       },
@@ -378,9 +320,7 @@ const normalizeBrandResult = (
         presentations: product.presentations,
         feedingGuide: product.feedingGuide.flatMap((entry) => {
           if (entry.petWeightKgMin === null) return [];
-          const conditions: Record<string, string> = entry.condition
-            ? { condition: entry.condition }
-            : {};
+          const conditions: Record<string, string> = entry.condition ? { condition: entry.condition } : {};
           return [
             {
               petWeightKgMin: entry.petWeightKgMin,
@@ -421,50 +361,33 @@ const normalizeBrandResult = (
   errors: result.errors,
 });
 
-const inferSpecies = (name: string | null): 'DOG' | 'CAT' =>
-  /gato|gatito|cat/i.test(name ?? '') ? 'CAT' : 'DOG';
+const inferSpecies = (name: string | null): 'DOG' | 'CAT' => (/gato|gatito|cat/i.test(name ?? '') ? 'CAT' : 'DOG');
 
 const parseApproval = (value: string): ApprovalFile => {
   const approval = JSON.parse(value) as ApprovalFile;
-  if (
-    approval.schemaVersion !== 'catalog-research.approval.v1' ||
-    !approval.runId ||
-    !Array.isArray(approval.approvedProducts)
-  ) {
+  if (approval.schemaVersion !== 'catalog-research.approval.v1' || !approval.runId || !Array.isArray(approval.approvedProducts)) {
     throw new Error('La aprobación no cumple catalog-research.approval.v1.');
   }
   return approval;
 };
 
-const selectApprovedProducts = (
-  result: CatalogResearchRunResult,
-  value: string,
-): CatalogResearchProductResult[] => {
+const selectApprovedProducts = (result: CatalogResearchRunResult, value: string): CatalogResearchProductResult[] => {
   const approval = parseApproval(value);
   if (approval.runId !== result.runId) {
     throw new Error('La aprobación no corresponde al runId del resultado.');
   }
   return result.products.filter(
-    (product) =>
-      approval.approvedProducts.includes(product.canonicalKey) ||
-      approval.approvedProducts.includes(product.source.url),
+    (product) => approval.approvedProducts.includes(product.canonicalKey) || approval.approvedProducts.includes(product.source.url),
   );
 };
 
 const countObservations = (products: CatalogResearchProductResult[]): number =>
-  products.reduce(
-    (total, product) => total + product.retailObservations.length,
-    0,
-  );
+  products.reduce((total, product) => total + product.retailObservations.length, 0);
 
 const uniqueNumbers = (values: number[]): number[] =>
-  values.filter(
-    (value, index) =>
-      Number.isInteger(value) && value > 0 && values.indexOf(value) === index,
-  );
+  values.filter((value, index) => Number.isInteger(value) && value > 0 && values.indexOf(value) === index);
 
-const decimalOrNull = (value: number | null): string | null =>
-  value === null ? null : value.toFixed(2);
+const decimalOrNull = (value: number | null): string | null => (value === null ? null : value.toFixed(2));
 
 const slugify = (value: string): string =>
   value
@@ -475,10 +398,6 @@ const slugify = (value: string): string =>
     .replace(/^-+|-+$/g, '');
 
 main().catch((error: unknown) => {
-  console.error(
-    error instanceof Error
-      ? error.message
-      : 'No se pudo importar la investigación.',
-  );
+  console.error(error instanceof Error ? error.message : 'No se pudo importar la investigación.');
   process.exit(1);
 });

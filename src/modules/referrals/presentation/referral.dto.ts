@@ -1,14 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsBoolean,
-  IsDate,
-  IsIn,
-  IsNumberString,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsBoolean, IsDate, IsIn, IsNumberString, IsOptional, IsString, MaxLength } from 'class-validator';
 export class CreateReferralCampaignDto {
   @ApiProperty() @IsString() @MaxLength(120) public name!: string;
   @ApiProperty({ enum: ['PERCENTAGE', 'FIXED'] })

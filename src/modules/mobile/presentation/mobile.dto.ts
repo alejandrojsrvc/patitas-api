@@ -92,9 +92,7 @@ export class MobileAddressCreateDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() public isDefault?: boolean;
 }
 
-export class MobileAddressUpdateDto extends PartialType(
-  MobileAddressCreateDto,
-) {}
+export class MobileAddressUpdateDto extends PartialType(MobileAddressCreateDto) {}
 
 export class MobilePetCreateDto {
   @ApiProperty() @IsString() @MaxLength(80) public name!: string;
@@ -121,8 +119,7 @@ export class MobilePetCreateDto {
   @ApiPropertyOptional({ enum: ['male', 'female', 'unknown'], nullable: true })
   @IsOptional()
   @IsIn(['male', 'female', 'unknown', 'MALE', 'FEMALE', 'UNKNOWN'])
-  public sex?:
-    'male' | 'female' | 'unknown' | 'MALE' | 'FEMALE' | 'UNKNOWN' | null;
+  public sex?: 'male' | 'female' | 'unknown' | 'MALE' | 'FEMALE' | 'UNKNOWN' | null;
   @ApiPropertyOptional({ format: 'date', nullable: true })
   @IsOptional()
   @IsDateString()

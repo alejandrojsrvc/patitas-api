@@ -6,4 +6,8 @@ export class ResetPasswordUseCase {
   public execute(token: string, password: string): Promise<void> {
     return this.identityProvider.resetPassword(token, password);
   }
+
+  public acceptInvitation(token: string, password: string): Promise<void> {
+    return this.identityProvider.acceptInvitation(token, password);
+  }
 }

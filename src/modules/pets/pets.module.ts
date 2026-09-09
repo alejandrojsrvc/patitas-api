@@ -4,10 +4,7 @@ import { AuthModule } from '../auth/auth.module';
 import { CustomersModule } from '../customers/customers.module';
 import { PetService } from './application/pet.service';
 import { PetBreedService } from './application/pet-breed.service';
-import {
-  PET_BREED_REPOSITORY,
-  type PetBreedRepository,
-} from './domain/pet-breed.repository';
+import { PET_BREED_REPOSITORY, type PetBreedRepository } from './domain/pet-breed.repository';
 import { PET_REPOSITORY, type PetRepository } from './domain/pet.repository';
 import { PrismaPetRepository } from './infrastructure/prisma-pet.repository';
 import { PrismaPetBreedRepository } from './infrastructure/prisma-pet-breed.repository';
@@ -22,14 +19,12 @@ import { PetController } from './presentation/pet.controller';
     {
       provide: PetService,
       inject: [PET_REPOSITORY, PET_BREED_REPOSITORY],
-      useFactory: (repository: PetRepository, breeds: PetBreedRepository) =>
-        new PetService(repository, breeds),
+      useFactory: (repository: PetRepository, breeds: PetBreedRepository) => new PetService(repository, breeds),
     },
     {
       provide: PetBreedService,
       inject: [PET_BREED_REPOSITORY],
-      useFactory: (repository: PetBreedRepository) =>
-        new PetBreedService(repository),
+      useFactory: (repository: PetBreedRepository) => new PetBreedService(repository),
     },
   ],
   exports: [PetService, PetBreedService],

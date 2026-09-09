@@ -1,17 +1,15 @@
 import { Module } from '@nestjs/common';
+import { PrismaModule } from '../database/prisma.module';
 import { IDENTITY_PROVIDER } from '../../shared/application/ports/identity-provider.interface';
-import { SupabaseAuthClient } from './supabase/supabase-auth.client';
-import { SupabaseIdentityAdapter } from './supabase/supabase-identity.adapter';
-import { SupabaseIdentityAdminClient } from './supabase/supabase-identity-admin.client';
+import { JwtIdentityAdapter } from './jwt/jwt-identity.adapter';
 
 @Module({
+  imports: [PrismaModule],
   providers: [
-    SupabaseAuthClient,
-    SupabaseIdentityAdminClient,
-    SupabaseIdentityAdapter,
+    JwtIdentityAdapter,
     {
       provide: IDENTITY_PROVIDER,
-      useExisting: SupabaseIdentityAdapter,
+      useExisting: JwtIdentityAdapter,
     },
   ],
   exports: [IDENTITY_PROVIDER],

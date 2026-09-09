@@ -2,14 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import type { CartRepository } from '../domain/cart.repository';
-import type {
-  Cart,
-  CartItem,
-  CartItemContext,
-  CartOwner,
-  CartPage,
-  CartSummary,
-} from '../domain/cart.types';
+import type { Cart, CartItem, CartItemContext, CartOwner, CartPage, CartSummary } from '../domain/cart.types';
 import { CartValidationError } from '../domain/cart.error';
 
 const cartInclude = {
@@ -28,10 +21,7 @@ const cartInclude = {
   },
 } as const;
 type CartRecord = Prisma.CartGetPayload<{ include: typeof cartInclude }>;
-type CartTransaction = Pick<
-  PrismaService,
-  'cart' | 'cartItem' | 'productVariant' | 'pet' | 'replenishmentPlan'
->;
+type CartTransaction = Pick<PrismaService, 'cart' | 'cartItem' | 'productVariant' | 'pet' | 'replenishmentPlan'>;
 
 @Injectable()
 export class PrismaCartRepository implements CartRepository {
@@ -42,9 +32,7 @@ export class PrismaCartRepository implements CartRepository {
       where: {
         status: 'ACTIVE',
         lastActivityAt: { gte: activeCartThreshold() },
-        ...(owner.customerId
-          ? { customerId: owner.customerId }
-          : { anonymousTokenHash: owner.tokenHash }),
+        ...(owner.customerId ? { customerId: owner.customerId } : { anonymousTokenHash: owner.tokenHash }),
         source: owner.source ?? 'STORE',
       },
       include: cartInclude,
@@ -53,16 +41,12 @@ export class PrismaCartRepository implements CartRepository {
     return record ? mapCart(record) : null;
   }
 
-  public async findActiveSummary(
-    owner: CartOwner,
-  ): Promise<CartSummary | null> {
+  public async findActiveSummary(owner: CartOwner): Promise<CartSummary | null> {
     const record = await this.prisma.cart.findFirst({
       where: {
         status: 'ACTIVE',
         lastActivityAt: { gte: activeCartThreshold() },
-        ...(owner.customerId
-          ? { customerId: owner.customerId }
-          : { anonymousTokenHash: owner.tokenHash }),
+        ...(owner.customerId ? { customerId: owner.customerId } : { anonymousTokenHash: owner.tokenHash }),
         source: owner.source ?? 'STORE',
       },
       select: {
@@ -80,13 +64,7 @@ export class PrismaCartRepository implements CartRepository {
     return {
       id: record.id,
       itemCount: record.items.reduce((total, item) => total + item.quantity, 0),
-      subtotal: record.items
-        .reduce(
-          (total, item) =>
-            total + Number(item.variant.salePrice ?? 0) * item.quantity,
-          0,
-        )
-        .toFixed(2),
+      subtotal: record.items.reduce((total, item) => total + Number(item.variant.salePrice ?? 0) * item.quantity, 0).toFixed(2),
       currency: 'ARS',
     };
   }
@@ -114,8 +92,7 @@ export class PrismaCartRepository implements CartRepository {
           include: cartInclude,
           orderBy: { updatedAt: 'desc' },
         });
-        if (existing?.status === 'ACTIVE' || existing?.status === 'ABANDONED')
-          return mapCart(existing);
+        if (existing?.status === 'ACTIVE' || existing?.status === 'ABANDONED') return mapCart(existing);
         await this.prisma.cart.updateMany({
           where: { anonymousTokenHash: owner.tokenHash },
           data: { anonymousTokenHash: null },
@@ -125,36 +102,25 @@ export class PrismaCartRepository implements CartRepository {
     throw new CartValidationError('No se pudo crear el carrito.');
   }
 
-  public async setItem(
-    owner: CartOwner,
-    variantId: string,
-    quantity: number,
-    context?: CartItemContext,
-  ): Promise<Cart> {
+  public async setItem(owner: CartOwner, variantId: string, quantity: number, context?: CartItemContext): Promise<Cart> {
     return this.prisma.$transaction(async (transaction) => {
       const cart = await findOrCreateTransactionCart(transaction, owner);
+      const itemContextKey = contextKey(context);
       const variant = await transaction.productVariant.findUnique({
         where: { id: variantId },
         include: { product: true, inventory: true },
       });
-      if (
-        !variant ||
-        !variant.active ||
-        variant.product.status !== 'ACTIVE' ||
-        !variant.salePrice ||
-        Number(variant.salePrice) <= 0
-      ) {
-        throw new CartValidationError(
-          'La variante no está disponible para la venta.',
-        );
+      if (!variant || !variant.active || variant.product.status !== 'ACTIVE' || !variant.salePrice || Number(variant.salePrice) <= 0) {
+        throw new CartValidationError('La variante no está disponible para la venta.');
       }
       await validateContext(transaction, owner, context);
       await transaction.cartItem.upsert({
-        where: { cartId_variantId: { cartId: cart.id, variantId } },
+        where: { cartId_variantId_contextKey: { cartId: cart.id, variantId, contextKey: itemContextKey } },
         create: {
           cartId: cart.id,
           variantId,
           quantity,
+          contextKey: itemContextKey,
           ...(context ?? { role: 'EXTRA', petId: null, planId: null }),
         },
         update: { quantity, ...(context ?? {}) },
@@ -176,31 +142,19 @@ export class PrismaCartRepository implements CartRepository {
     });
   }
 
-  public async reorderItem(
-    owner: CartOwner,
-    variantId: string,
-    quantity: number,
-    context: CartItemContext,
-  ): Promise<Cart> {
+  public async reorderItem(owner: CartOwner, variantId: string, quantity: number, context: CartItemContext): Promise<Cart> {
     return this.prisma.$transaction(async (transaction) => {
       const cart = await findOrCreateTransactionCart(transaction, owner);
       const variant = await transaction.productVariant.findUnique({
         where: { id: variantId },
         include: { product: true, inventory: true },
       });
-      if (
-        !variant ||
-        !variant.active ||
-        variant.product.status !== 'ACTIVE' ||
-        !variant.salePrice ||
-        Number(variant.salePrice) <= 0
-      )
-        throw new CartValidationError(
-          'La variante no está disponible para la venta.',
-        );
+      if (!variant || !variant.active || variant.product.status !== 'ACTIVE' || !variant.salePrice || Number(variant.salePrice) <= 0)
+        throw new CartValidationError('La variante no está disponible para la venta.');
       await validateContext(transaction, owner, context);
+      const itemContextKey = contextKey(context);
       const existing = await transaction.cartItem.findUnique({
-        where: { cartId_variantId: { cartId: cart.id, variantId } },
+        where: { cartId_variantId_contextKey: { cartId: cart.id, variantId, contextKey: itemContextKey } },
       });
       if (existing)
         await transaction.cartItem.update({
@@ -210,6 +164,7 @@ export class PrismaCartRepository implements CartRepository {
             role: 'MAIN',
             petId: context.petId ?? null,
             planId: context.planId ?? null,
+            contextKey: itemContextKey,
           },
         });
       else
@@ -221,6 +176,7 @@ export class PrismaCartRepository implements CartRepository {
             role: 'MAIN',
             petId: context.petId ?? null,
             planId: context.planId ?? null,
+            contextKey: itemContextKey,
           },
         });
       await transaction.cart.update({
@@ -237,6 +193,17 @@ export class PrismaCartRepository implements CartRepository {
           include: cartInclude,
         }),
       );
+    });
+  }
+
+  public async setItemQuantity(owner: CartOwner, itemId: string, quantity: number): Promise<Cart> {
+    return this.prisma.$transaction(async (transaction) => {
+      const cart = await findOrCreateTransactionCart(transaction, owner);
+      const item = await transaction.cartItem.findFirst({ where: { id: itemId, cartId: cart.id }, select: { id: true } });
+      if (!item) throw new CartValidationError('El producto ya no está en tu carrito.');
+      await transaction.cartItem.update({ where: { id: item.id }, data: { quantity } });
+      await transaction.cart.update({ where: { id: cart.id }, data: { lastActivityAt: new Date() } });
+      return mapCart(await transaction.cart.findUniqueOrThrow({ where: { id: cart.id }, include: cartInclude }));
     });
   }
 
@@ -259,11 +226,16 @@ export class PrismaCartRepository implements CartRepository {
     });
   }
 
-  public async merge(
-    tokenHash: string,
-    customerId: string,
-    source: CartOwner['source'] = 'STORE',
-  ): Promise<Cart> {
+  public async removeItemById(owner: CartOwner, itemId: string): Promise<Cart> {
+    return this.prisma.$transaction(async (transaction) => {
+      const cart = await findOrCreateTransactionCart(transaction, owner);
+      await transaction.cartItem.deleteMany({ where: { id: itemId, cartId: cart.id } });
+      await transaction.cart.update({ where: { id: cart.id }, data: { lastActivityAt: new Date() } });
+      return mapCart(await transaction.cart.findUniqueOrThrow({ where: { id: cart.id }, include: cartInclude }));
+    });
+  }
+
+  public async merge(tokenHash: string, customerId: string, source: CartOwner['source'] = 'STORE'): Promise<Cart> {
     return this.prisma.$transaction(async (transaction) => {
       const guest = await transaction.cart.findFirst({
         where: {
@@ -298,9 +270,7 @@ export class PrismaCartRepository implements CartRepository {
           include: { items: true },
         }));
       for (const item of guest.items) {
-        const existing = target.items.find(
-          (candidate) => candidate.variantId === item.variantId,
-        );
+        const existing = target.items.find((candidate) => candidate.variantId === item.variantId && candidate.contextKey === item.contextKey);
         if (existing)
           await transaction.cartItem.update({
             where: { id: existing.id },
@@ -324,6 +294,7 @@ export class PrismaCartRepository implements CartRepository {
               role: item.role,
               petId: item.petId,
               planId: item.planId,
+              contextKey: item.contextKey,
             },
           });
       }
@@ -385,16 +356,11 @@ export class PrismaCartRepository implements CartRepository {
   }
 }
 
-const findOrCreateTransactionCart = async (
-  transaction: CartTransaction,
-  owner: CartOwner,
-) => {
+const findOrCreateTransactionCart = async (transaction: CartTransaction, owner: CartOwner) => {
   const current = await transaction.cart.findFirst({
     where: {
       status: { in: ['ACTIVE', 'ABANDONED'] },
-      ...(owner.customerId
-        ? { customerId: owner.customerId }
-        : { anonymousTokenHash: owner.tokenHash }),
+      ...(owner.customerId ? { customerId: owner.customerId } : { anonymousTokenHash: owner.tokenHash }),
       source: owner.source ?? 'STORE',
     },
     include: { items: true },
@@ -425,39 +391,29 @@ const findOrCreateTransactionCart = async (
 
 const activeCartThreshold = () => new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-const isUniqueConstraintError = (error: unknown): boolean =>
-  error instanceof Prisma.PrismaClientKnownRequestError &&
-  error.code === 'P2002';
+const isUniqueConstraintError = (error: unknown): boolean => error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
 
-const validateContext = async (
-  transaction: CartTransaction,
-  owner: CartOwner,
-  context?: CartItemContext,
-): Promise<void> => {
+const contextKey = (context?: CartItemContext): string =>
+  context?.planId ? `PLAN:${context.planId}` : context?.petId ? `PET:${context.petId}` : 'CASUAL';
+
+const validateContext = async (transaction: CartTransaction, owner: CartOwner, context?: CartItemContext): Promise<void> => {
   if (!context) return;
-  if (context.role === 'MAIN' && !context.petId)
-    throw new CartValidationError(
-      'Una línea principal debe estar asociada a una mascota.',
-    );
+  if (context.role === 'MAIN' && !context.petId) throw new CartValidationError('Una línea principal debe estar asociada a una mascota.');
   if ((context.petId || context.planId) && !owner.customerId)
-    throw new CartValidationError(
-      'El contexto de la línea requiere una sesión de cliente.',
-    );
+    throw new CartValidationError('El contexto de la línea requiere una sesión de cliente.');
   if (context.petId) {
     const pet = await transaction.pet.findFirst({
       where: { id: context.petId, customerId: owner.customerId! },
       select: { id: true },
     });
-    if (!pet)
-      throw new CartValidationError('La mascota no existe o no tienes acceso.');
+    if (!pet) throw new CartValidationError('La mascota no existe o no tienes acceso.');
   }
   if (context.planId) {
     const plan = await transaction.replenishmentPlan.findFirst({
       where: { id: context.planId, customerId: owner.customerId! },
       select: { id: true, petId: true },
     });
-    if (!plan || (context.petId && plan.petId !== context.petId))
-      throw new CartValidationError('El plan no existe o no tienes acceso.');
+    if (!plan || (context.petId && plan.petId !== context.petId)) throw new CartValidationError('El plan no existe o no tienes acceso.');
   }
 };
 
@@ -476,11 +432,7 @@ const mapCart = (value: CartRecord): Cart => {
       unitPrice: unitPrice.toFixed(2),
       quantity: item.quantity,
       lineTotal: (unitPrice * item.quantity).toFixed(2),
-      availableQuantity: Math.max(
-        0,
-        (item.variant.inventory?.onHand ?? 0) -
-          (item.variant.inventory?.reserved ?? 0),
-      ),
+      availableQuantity: Math.max(0, (item.variant.inventory?.onHand ?? 0) - (item.variant.inventory?.reserved ?? 0)),
       role: item.role === 'MAIN' ? 'MAIN' : 'EXTRA',
       petId: item.petId,
       planId: item.planId,
@@ -491,9 +443,7 @@ const mapCart = (value: CartRecord): Cart => {
     customerId: value.customerId,
     status: value.status,
     currency: 'ARS',
-    subtotal: items
-      .reduce((sum: number, item: CartItem) => sum + Number(item.lineTotal), 0)
-      .toFixed(2),
+    subtotal: items.reduce((sum: number, item: CartItem) => sum + Number(item.lineTotal), 0).toFixed(2),
     lastActivityAt: value.lastActivityAt,
     items,
     source: value.source === 'MOBILE' ? 'MOBILE' : 'STORE',

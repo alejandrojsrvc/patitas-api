@@ -1,12 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsBoolean,
-  IsInt,
-  IsOptional,
-  IsString,
-  Matches,
-  Min,
-} from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, Matches, Min } from 'class-validator';
 
 export class UpdateFulfillmentSettingsDto {
   @ApiPropertyOptional({ example: 'America/Argentina/Buenos_Aires' })

@@ -13,42 +13,21 @@ import { ReplenishmentModule } from '../replenishment/replenishment.module';
 import { ReplenishmentService } from '../replenishment/application/replenishment.service';
 import { AccountQueryService } from './application/account-query.service';
 import { StorefrontQueryService } from './application/storefront-query.service';
-import {
-  AccountController,
-  CartScreenController,
-  StorefrontController,
-} from './presentation/storefront.controller';
+import { AccountController, CartScreenController, StorefrontController } from './presentation/storefront.controller';
 
 @Module({
-  imports: [
-    AuthModule,
-    CartModule,
-    CheckoutModule,
-    CustomersModule,
-    PetsModule,
-    ReplenishmentModule,
-  ],
+  imports: [AuthModule, CartModule, CheckoutModule, CustomersModule, PetsModule, ReplenishmentModule],
   controllers: [StorefrontController, AccountController, CartScreenController],
   providers: [
     {
       provide: StorefrontQueryService,
       inject: [CustomerService, CustomerAddressService, CartService],
-      useFactory: (
-        customers: CustomerService,
-        addresses: CustomerAddressService,
-        carts: CartService,
-      ) => new StorefrontQueryService(customers, addresses, carts),
+      useFactory: (customers: CustomerService, addresses: CustomerAddressService, carts: CartService) =>
+        new StorefrontQueryService(customers, addresses, carts),
     },
     {
       provide: AccountQueryService,
-      inject: [
-        CustomerService,
-        CustomerAddressService,
-        CheckoutService,
-        PetService,
-        ReplenishmentService,
-        CartService,
-      ],
+      inject: [CustomerService, CustomerAddressService, CheckoutService, PetService, ReplenishmentService, CartService],
       useFactory: (
         customers: CustomerService,
         addresses: CustomerAddressService,
@@ -56,15 +35,7 @@ import {
         pets: PetService,
         replenishments: ReplenishmentService,
         carts: CartService,
-      ) =>
-        new AccountQueryService(
-          customers,
-          addresses,
-          checkout,
-          pets,
-          replenishments,
-          carts,
-        ),
+      ) => new AccountQueryService(customers, addresses, checkout, pets, replenishments, carts),
     },
   ],
 })

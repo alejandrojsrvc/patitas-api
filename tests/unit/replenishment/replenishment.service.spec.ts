@@ -24,11 +24,7 @@ describe('ReplenishmentService Mobile state', () => {
       },
     );
 
-    expect(updateMobileState).toHaveBeenCalledWith(
-      'plan-1',
-      { customerId: 'customer-1' },
-      { remindersEnabled: false, leadDays: 7 },
-    );
+    expect(updateMobileState).toHaveBeenCalledWith('plan-1', { customerId: 'customer-1' }, { remindersEnabled: false, leadDays: 7 });
   });
 
   it('rejects invalid lead days before reaching persistence', () => {

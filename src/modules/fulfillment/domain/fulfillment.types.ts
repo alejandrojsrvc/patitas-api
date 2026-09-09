@@ -1,8 +1,4 @@
-import type {
-  Product,
-  ProductVariant,
-  SupplierFulfillmentMode,
-} from '../../catalog/domain/catalog.types';
+import type { Product, ProductVariant, SupplierFulfillmentMode } from '../../catalog/domain/catalog.types';
 
 export interface FulfillmentSettings {
   id: string;

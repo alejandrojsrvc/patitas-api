@@ -23,10 +23,10 @@
     "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --config ./tests/jest.integration.json --passWithNoTests --runInBand",
     "test:e2e": "NODE_OPTIONS=--experimental-vm-modules jest --config ./tests/jest.e2e.json --passWithNoTests --runInBand",
     "test:all": "pnpm test:unit && pnpm test:integration && pnpm test:e2e",
-    "infra:start": "node scripts/supabase-local.mjs start",
-    "infra:stop": "node scripts/supabase-local.mjs stop",
-    "infra:status": "node scripts/supabase-local.mjs status",
-    "infra:reset": "node scripts/supabase-local.mjs reset",
+    "infra:start": "node scripts/local-infra.mjs start",
+    "infra:stop": "node scripts/local-infra.mjs stop",
+    "infra:status": "node scripts/local-infra.mjs status",
+    "infra:reset": "node scripts/local-infra.mjs reset",
     "db:generate": "node scripts/prisma-command.mjs generate",
     "db:validate": "node scripts/prisma-command.mjs validate",
     "db:status": "node scripts/prisma-command.mjs migrate status",
@@ -37,9 +37,6 @@
     "catalog:research": "tsx tools/catalog-research/cli.ts",
     "catalog:research:import": "tsx scripts/import-catalog-research.ts",
     "catalog:export-production": "node scripts/export-production-catalog.mjs",
-    "catalog:copy-media": "node scripts/copy-product-media.mjs",
-    "storage:migrate:r2": "node scripts/migrate-supabase-storage-to-r2.mjs",
-    "catalog:upload-images": "node scripts/upload-product-images.mjs",
     "images:generate-variants": "node scripts/generate-product-image-variants.mjs",
     "images:upload-variants": "node scripts/upload-product-image-variants.mjs",
     "catalog:cache:clear": "node scripts/invalidate-web-catalog-cache.mjs",
@@ -51,6 +48,8 @@
   "dependencies": {
     "@aws-sdk/client-s3": "3.1121.0",
     "@aws-sdk/s3-request-presigner": "3.1121.0",
+    "@neon/config": "^1.3.0",
+    "@neon/env": "^1.2.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
@@ -58,11 +57,13 @@
     "@nestjs/swagger": "^11.4.6",
     "@prisma/adapter-pg": "7.9.1",
     "@prisma/client": "^7.9.1",
-    "@supabase/supabase-js": "^2.112.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "dotenv": "^17.4.2",
+    "hash-wasm": "4.12.0",
+    "jose": "6.2.12",
     "mercadopago": "^3.4.0",
+    "nodemailer": "^10.0.0",
     "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -83,6 +84,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
+    "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.23.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
@@ -96,7 +98,6 @@
     "prisma": "^7.9.1",
     "sharp": "0.35.3",
     "source-map-support": "^0.5.21",
-    "supabase": "2.115.0",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
@@ -105,5 +106,10 @@
     "tsx": "^4.23.12",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp"
+    ]
   }
 }

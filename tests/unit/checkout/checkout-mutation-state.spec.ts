@@ -27,6 +27,22 @@ const session = {
   subtotal: '1000.00',
   discountTotal: '0.00',
   total: '1000.00',
+  pricing: {
+    productDiscountTotal: '0.00',
+    paymentDiscountTotal: '0.00',
+    shippingDiscountTotal: '0.00',
+    benefits: [],
+    conflicts: [],
+    shippingThreshold: {
+      threshold: null,
+      eligibleAmount: '0.00',
+      remaining: null,
+    },
+  },
+  actions: {
+    coupon: { allowed: true, reasonCode: null, message: null },
+    purchaseSchedule: { allowed: true, reasonCode: null, message: null },
+  },
   items: [],
   expiresAt: new Date(),
 } satisfies CheckoutSession;
@@ -38,31 +54,19 @@ describe('CheckoutService mutation state', () => {
     } as unknown as CheckoutRepository;
     const service = new CheckoutService(repository);
 
-    const result = await service.applyCouponWithState(
-      'checkout-1',
-      { customerId: 'customer-1' },
-      'PATITAS',
-    );
+    const result = await service.applyCouponWithState('checkout-1', { customerId: 'customer-1' }, 'PATITAS');
 
     expect(result).toEqual({ session, shippingOptions: [] });
   });
 
   it('attaches the current state to a recoverable conflict', async () => {
     const repository = {
-      applyCoupon: jest
-        .fn()
-        .mockRejectedValue(new CheckoutConflictError('El checkout cambió.')),
+      applyCoupon: jest.fn().mockRejectedValue(new CheckoutConflictError('El checkout cambió.')),
       find: jest.fn().mockResolvedValue(session),
     } as unknown as CheckoutRepository;
     const service = new CheckoutService(repository);
 
-    await expect(
-      service.applyCouponWithState(
-        'checkout-1',
-        { customerId: 'customer-1' },
-        'PATITAS',
-      ),
-    ).rejects.toMatchObject({
+    await expect(service.applyCouponWithState('checkout-1', { customerId: 'customer-1' }, 'PATITAS')).rejects.toMatchObject({
       code: 'CHECKOUT_CONFLICT',
       currentState: { session, shippingOptions: [] },
     });

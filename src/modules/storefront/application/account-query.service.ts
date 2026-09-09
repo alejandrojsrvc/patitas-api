@@ -5,14 +5,9 @@ import type { CustomerService } from '../../customers/application/customer.servi
 import type { PetService } from '../../pets/application/pet.service';
 import type { ReplenishmentService } from '../../replenishment/application/replenishment.service';
 import type { CartService } from '../../cart/application/cart.service';
-import {
-  toAuthenticatedViewer,
-  toCartSummary,
-  toLocationSummary,
-} from './storefront-shell';
+import { toAuthenticatedViewer, toCartSummary, toLocationSummary } from './storefront-shell';
 
-export type AccountSection =
-  'overview' | 'orders' | 'addresses' | 'pets' | 'replenishments';
+export type AccountSection = 'overview' | 'orders' | 'addresses' | 'pets' | 'replenishments';
 
 export class AccountQueryService {
   public constructor(
@@ -49,16 +44,9 @@ export class AccountQueryService {
             type: input.section,
             addresses: items,
           }))
-        : this.loadSection(
-            profile.id,
-            input.section,
-            input.orderId,
-            input.page ?? 1,
-            input.perPage ?? 10,
-          ),
+        : this.loadSection(profile.id, input.section, input.orderId, input.page ?? 1, input.perPage ?? 10),
     ]);
-    const defaultAddress =
-      addresses.find((address) => address.isDefault) ?? addresses[0] ?? null;
+    const defaultAddress = addresses.find((address) => address.isDefault) ?? addresses[0] ?? null;
 
     return {
       shell: {
@@ -74,13 +62,7 @@ export class AccountQueryService {
     };
   }
 
-  private async loadSection(
-    customerId: string,
-    section: AccountSection,
-    orderId?: string,
-    page = 1,
-    perPage = 10,
-  ) {
+  private async loadSection(customerId: string, section: AccountSection, orderId?: string, page = 1, perPage = 10) {
     if (section === 'pets') {
       return { type: section, pets: await this.pets.list(customerId) };
     }
@@ -97,11 +79,7 @@ export class AccountQueryService {
         order: await this.checkout.customerOrder(customerId, orderId),
       };
     }
-    const orders = await this.checkout.customerOrderPage(
-      customerId,
-      section === 'overview' ? 1 : page,
-      section === 'overview' ? 3 : perPage,
-    );
+    const orders = await this.checkout.customerOrderPage(customerId, section === 'overview' ? 1 : page, section === 'overview' ? 3 : perPage);
     if (section === 'overview') {
       return {
         type: section,

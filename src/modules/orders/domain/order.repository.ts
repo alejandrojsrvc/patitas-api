@@ -1,12 +1,4 @@
-import type {
-  CreateOrderInput,
-  Order,
-  OrderFilter,
-  OrderPage,
-  RegisterPaymentInput,
-  UploadPaymentProofInput,
-  UpdateOrderInput,
-} from './order.types';
+import type { CreateOrderInput, Order, OrderFilter, OrderPage, RegisterPaymentInput, UploadPaymentProofInput, UpdateOrderInput } from './order.types';
 
 export const ORDER_REPOSITORY = Symbol('ORDER_REPOSITORY');
 
@@ -18,8 +10,5 @@ export interface OrderRepository {
   registerPayment(id: string, input: RegisterPaymentInput): Promise<Order>;
   transition(id: string, status: Order['status']): Promise<Order>;
   expirePaymentReservations(): Promise<{ expired: number }>;
-  uploadPaymentProof(
-    id: string,
-    input: UploadPaymentProofInput,
-  ): Promise<Order>;
+  uploadPaymentProof(id: string, input: UploadPaymentProofInput): Promise<Order>;
 }

@@ -38,9 +38,7 @@ const createRepository = (visitorInsertCount: number) => {
     },
   };
   const prisma = {
-    $transaction: jest.fn((callback: (value: typeof transaction) => unknown) =>
-      callback(transaction),
-    ),
+    $transaction: jest.fn((callback: (value: typeof transaction) => unknown) => callback(transaction)),
   };
 
   return {
@@ -53,16 +51,11 @@ const createRepository = (visitorInsertCount: number) => {
 
 describe('PrismaAnalyticsRepository', () => {
   it('counts the first visit as unique without throwing on duplicates', async () => {
-    const { repository, transaction, productViewDailyUpdate, visitorUpdate } =
-      createRepository(1);
+    const { repository, transaction, productViewDailyUpdate, visitorUpdate } = createRepository(1);
 
-    await expect(
-      repository.recordProductView('producto', 'visitor-hash'),
-    ).resolves.toBeUndefined();
+    await expect(repository.recordProductView('producto', 'visitor-hash')).resolves.toBeUndefined();
 
-    expect(transaction.productViewVisitorDaily.createMany).toHaveBeenCalledWith(
-      expect.objectContaining({ skipDuplicates: true }),
-    );
+    expect(transaction.productViewVisitorDaily.createMany).toHaveBeenCalledWith(expect.objectContaining({ skipDuplicates: true }));
     expect(productViewDailyUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: { uniqueViews: { increment: 1 } },
@@ -72,16 +65,11 @@ describe('PrismaAnalyticsRepository', () => {
   });
 
   it('updates a repeated visitor without incrementing unique views', async () => {
-    const { repository, transaction, productViewDailyUpdate, visitorUpdate } =
-      createRepository(0);
+    const { repository, transaction, productViewDailyUpdate, visitorUpdate } = createRepository(0);
 
-    await expect(
-      repository.recordProductView('producto', 'visitor-hash'),
-    ).resolves.toBeUndefined();
+    await expect(repository.recordProductView('producto', 'visitor-hash')).resolves.toBeUndefined();
 
-    expect(transaction.productViewVisitorDaily.createMany).toHaveBeenCalledWith(
-      expect.objectContaining({ skipDuplicates: true }),
-    );
+    expect(transaction.productViewVisitorDaily.createMany).toHaveBeenCalledWith(expect.objectContaining({ skipDuplicates: true }));
     expect(visitorUpdate).toHaveBeenCalledTimes(1);
     const updateInput = visitorUpdate.mock.calls[0][0];
     expect(updateInput.data.lastViewedAt).toBeInstanceOf(Date);

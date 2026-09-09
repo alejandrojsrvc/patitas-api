@@ -34,10 +34,7 @@ export class CreateOrderDto {
   @IsString()
   @MaxLength(40)
   public contactPhone?: string | null;
-  @ApiProperty({ type: Object }) @IsObject() public shippingAddress!: Record<
-    string,
-    string
-  >;
+  @ApiProperty({ type: Object }) @IsObject() public shippingAddress!: Record<string, string>;
   @ApiPropertyOptional()
   @IsOptional()
   @IsNumberString()
@@ -99,33 +96,10 @@ export class RegisterPaymentDto {
 
 export class TransitionOrderDto {
   @ApiProperty({
-    enum: [
-      'DRAFT',
-      'PENDING_PAYMENT',
-      'PAID',
-      'PROCESSING',
-      'SHIPPED',
-      'DELIVERED',
-      'CANCELLED',
-    ],
+    enum: ['DRAFT', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'],
   })
-  @IsIn([
-    'DRAFT',
-    'PENDING_PAYMENT',
-    'PAID',
-    'PROCESSING',
-    'SHIPPED',
-    'DELIVERED',
-    'CANCELLED',
-  ])
-  public status!:
-    | 'DRAFT'
-    | 'PENDING_PAYMENT'
-    | 'PAID'
-    | 'PROCESSING'
-    | 'SHIPPED'
-    | 'DELIVERED'
-    | 'CANCELLED';
+  @IsIn(['DRAFT', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'])
+  public status!: 'DRAFT' | 'PENDING_PAYMENT' | 'PAID' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 }
 
 export class OrdersQueryDto {
@@ -135,59 +109,17 @@ export class OrdersQueryDto {
   @IsUUID()
   public customerId?: string;
   @ApiPropertyOptional({
-    enum: [
-      'DRAFT',
-      'PENDING_PAYMENT',
-      'PAID',
-      'PROCESSING',
-      'SHIPPED',
-      'DELIVERED',
-      'CANCELLED',
-    ],
+    enum: ['DRAFT', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'],
   })
   @IsOptional()
-  @IsIn([
-    'DRAFT',
-    'PENDING_PAYMENT',
-    'PAID',
-    'PROCESSING',
-    'SHIPPED',
-    'DELIVERED',
-    'CANCELLED',
-  ])
+  @IsIn(['DRAFT', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'])
   public status?: TransitionOrderDto['status'];
   @ApiPropertyOptional({
-    enum: [
-      'UNPAID',
-      'PENDING',
-      'PROCESSING',
-      'PAID',
-      'FAILED',
-      'PARTIALLY_REFUNDED',
-      'REFUNDED',
-      'CHARGED_BACK',
-    ],
+    enum: ['UNPAID', 'PENDING', 'PROCESSING', 'PAID', 'FAILED', 'PARTIALLY_REFUNDED', 'REFUNDED', 'CHARGED_BACK'],
   })
   @IsOptional()
-  @IsIn([
-    'UNPAID',
-    'PENDING',
-    'PROCESSING',
-    'PAID',
-    'FAILED',
-    'PARTIALLY_REFUNDED',
-    'REFUNDED',
-    'CHARGED_BACK',
-  ])
-  public paymentStatus?:
-    | 'UNPAID'
-    | 'PENDING'
-    | 'PROCESSING'
-    | 'PAID'
-    | 'FAILED'
-    | 'PARTIALLY_REFUNDED'
-    | 'REFUNDED'
-    | 'CHARGED_BACK';
+  @IsIn(['UNPAID', 'PENDING', 'PROCESSING', 'PAID', 'FAILED', 'PARTIALLY_REFUNDED', 'REFUNDED', 'CHARGED_BACK'])
+  public paymentStatus?: 'UNPAID' | 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED' | 'PARTIALLY_REFUNDED' | 'REFUNDED' | 'CHARGED_BACK';
   @ApiPropertyOptional({ default: 1 })
   @Transform(({ value }) => Number(value ?? 1))
   @IsInt()

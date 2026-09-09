@@ -2,23 +2,14 @@ import { Injectable } from '@nestjs/common';
 import type { PaymentProviderConfigurationName } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import type { PaymentProviderName } from '../../../shared/domain/payment.types';
-import type {
-  PaymentProviderConfiguration,
-  PaymentProviderConfigurationRepository,
-} from '../domain/payment-provider-configuration.repository';
+import type { PaymentProviderConfiguration, PaymentProviderConfigurationRepository } from '../domain/payment-provider-configuration.repository';
 
-const TO_PRISMA: Record<PaymentProviderName, PaymentProviderConfigurationName> =
-  {
-    simulated: 'SIMULATED',
-    mercadopago: 'MERCADO_PAGO',
-    payway: 'PAYWAY',
-  };
+const TO_PRISMA: Record<PaymentProviderName, PaymentProviderConfigurationName> = {
+  mercadopago: 'MERCADO_PAGO',
+  payway: 'PAYWAY',
+};
 
-const FROM_PRISMA: Record<
-  PaymentProviderConfigurationName,
-  PaymentProviderName
-> = {
-  SIMULATED: 'simulated',
+const FROM_PRISMA: Record<PaymentProviderConfigurationName, PaymentProviderName> = {
   MERCADO_PAGO: 'mercadopago',
   PAYWAY: 'payway',
 };
@@ -49,10 +40,7 @@ export class PrismaPaymentProviderConfigurationRepository implements PaymentProv
     return row?.enabled ?? false;
   }
 
-  public async update(
-    provider: PaymentProviderName,
-    input: { enabled?: boolean; priority?: number },
-  ) {
+  public async update(provider: PaymentProviderName, input: { enabled?: boolean; priority?: number }) {
     const row = await this.prisma.paymentProviderConfiguration.update({
       where: { provider: TO_PRISMA[provider] },
       data: input,

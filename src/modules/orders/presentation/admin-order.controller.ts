@@ -20,13 +20,7 @@ import { Roles } from '../../auth/presentation/decorators/roles.decorator';
 import { UserRole } from '../../users/domain/entities/user.entity';
 import { AdminAuditInterceptor } from '../../../infrastructure/audit/admin-audit.interceptor';
 import { OrderService } from '../application/order.service';
-import {
-  CreateOrderDto,
-  OrdersQueryDto,
-  RegisterPaymentDto,
-  TransitionOrderDto,
-  UpdateOrderDto,
-} from './order.dto';
+import { CreateOrderDto, OrdersQueryDto, RegisterPaymentDto, TransitionOrderDto, UpdateOrderDto } from './order.dto';
 import { OrderExceptionFilter } from './order.exception.filter';
 
 @ApiTags('Admin orders')
@@ -48,25 +42,16 @@ export class AdminOrderController {
   @Post() public create(@Body() input: CreateOrderDto) {
     return this.orders.create(input);
   }
-  @Patch(':id') public update(
-    @Param('id') id: string,
-    @Body() input: UpdateOrderDto,
-  ) {
+  @Patch(':id') public update(@Param('id') id: string, @Body() input: UpdateOrderDto) {
     return this.orders.update(id, input);
   }
-  @Post(':id/payment') public payment(
-    @Param('id') id: string,
-    @Body() input: RegisterPaymentDto,
-  ) {
+  @Post(':id/payment') public payment(@Param('id') id: string, @Body() input: RegisterPaymentDto) {
     return this.orders.registerPayment(id, {
       ...input,
       paidAt: input.paidAt ? new Date(input.paidAt) : null,
     });
   }
-  @Post(':id/status') public status(
-    @Param('id') id: string,
-    @Body() input: TransitionOrderDto,
-  ) {
+  @Post(':id/status') public status(@Param('id') id: string, @Body() input: TransitionOrderDto) {
     return this.orders.transition(id, input.status);
   }
   @Post(':id/cancel') public cancel(@Param('id') id: string) {
@@ -84,19 +69,14 @@ export class AdminOrderController {
       properties: { file: { type: 'string', format: 'binary' } },
     },
   })
-  @UseInterceptors(
-    FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
-  )
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 0, parts: 1 } }))
   public proof(
     @Param('orderId') orderId: string,
     @Param('paymentId') paymentId: string,
     @UploadedFile()
-    file:
-      | { originalname: string; mimetype: string; buffer: Uint8Array }
-      | undefined,
+    file: { originalname: string; mimetype: string; buffer: Uint8Array } | undefined,
   ) {
-    if (!file)
-      throw new BadRequestException('Se requiere un archivo de comprobante.');
+    if (!file) throw new BadRequestException('Se requiere un archivo de comprobante.');
     return this.orders.uploadPaymentProof(orderId, {
       paymentId,
       originalName: file.originalname,

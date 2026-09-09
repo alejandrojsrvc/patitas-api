@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import {
-  createAnonymousToken,
-  hashAnonymousToken,
-} from '../../../shared/application/anonymous-token';
+import { createAnonymousToken, hashAnonymousToken } from '../../../shared/application/anonymous-token';
 import { DomainError } from '../../../shared/domain/domain-error';
 import type { CheckoutHandoffRepository } from '../domain/checkout-handoff.repository';
 
@@ -31,10 +28,7 @@ export class PrismaCheckoutHandoffRepository implements CheckoutHandoffRepositor
         where: { tokenHash, consumedAt: null, expiresAt: { gt: new Date() } },
         data: { consumedAt: new Date() },
       });
-      if (claimed.count !== 1)
-        throw new CheckoutHandoffError(
-          'El enlace de checkout no existe o expiró.',
-        );
+      if (claimed.count !== 1) throw new CheckoutHandoffError('El enlace de checkout no existe o expiró.');
       const handoff = await tx.checkoutHandoff.findUniqueOrThrow({
         where: { tokenHash },
       });

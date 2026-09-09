@@ -14,13 +14,7 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
-  ApiProduces,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiProduces, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../auth/presentation/decorators/roles.decorator';
 import { AuthGuard } from '../../auth/presentation/guards/auth.guard';
 import { RolesGuard } from '../../auth/presentation/guards/roles.guard';
@@ -55,36 +49,23 @@ export class AdminSuppliersController {
     const suppliers = await this.suppliers.listAllSuppliers();
     return csv(
       ['uuid', 'supplier_id', 'name', 'active'],
-      suppliers.map((supplier) => [
-        supplier.id,
-        supplier.id,
-        supplier.name,
-        supplier.active,
-      ]),
+      suppliers.map((supplier) => [supplier.id, supplier.id, supplier.name, supplier.active]),
     );
   }
   @Get('suppliers') public list(@Query() query: SuppliersQueryDto) {
     return this.suppliers.listSuppliers(query);
   }
   @Get('suppliers/:id') public async find(@Param('id') id: string) {
-    const [supplier, offers] = await Promise.all([
-      this.suppliers.findSupplier(id),
-      this.suppliers.listOffers({ supplierId: id }),
-    ]);
+    const [supplier, offers] = await Promise.all([this.suppliers.findSupplier(id), this.suppliers.listOffers({ supplierId: id })]);
     return { ...supplier, offers };
   }
   @Post('suppliers') public create(@Body() input: CreateSupplierDto) {
     return this.suppliers.createSupplier(input);
   }
-  @Patch('suppliers/:id') public update(
-    @Param('id') id: string,
-    @Body() input: UpdateSupplierDto,
-  ) {
+  @Patch('suppliers/:id') public update(@Param('id') id: string, @Body() input: UpdateSupplierDto) {
     return this.suppliers.updateSupplier(id, input);
   }
-  @Get('supplier-offers') public offers(
-    @Query() query: SupplierOffersQueryDto,
-  ) {
+  @Get('supplier-offers') public offers(@Query() query: SupplierOffersQueryDto) {
     return this.suppliers.listOffers(query);
   }
   @Get('supplier-offers/export-csv')
@@ -141,10 +122,7 @@ export class AdminSuppliersController {
   @Get('supplier-offers/import-template')
   @ApiProduces('text/csv')
   @Header('Content-Type', 'text/csv; charset=utf-8')
-  @Header(
-    'Content-Disposition',
-    'attachment; filename="supplier-offers-template.csv"',
-  )
+  @Header('Content-Disposition', 'attachment; filename="supplier-offers-template.csv"')
   public importTemplate() {
     return [
       'supplier_id,supplier_name,variant_id,sku,barcode,ean,supplier_sku,unit_cost,stock_status,lead_time_hours,fulfillment_mode,supplier_cutoff,supplier_to_depot_minutes,fulfillment_cost,minimum_quantity,active',
@@ -167,27 +145,17 @@ export class AdminSuppliersController {
       },
     },
   })
-  @UseInterceptors(
-    FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
-  )
-  public importOffers(
-    @UploadedFile() file: UploadedSupplierOffersCsv | undefined,
-    @Body('dryRun') dryRun?: string | boolean,
-  ) {
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 0, parts: 1 } }))
+  public importOffers(@UploadedFile() file: UploadedSupplierOffersCsv | undefined, @Body('dryRun') dryRun?: string | boolean) {
     if (!file) throw new BadRequestException('Se requiere un archivo CSV.');
     return this.suppliers.importOffers(file.buffer, {
       dryRun: dryRun === true || dryRun === 'true',
     });
   }
-  @Post('supplier-offers') public createOffer(
-    @Body() input: CreateSupplierOfferDto,
-  ) {
+  @Post('supplier-offers') public createOffer(@Body() input: CreateSupplierOfferDto) {
     return this.suppliers.createOffer(input);
   }
-  @Patch('supplier-offers/:id') public updateOffer(
-    @Param('id') id: string,
-    @Body() input: UpdateSupplierOfferDto,
-  ) {
+  @Patch('supplier-offers/:id') public updateOffer(@Param('id') id: string, @Body() input: UpdateSupplierOfferDto) {
     return this.suppliers.updateOffer(id, input);
   }
 }

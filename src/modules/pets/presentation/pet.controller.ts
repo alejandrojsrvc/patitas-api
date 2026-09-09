@@ -1,19 +1,11 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../../auth/presentation/guards/auth.guard';
 import { CurrentUser } from '../../auth/presentation/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../auth/presentation/authenticated-user';
 import { CustomerService } from '../../customers/application/customer.service';
 import { PetService } from '../application/pet.service';
-import { CreatePetDto, UpdatePetDto } from './pet.dto';
+import { CreatePetDto, SetPetCurrentFoodDto, UpdatePetDto } from './pet.dto';
 
 @ApiTags('Customer pets')
 @ApiBearerAuth()
@@ -31,26 +23,17 @@ export class PetController {
   }
 
   @Post()
-  public async create(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() input: CreatePetDto,
-  ) {
-    return this.pets.create(
-      (await this.customers.findByUserId(user.userId)).id,
-      input,
-    );
+  public async create(@CurrentUser() user: AuthenticatedUser, @Body() input: CreatePetDto) {
+    return this.pets.create((await this.customers.findByUserId(user.userId)).id, input);
+  }
+
+  @Put(':petId/current-food')
+  public async setCurrentFood(@CurrentUser() user: AuthenticatedUser, @Param('petId') petId: string, @Body() input: SetPetCurrentFoodDto) {
+    return this.pets.setCurrentFood(petId, (await this.customers.findByUserId(user.userId)).id, input);
   }
 
   @Patch(':petId')
-  public async update(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('petId') petId: string,
-    @Body() input: UpdatePetDto,
-  ) {
-    return this.pets.update(
-      petId,
-      (await this.customers.findByUserId(user.userId)).id,
-      input,
-    );
+  public async update(@CurrentUser() user: AuthenticatedUser, @Param('petId') petId: string, @Body() input: UpdatePetDto) {
+    return this.pets.update(petId, (await this.customers.findByUserId(user.userId)).id, input);
   }
 }

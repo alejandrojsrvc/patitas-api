@@ -40,4 +40,9 @@ describe('checkout boundaries (e2e)', () => {
         expect(body.code).toBe('SHIPPING_VALIDATION_FAILED');
       });
   });
+
+  it('protects manual transfer review routes behind admin authentication', async () => {
+    await request(app.getHttpServer()).get('/api/v1/admin/payment-method-benefits/transfers').expect(401);
+    await request(app.getHttpServer()).post('/api/v1/admin/payment-method-benefits/transfers/attempt-1/confirm').send({ amount: '1.00' }).expect(401);
+  });
 });

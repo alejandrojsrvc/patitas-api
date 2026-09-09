@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import {
-  CustomerNotFoundError,
-  CustomerValidationError,
-} from '../domain/customer.error';
+import { CustomerNotFoundError, CustomerValidationError } from '../domain/customer.error';
 import type { CustomerRepository } from '../domain/customer.repository';
 import type {
   CreateCustomerInput,
@@ -62,19 +59,14 @@ export class PrismaCustomerRepository implements CustomerRepository {
     return customer ? mapCustomer(customer) : null;
   }
 
-  public async findProfileByUserId(
-    userId: string,
-  ): Promise<CustomerProfile | null> {
+  public async findProfileByUserId(userId: string): Promise<CustomerProfile | null> {
     const customer = await this.prisma.customer.findUnique({
       where: { userId },
     });
     return customer ? mapCustomerProfile(customer) : null;
   }
 
-  public async ensureProfileByUserId(
-    userId: string,
-    input: { fullName: string; email: string },
-  ): Promise<CustomerProfile> {
+  public async ensureProfileByUserId(userId: string, input: { fullName: string; email: string }): Promise<CustomerProfile> {
     return this.prisma.$transaction(async (transaction) => {
       const existing = await transaction.customer.findUnique({
         where: { userId },
@@ -87,10 +79,7 @@ export class PrismaCustomerRepository implements CustomerRepository {
         });
         return mapCustomerProfile(created);
       } catch (error) {
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === 'P2002'
-        ) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
           const concurrent = await transaction.customer.findUnique({
             where: { userId },
           });
@@ -105,50 +94,45 @@ export class PrismaCustomerRepository implements CustomerRepository {
     try {
       return mapCustomer(await this.prisma.customer.create({ data: input }));
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new CustomerValidationError(
-          'Ya existe un cliente asociado a ese usuario.',
-        );
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new CustomerValidationError('Ya existe un cliente asociado a ese usuario.');
       }
       throw error;
     }
   }
 
-  public async update(
-    id: string,
-    input: UpdateCustomerInput,
-  ): Promise<Customer> {
+  public async update(id: string, input: UpdateCustomerInput): Promise<Customer> {
     try {
-      return mapCustomer(
-        await this.prisma.customer.update({ where: { id }, data: input }),
-      );
+      return await this.prisma.$transaction(async (transaction) => {
+        const updated = await transaction.customer.update({ where: { id }, data: input });
+        if (input.active !== undefined && updated.userId) {
+          const now = new Date();
+          await transaction.user.update({
+            where: { id: updated.userId },
+            data: { status: input.active ? 'ACTIVE' : 'SUSPENDED' },
+          });
+          if (!input.active) {
+            await transaction.authSession.updateMany({
+              where: { userId: updated.userId, revokedAt: null },
+              data: { revokedAt: now },
+            });
+          }
+        }
+        return mapCustomer(updated);
+      });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         throw new CustomerNotFoundError();
       }
       throw error;
     }
   }
 
-  public async updateProfile(
-    id: string,
-    input: UpdateCustomerProfileInput,
-  ): Promise<CustomerProfile> {
+  public async updateProfile(id: string, input: UpdateCustomerProfileInput): Promise<CustomerProfile> {
     try {
-      return mapCustomerProfile(
-        await this.prisma.customer.update({ where: { id }, data: input }),
-      );
+      return mapCustomerProfile(await this.prisma.customer.update({ where: { id }, data: input }));
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         throw new CustomerNotFoundError();
       }
       throw error;

@@ -2,17 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import {
-  PromotionNotFoundError,
-  PromotionValidationError,
-} from '../domain/promotion.error';
+import { PromotionNotFoundError, PromotionValidationError } from '../domain/promotion.error';
 import type { PromotionRepository } from '../domain/promotion.repository';
-import type {
-  Coupon,
-  CouponInput,
-  Promotion,
-  PromotionInput,
-} from '../domain/promotion.types';
+import type { Coupon, CouponInput, Promotion, PromotionInput } from '../domain/promotion.types';
 
 const promotionInclude = { targets: true, bundleItems: true } as const;
 const couponInclude = { promotion: { include: promotionInclude } } as const;
@@ -151,15 +143,9 @@ export class PrismaPromotionRepository implements PromotionRepository {
         }),
       );
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      )
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')
         throw new PromotionValidationError('El código del cupón ya existe.');
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2003'
-      )
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003')
         throw new PromotionValidationError('La promoción del cupón no existe.');
       throw error;
     }
@@ -174,15 +160,8 @@ export class PrismaPromotionRepository implements PromotionRepository {
         }),
       );
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      )
-        throw new PromotionNotFoundError('El cupón no existe.');
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2003'
-      )
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') throw new PromotionNotFoundError('El cupón no existe.');
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003')
         throw new PromotionValidationError('La promoción del cupón no existe.');
       throw error;
     }
@@ -198,12 +177,8 @@ const promotionData = (input: Partial<PromotionInput>) => ({
   ...(input.startsAt !== undefined ? { startsAt: input.startsAt } : {}),
   ...(input.endsAt !== undefined ? { endsAt: input.endsAt } : {}),
   ...(input.priority !== undefined ? { priority: input.priority } : {}),
-  ...(input.minimumSubtotal !== undefined
-    ? { minimumSubtotal: input.minimumSubtotal }
-    : {}),
-  ...(input.maxRedemptions !== undefined
-    ? { maxRedemptions: input.maxRedemptions }
-    : {}),
+  ...(input.minimumSubtotal !== undefined ? { minimumSubtotal: input.minimumSubtotal } : {}),
+  ...(input.maxRedemptions !== undefined ? { maxRedemptions: input.maxRedemptions } : {}),
 });
 
 const mapPromotion = (value: PromotionRecord): Promotion => ({
@@ -244,21 +219,9 @@ const mapCoupon = (value: CouponRecord): Coupon => ({
 });
 
 const mapPromotionPersistenceError = (error: unknown): Error => {
-  if (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === 'P2002'
-  )
-    return new PromotionValidationError(
-      'La promoción contiene un valor duplicado.',
-    );
-  if (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === 'P2003'
-  )
-    return new PromotionValidationError(
-      'La promoción referencia un producto, variante, categoría o marca inexistente.',
-    );
-  return error instanceof Error
-    ? error
-    : new Error('Error al guardar la promoción.');
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')
+    return new PromotionValidationError('La promoción contiene un valor duplicado.');
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003')
+    return new PromotionValidationError('La promoción referencia un producto, variante, categoría o marca inexistente.');
+  return error instanceof Error ? error : new Error('Error al guardar la promoción.');
 };

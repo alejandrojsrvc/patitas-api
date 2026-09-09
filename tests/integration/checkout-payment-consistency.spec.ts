@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/require-await */
 
-import 'dotenv/config';
 import { randomUUID } from 'node:crypto';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../src/infrastructure/database/generated/prisma/client';
@@ -8,15 +7,13 @@ import { PrismaCheckoutHandoffRepository } from '../../src/modules/checkout/infr
 import { PrismaCheckoutRepository } from '../../src/modules/checkout/infrastructure/prisma-checkout.repository';
 import { hashAnonymousToken } from '../../src/shared/application/anonymous-token';
 import { PrismaOrderRepository } from '../../src/modules/orders/infrastructure/prisma-order.repository';
-import {
-  applyWebhookResult,
-  PrismaPaymentRepository,
-} from '../../src/modules/payments/infrastructure/prisma-payment.repository';
+import { applyWebhookResult, PrismaPaymentRepository } from '../../src/modules/payments/infrastructure/prisma-payment.repository';
 import type { PaymentProvider } from '../../src/shared/application/ports/payment-provider.interface';
+import { loadProjectEnv } from '../../scripts/load-project-env';
 
-const databaseUrl =
-  process.env.DATABASE_URL ??
-  'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+loadProjectEnv();
+
+const databaseUrl = process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/patitas';
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: databaseUrl }),
 });
@@ -36,9 +33,7 @@ describe('checkout and payment database invariants', () => {
           tokenHash: fixture.checkoutTokenHash,
         }),
       ).rejects.toThrow('carrito está vacío');
-      expect(await prisma.order.count({ where: { id: fixture.orderId } })).toBe(
-        0,
-      );
+      expect(await prisma.order.count({ where: { id: fixture.orderId } })).toBe(0);
     } finally {
       await cleanupFixture(fixture);
     }
@@ -57,9 +52,7 @@ describe('checkout and payment database invariants', () => {
           tokenHash: fixture.checkoutTokenHash,
         }),
       ).rejects.toThrow('variante dejó de estar disponible');
-      expect(await prisma.order.count({ where: { id: fixture.orderId } })).toBe(
-        0,
-      );
+      expect(await prisma.order.count({ where: { id: fixture.orderId } })).toBe(0);
     } finally {
       await cleanupFixture(fixture);
     }
@@ -74,16 +67,9 @@ describe('checkout and payment database invariants', () => {
     const repository = new PrismaCheckoutHandoffRepository(prisma as never);
     try {
       await repository.create(fixture.cartId, hashAnonymousToken(token), token);
-      const results = await Promise.allSettled([
-        repository.consume(hashAnonymousToken(token)),
-        repository.consume(hashAnonymousToken(token)),
-      ]);
-      expect(
-        results.filter((result) => result.status === 'fulfilled'),
-      ).toHaveLength(1);
-      expect(
-        results.filter((result) => result.status === 'rejected'),
-      ).toHaveLength(1);
+      const results = await Promise.allSettled([repository.consume(hashAnonymousToken(token)), repository.consume(hashAnonymousToken(token))]);
+      expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+      expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
     } finally {
       await cleanupFixture(fixture);
     }
@@ -291,18 +277,8 @@ describe('checkout and payment database invariants', () => {
     const repository = new PrismaPaymentRepository(prisma as never, {
       resolve: () => provider,
     });
-    const first = await repository.refund(
-      orderId,
-      { admin: true },
-      '4.00',
-      'refund-key-1',
-    );
-    const second = await repository.refund(
-      orderId,
-      { admin: true },
-      '4.00',
-      'refund-key-1',
-    );
+    const first = await repository.refund(orderId, { admin: true }, '4.00', 'refund-key-1');
+    const second = await repository.refund(orderId, { admin: true }, '4.00', 'refund-key-1');
     const movements = await prisma.orderPayment.findMany({
       where: { orderId, kind: 'REFUND' },
     });
@@ -329,10 +305,7 @@ type Fixture = {
   orderId: string;
 };
 
-const createFixture = async (input: {
-  productStatus: 'ACTIVE' | 'ARCHIVED';
-  withItem: boolean;
-}): Promise<Fixture> => {
+const createFixture = async (input: { productStatus: 'ACTIVE' | 'ARCHIVED'; withItem: boolean }): Promise<Fixture> => {
   const brandId = randomUUID();
   const productId = randomUUID();
   const variantId = randomUUID();
@@ -360,6 +333,7 @@ const createFixture = async (input: {
       productId,
       sku: `SKU-${variantId}`,
       presentation: 'Unit',
+      weightGrams: 5000,
       salePrice: '10.00',
       active: true,
     },
@@ -370,7 +344,7 @@ const createFixture = async (input: {
   await prisma.shippingOption.create({
     data: {
       id: shippingOptionId,
-      name: `Test Shipping ${shippingOptionId}`,
+      name: 'Entrega a domicilio',
       cost: '0.00',
     },
   });
@@ -378,9 +352,7 @@ const createFixture = async (input: {
     data: {
       id: cartId,
       anonymousTokenHash: hashAnonymousToken(`cart-${cartId}`),
-      items: input.withItem
-        ? { create: { id: randomUUID(), variantId, quantity: 1 } }
-        : undefined,
+      items: input.withItem ? { create: { id: randomUUID(), variantId, quantity: 1 } } : undefined,
     },
   });
   await prisma.checkoutSession.create({
@@ -397,7 +369,7 @@ const createFixture = async (input: {
         province: 'Buenos Aires',
         postalCode: '1000',
       },
-      paymentMethod: 'SIMULATED_CARD',
+      paymentMethod: 'PAYWAY',
       shippingOptionId,
       expiresAt: new Date(Date.now() + 60_000),
     },

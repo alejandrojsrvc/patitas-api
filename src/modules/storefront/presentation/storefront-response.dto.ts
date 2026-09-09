@@ -20,8 +20,7 @@ export class StorefrontLocationResponseDto {
 }
 
 export class StorefrontCartSummaryResponseDto {
-  @ApiPropertyOptional({ format: 'uuid', nullable: true }) public id!:
-    string | null;
+  @ApiPropertyOptional({ format: 'uuid', nullable: true }) public id!: string | null;
   @ApiProperty() public itemCount!: number;
   @ApiProperty({ example: '0.00' }) public subtotal!: string;
   @ApiProperty({ example: 'ARS' }) public currency!: 'ARS';
@@ -52,8 +51,7 @@ export class AccountScreenResponseDto {
   @ApiProperty({ type: Object }) public profile!: Record<string, unknown>;
   @ApiProperty({
     type: Object,
-    description:
-      'Unión discriminada por type: overview, orders, order-detail, addresses, pets o replenishments.',
+    description: 'Unión discriminada por type: overview, orders, order-detail, addresses, pets o replenishments.',
   })
   public section!: Record<string, unknown>;
 }

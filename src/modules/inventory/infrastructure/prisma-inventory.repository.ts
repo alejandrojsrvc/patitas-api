@@ -3,12 +3,7 @@ import { Prisma } from '../../../infrastructure/database/generated/prisma/client
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { InventoryValidationError } from '../application/inventory.service';
 import type { InventoryRepository } from '../domain/inventory.repository';
-import type {
-  InventoryAdjustment,
-  InventoryListFilter,
-  InventoryPage,
-  InventoryRow,
-} from '../domain/inventory.types';
+import type { InventoryAdjustment, InventoryListFilter, InventoryPage, InventoryRow } from '../domain/inventory.types';
 
 @Injectable()
 export class PrismaInventoryRepository implements InventoryRepository {
@@ -43,10 +38,7 @@ export class PrismaInventoryRepository implements InventoryRepository {
     };
   }
 
-  public async adjust(
-    input: InventoryAdjustment,
-    actorUserId?: string,
-  ): Promise<InventoryRow> {
+  public async adjust(input: InventoryAdjustment, actorUserId?: string): Promise<InventoryRow> {
     return this.prisma.$transaction(
       async (transaction) => {
         const locked = await transaction.$queryRaw<
@@ -56,20 +48,12 @@ export class PrismaInventoryRepository implements InventoryRepository {
             on_hand: number;
             reserved: number;
           }>
-        >(
-          Prisma.sql`SELECT id, variant_id, on_hand, reserved FROM inventory_items WHERE variant_id = ${input.variantId} FOR UPDATE`,
-        );
+        >(Prisma.sql`SELECT id, variant_id, on_hand, reserved FROM inventory_items WHERE variant_id = ${input.variantId} FOR UPDATE`);
         const current = locked[0];
-        if (!current)
-          throw new InventoryValidationError(
-            'La variante no tiene registro de inventario.',
-          );
+        if (!current) throw new InventoryValidationError('La variante no tiene registro de inventario.');
         const onHand = Number(current.on_hand) + input.quantityDelta;
         const reserved = Number(current.reserved);
-        if (onHand < 0 || onHand < reserved)
-          throw new InventoryValidationError(
-            'El ajuste dejaría el inventario por debajo de las reservas.',
-          );
+        if (onHand < 0 || onHand < reserved) throw new InventoryValidationError('El ajuste dejaría el inventario por debajo de las reservas.');
         const updated = await transaction.inventoryItem.update({
           where: { variantId: input.variantId },
           data: { onHand },

@@ -1,9 +1,4 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import type { Observable } from 'rxjs';
 import type { AuthenticatedRequest } from '../../auth/presentation/authenticated-user';
 import { MobileAccessService } from '../application/mobile-access.service';
@@ -12,10 +7,7 @@ import { MobileAccessService } from '../application/mobile-access.service';
 export class MobileAccessInterceptor implements NestInterceptor {
   public constructor(private readonly accesses: MobileAccessService) {}
 
-  public intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<unknown> {
+  public intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     if (!isMobilePath(request.path)) return next.handle();
     const deviceId =
@@ -37,11 +29,7 @@ export class MobileAccessInterceptor implements NestInterceptor {
   }
 }
 
-const header = (value: string | string[] | undefined): string | undefined =>
-  Array.isArray(value) ? value[0] : value;
+const header = (value: string | string[] | undefined): string | undefined => (Array.isArray(value) ? value[0] : value);
 
 const isMobilePath = (path: string): boolean =>
-  path === '/mobile' ||
-  path.startsWith('/mobile/') ||
-  path === '/api/v1/mobile' ||
-  path.startsWith('/api/v1/mobile/');
+  path === '/mobile' || path.startsWith('/mobile/') || path === '/api/v1/mobile' || path.startsWith('/api/v1/mobile/');

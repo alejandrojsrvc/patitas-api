@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Header } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { PromotionService } from '../application/promotion.service';
 import { isWithinPeriod } from '../application/promotion.service';
@@ -9,12 +9,12 @@ export class PublicPromotionController {
   public constructor(private readonly promotions: PromotionService) {}
 
   @Get()
+  @Header('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=3600')
   public async list() {
     const promotions = (await this.promotions.list(true)).filter(
       (promotion) =>
         isWithinPeriod(promotion.startsAt, promotion.endsAt) &&
-        (promotion.maxRedemptions === null ||
-          promotion.redemptionCount < promotion.maxRedemptions),
+        (promotion.maxRedemptions === null || promotion.redemptionCount < promotion.maxRedemptions),
     );
     return promotions.map((promotion) => ({
       id: promotion.id,

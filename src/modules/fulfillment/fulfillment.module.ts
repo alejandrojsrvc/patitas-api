@@ -2,10 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../infrastructure/database/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { FulfillmentService } from './application/fulfillment.service';
-import {
-  FULFILLMENT_REPOSITORY,
-  type FulfillmentRepository,
-} from './domain/fulfillment.types';
+import { FULFILLMENT_REPOSITORY, type FulfillmentRepository } from './domain/fulfillment.types';
 import { PrismaFulfillmentRepository } from './infrastructure/persistence/prisma-fulfillment.repository';
 import { AdminFulfillmentController } from './presentation/admin-fulfillment.controller';
 
@@ -17,8 +14,7 @@ import { AdminFulfillmentController } from './presentation/admin-fulfillment.con
     {
       provide: FulfillmentService,
       inject: [FULFILLMENT_REPOSITORY],
-      useFactory: (repository: FulfillmentRepository) =>
-        new FulfillmentService(repository),
+      useFactory: (repository: FulfillmentRepository) => new FulfillmentService(repository),
     },
   ],
   exports: [FulfillmentService],

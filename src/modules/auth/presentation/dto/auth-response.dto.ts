@@ -1,8 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type {
-  AuthenticatedResult,
-  RegistrationResult,
-} from '../../application/auth-result';
+import type { AuthenticatedResult, RegistrationResult } from '../../application/auth-result';
 
 export class AuthUserDto {
   @ApiProperty({ format: 'uuid' })

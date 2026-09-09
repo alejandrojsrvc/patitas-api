@@ -11,12 +11,7 @@ export class ProviderOperationError extends Error {
 }
 
 export class ProviderAuthenticationError extends ProviderOperationError {
-  public constructor(
-    provider: string,
-    operation: string,
-    message: string,
-    options?: ErrorOptions,
-  ) {
+  public constructor(provider: string, operation: string, message: string, options?: ErrorOptions) {
     super(provider, operation, message, options);
     this.name = ProviderAuthenticationError.name;
   }

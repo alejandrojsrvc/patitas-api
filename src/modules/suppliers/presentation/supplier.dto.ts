@@ -1,17 +1,6 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsIn,
-  IsInt,
-  IsNumberString,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Matches,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsNumberString, IsOptional, IsString, IsUUID, Matches, Max, Min } from 'class-validator';
 
 export class CreateSupplierDto {
   @ApiProperty() @IsString() public name!: string;
@@ -31,8 +20,7 @@ export class UpdateSupplierDto extends PartialType(CreateSupplierDto) {}
 export class CreateSupplierOfferDto {
   @ApiProperty({ format: 'uuid' }) @IsUUID() public supplierId!: string;
   @ApiProperty({ format: 'uuid' }) @IsUUID() public variantId!: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() public supplierSku?:
-    string | null;
+  @ApiPropertyOptional() @IsOptional() @IsString() public supplierSku?: string | null;
   @ApiProperty() @IsNumberString() public unitCost!: string;
   @ApiPropertyOptional({
     enum: ['AVAILABLE', 'OUT_OF_STOCK', 'ON_REQUEST', 'UNKNOWN'],
@@ -40,8 +28,7 @@ export class CreateSupplierOfferDto {
   @IsOptional()
   @IsIn(['AVAILABLE', 'OUT_OF_STOCK', 'ON_REQUEST', 'UNKNOWN'])
   public stockStatus?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'ON_REQUEST' | 'UNKNOWN';
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0) public leadTimeHours?:
-    number | null;
+  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0) public leadTimeHours?: number | null;
   @ApiPropertyOptional({ enum: ['STANDARD', 'EXPRESS'] })
   @IsOptional()
   @IsIn(['STANDARD', 'EXPRESS'])
@@ -67,8 +54,7 @@ export class CreateSupplierOfferDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() public active?: boolean;
 }
 export class UpdateSupplierOfferDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() public supplierSku?:
-    string | null;
+  @ApiPropertyOptional() @IsOptional() @IsString() public supplierSku?: string | null;
   @ApiPropertyOptional()
   @IsOptional()
   @IsNumberString()
@@ -79,8 +65,7 @@ export class UpdateSupplierOfferDto {
   @IsOptional()
   @IsIn(['AVAILABLE', 'OUT_OF_STOCK', 'ON_REQUEST', 'UNKNOWN'])
   public stockStatus?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'ON_REQUEST' | 'UNKNOWN';
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0) public leadTimeHours?:
-    number | null;
+  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0) public leadTimeHours?: number | null;
   @ApiPropertyOptional({ enum: ['STANDARD', 'EXPRESS'] })
   @IsOptional()
   @IsIn(['STANDARD', 'EXPRESS'])

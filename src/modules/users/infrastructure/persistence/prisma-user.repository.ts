@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  Prisma,
-  type UserRole as PrismaUserRole,
-} from '../../../../infrastructure/database/generated/prisma/client';
+import { Prisma, type UserRole as PrismaUserRole } from '../../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import type { User } from '../../domain/entities/user.entity';
 import { UserEmailAlreadyExistsError } from '../../domain/errors/user-email-already-exists.error';
@@ -44,10 +41,7 @@ export class PrismaUserRepository implements UserRepository {
       });
       return PrismaUserMapper.toDomain(createdUser);
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new UserEmailAlreadyExistsError(user.email);
       }
       throw error;

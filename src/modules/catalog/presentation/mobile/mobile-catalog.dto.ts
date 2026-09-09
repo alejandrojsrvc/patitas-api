@@ -1,30 +1,27 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsIn,
-  IsInt,
-  IsOptional,
-  IsString,
-  Matches,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class MobileCatalogQueryDto {
-  @ApiPropertyOptional({ description: 'Texto libre de búsqueda.' })
+  @ApiPropertyOptional({ description: 'Texto libre de búsqueda.', maxLength: 80 })
   @IsOptional()
+  @Transform(({ value }) => normalizeQueryText(value))
   @IsString()
+  @MaxLength(80)
   public query?: string;
 
-  @ApiPropertyOptional({ description: 'Alias compatible con el catálogo Web.' })
+  @ApiPropertyOptional({ description: 'Alias compatible con el catálogo Web.', maxLength: 80 })
   @IsOptional()
+  @Transform(({ value }) => normalizeQueryText(value))
   @IsString()
+  @MaxLength(80)
   public q?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => normalizeQueryText(value))
   @IsString()
+  @MaxLength(220)
   public category?: string;
 
   @ApiPropertyOptional({ enum: ['dog', 'cat'] })
@@ -34,7 +31,9 @@ export class MobileCatalogQueryDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => normalizeQueryText(value))
   @IsString()
+  @MaxLength(220)
   public brand?: string;
 
   @ApiPropertyOptional()
@@ -58,6 +57,7 @@ export class MobileCatalogQueryDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(1_024)
   public cursor?: string;
 
   @ApiPropertyOptional({ default: 24, maximum: 100 })
@@ -73,6 +73,7 @@ export class MobileCategoriesQueryDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(1_024)
   public cursor?: string;
 
   @ApiPropertyOptional({ default: 24, maximum: 100 })
@@ -84,8 +85,23 @@ export class MobileCategoriesQueryDto {
   public limit = 24;
 }
 
+export class MobileProductAutocompleteQueryDto {
+  @ApiPropertyOptional({
+    description: 'Prefijo del producto, marca o presentación.',
+    maxLength: 80,
+  })
+  @IsOptional()
+  @Transform(({ value }) => normalizeQueryText(value))
+  @IsString()
+  @MinLength(2)
+  @MaxLength(80)
+  public q?: string;
+}
+
 const parseBoolean = (value: unknown): unknown => {
   if (value === true || value === 'true') return true;
   if (value === false || value === 'false') return false;
   return value;
 };
+
+const normalizeQueryText = (value: unknown): unknown => (typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value);

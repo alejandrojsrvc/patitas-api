@@ -1,4 +1,5 @@
 import type { CartItem } from '../../cart/domain/cart.types';
+import type { CheckoutBenefit, CheckoutPricingActions, CheckoutPricingConflict } from './checkout-pricing';
 
 export type CheckoutStage = 'CONTACT' | 'SHIPPING' | 'PAYMENT' | 'CONFIRMATION';
 export type CheckoutStatus = 'DRAFT' | 'COMPLETED' | 'EXPIRED' | 'CANCELLED';
@@ -33,6 +34,26 @@ export interface CheckoutSession {
   subtotal: string;
   discountTotal: string;
   total: string;
+  pricing: {
+    productDiscountTotal: string;
+    paymentDiscountTotal: string;
+    shippingDiscountTotal: string;
+    benefits: CheckoutBenefit[];
+    conflicts: CheckoutPricingConflict[];
+    shippingThreshold: {
+      threshold: string | null;
+      eligibleAmount: string;
+      remaining: string | null;
+    };
+  };
+  actions: CheckoutPricingActions;
+  scheduledPurchase?: {
+    id: string;
+    frequencyDays: number;
+    discountPercent: string;
+    leadDays: number;
+    status: string;
+  } | null;
   items: CartItem[];
   expiresAt: Date;
 }
@@ -61,6 +82,20 @@ export interface OrderSummary {
     quantity: number;
     unitPrice: string;
     lineTotal: string;
+  }>;
+  benefits: Array<{
+    id: string;
+    type: string;
+    scope: string;
+    origin: string;
+    sourceId: string | null;
+    sourceCode: string | null;
+    description: string;
+    percentage: string | null;
+    amount: string;
+    currency: string;
+    metadata: unknown;
+    createdAt: Date;
   }>;
   createdAt: Date;
 }

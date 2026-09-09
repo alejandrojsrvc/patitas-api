@@ -12,6 +12,8 @@ import type {
   NotificationPreferences,
   NotificationRepository,
   ReminderPlanRecord,
+  ReminderSubscriptionRecord,
+  PurchaseScheduleReminderRecord,
 } from '../domain/notification.repository';
 import { NotificationQueryError } from '../domain/notification.repository';
 
@@ -60,9 +62,7 @@ type InAppNotificationRecordValue = Prisma.InAppNotificationGetPayload<{
 export class PrismaNotificationRepository implements NotificationRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  public async getPreferences(
-    customerId: string,
-  ): Promise<NotificationPreferences> {
+  public async getPreferences(customerId: string): Promise<NotificationPreferences> {
     const value = await this.prisma.customerNotificationPreference.findUnique({
       where: { customerId },
     });
@@ -73,10 +73,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
     };
   }
 
-  public async updatePreferences(
-    customerId: string,
-    input: NotificationPreferences,
-  ) {
+  public async updatePreferences(customerId: string, input: NotificationPreferences) {
     const value = await this.prisma.customerNotificationPreference.upsert({
       where: { customerId },
       create: { customerId, ...input },
@@ -85,9 +82,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
     return { push: value.push, email: value.email, whatsapp: value.whatsapp };
   }
 
-  public async getMobilePreferences(
-    customerId: string,
-  ): Promise<MobileNotificationPreferences> {
+  public async getMobilePreferences(customerId: string): Promise<MobileNotificationPreferences> {
     const value = await this.prisma.customerNotificationPreference.findUnique({
       where: { customerId },
     });
@@ -100,10 +95,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
     };
   }
 
-  public async updateMobilePreferences(
-    customerId: string,
-    input: Partial<MobileNotificationPreferences>,
-  ): Promise<MobileNotificationPreferences> {
+  public async updateMobilePreferences(customerId: string, input: Partial<MobileNotificationPreferences>): Promise<MobileNotificationPreferences> {
     const value = await this.prisma.customerNotificationPreference.upsert({
       where: { customerId },
       create: {
@@ -125,12 +117,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
     };
   }
 
-  public async registerDeviceToken(input: {
-    customerId: string;
-    token: string;
-    platform: string;
-    appVersion?: string | null;
-  }): Promise<void> {
+  public async registerDeviceToken(input: { customerId: string; token: string; platform: string; appVersion?: string | null }): Promise<void> {
     await this.upsertDeviceToken(input);
   }
 
@@ -178,9 +165,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
       appVersion: input.appVersion ?? null,
       active: true,
       lastSeenAt: new Date(),
-      ...(input.deviceIdHash !== undefined
-        ? { deviceIdHash: input.deviceIdHash }
-        : {}),
+      ...(input.deviceIdHash !== undefined ? { deviceIdHash: input.deviceIdHash } : {}),
     };
     const value = existing
       ? await this.prisma.deviceToken.update({
@@ -206,10 +191,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
     return mapDeviceToken(value);
   }
 
-  public async deactivateDeviceToken(
-    customerId: string,
-    id: string,
-  ): Promise<void> {
+  public async deactivateDeviceToken(customerId: string, id: string): Promise<void> {
     await this.prisma.deviceToken.updateMany({
       where: { id, customerId },
       data: { active: false },
@@ -242,16 +224,11 @@ export class PrismaNotificationRepository implements NotificationRepository {
     return {
       items: page.map(mapInAppNotification),
       unreadCount,
-      nextCursor: hasNext
-        ? Buffer.from(page[page.length - 1].id, 'utf8').toString('base64url')
-        : null,
+      nextCursor: hasNext ? Buffer.from(page[page.length - 1].id, 'utf8').toString('base64url') : null,
     };
   }
 
-  public async markInAppNotificationRead(
-    customerId: string,
-    id: string,
-  ): Promise<InAppNotificationRecord | null> {
+  public async markInAppNotificationRead(customerId: string, id: string): Promise<InAppNotificationRecord | null> {
     await this.prisma.inAppNotification.updateMany({
       where: { id, customerId, readAt: null },
       data: { readAt: new Date() },
@@ -304,9 +281,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
     const where: Prisma.CommunicationConsentWhereInput = {
       channel: input.channel,
       destination: input.destination,
-      ...(input.customerId
-        ? { customerId: input.customerId }
-        : { guestTokenHash: input.guestTokenHash }),
+      ...(input.customerId ? { customerId: input.customerId } : { guestTokenHash: input.guestTokenHash }),
     };
     const current = await this.prisma.communicationConsent.findFirst({
       where,
@@ -336,14 +311,8 @@ export class PrismaNotificationRepository implements NotificationRepository {
     });
   }
 
-  public async unsubscribe(input: {
-    customerId?: string;
-    guestTokenHash?: string;
-    channel: NotificationChannel;
-  }): Promise<void> {
-    const owner = input.customerId
-      ? { customerId: input.customerId }
-      : { guestTokenHash: input.guestTokenHash };
+  public async unsubscribe(input: { customerId?: string; guestTokenHash?: string; channel: NotificationChannel }): Promise<void> {
+    const owner = input.customerId ? { customerId: input.customerId } : { guestTokenHash: input.guestTokenHash };
     await this.prisma.communicationConsent.updateMany({
       where: { channel: input.channel, ...owner },
       data: { unsubscribedAt: new Date() },
@@ -351,17 +320,13 @@ export class PrismaNotificationRepository implements NotificationRepository {
     await this.prisma.replenishmentPlan.updateMany({
       where: {
         channel: input.channel,
-        ...(input.customerId
-          ? { customerId: input.customerId }
-          : { guestAccessTokenHash: input.guestTokenHash }),
+        ...(input.customerId ? { customerId: input.customerId } : { guestAccessTokenHash: input.guestTokenHash }),
       },
       data: { unsubscribedAt: new Date(), status: 'PAUSED' },
     });
   }
 
-  public async listAbandonedCarts(
-    cutoff: Date,
-  ): Promise<AbandonedCartRecord[]> {
+  public async listAbandonedCarts(cutoff: Date): Promise<AbandonedCartRecord[]> {
     const carts = await this.prisma.cart.findMany({
       where: { status: 'ACTIVE', lastActivityAt: { lt: cutoff } },
       include: { checkoutSession: true },
@@ -393,15 +358,15 @@ export class PrismaNotificationRepository implements NotificationRepository {
   public findConsentForOwner(input: {
     channel: NotificationChannel;
     customerId?: string | null;
+    replenishmentReminderId?: string;
+    template?: string;
     guestTokenHash?: string | null;
   }) {
     return this.prisma.communicationConsent.findFirst({
       where: {
         channel: input.channel,
         unsubscribedAt: null,
-        ...(input.customerId
-          ? { customerId: input.customerId }
-          : { guestTokenHash: input.guestTokenHash }),
+        ...(input.customerId ? { customerId: input.customerId } : { guestTokenHash: input.guestTokenHash }),
       },
       select: consentSelect,
     });
@@ -424,16 +389,19 @@ export class PrismaNotificationRepository implements NotificationRepository {
     checkoutSessionId?: string | null;
     planId?: string;
     customerId?: string | null;
+    replenishmentReminderId?: string;
+    template?: string;
   }): Promise<string> {
     const delivery = await this.prisma.notificationDelivery.create({
       data: {
         channel: input.channel,
-        template: input.planId ? 'replenishment_reminder' : 'abandoned_cart',
+        template: input.template ?? (input.planId ? 'replenishment_reminder' : 'abandoned_cart'),
         destinationHash: input.destinationHash,
         idempotencyKey: input.idempotencyKey,
         cartId: input.cartId,
         checkoutSessionId: input.checkoutSessionId,
         planId: input.planId,
+        replenishmentReminderId: input.replenishmentReminderId,
         customerId: input.customerId,
         attemptCount: 1,
       },
@@ -482,6 +450,59 @@ export class PrismaNotificationRepository implements NotificationRepository {
       data: { nextReminderAt },
     });
   }
+
+  public async listDueReminderSubscriptions(now: Date): Promise<ReminderSubscriptionRecord[]> {
+    const rows = await this.prisma.replenishmentReminder.findMany({
+      where: { status: 'ACTIVE', nextReminderAt: { lte: now } },
+      include: { estimate: true },
+      take: 100,
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      customerId: row.customerId,
+      guestAccessTokenHash: row.guestAccessTokenHash,
+      email: row.email,
+      nextReminderAt: row.nextReminderAt,
+      estimateId: row.estimateId,
+      petName: row.estimate.petName,
+      durationDaysMax: Number(row.estimate.durationDaysMax),
+    }));
+  }
+
+  public async advanceReminderSubscription(id: string, nextReminderAt: Date): Promise<void> {
+    await this.prisma.replenishmentReminder.update({
+      where: { id },
+      data: { nextReminderAt },
+    });
+  }
+
+  public async pauseReminderSubscription(id: string, at: Date): Promise<void> {
+    await this.prisma.replenishmentReminder.update({
+      where: { id },
+      data: { status: 'PAUSED', unsubscribedAt: at },
+    });
+  }
+
+  public async listDuePurchaseSchedules(now: Date): Promise<PurchaseScheduleReminderRecord[]> {
+    const rows = await this.prisma.purchaseSchedule.findMany({
+      where: { status: 'ACTIVE', nextReminderAt: { lte: now } },
+      include: { variant: { include: { product: true } } },
+      take: 100,
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      customerId: row.customerId,
+      nextReminderAt: row.nextReminderAt!,
+      productName: row.variant.product.name,
+    }));
+  }
+
+  public async markPurchaseScheduleAwaitingConfirmation(id: string): Promise<void> {
+    await this.prisma.purchaseSchedule.update({
+      where: { id },
+      data: { status: 'AWAITING_CONFIRMATION', nextReminderAt: null },
+    });
+  }
 }
 
 const mapPlan = (value: PlanRecord): ReminderPlanRecord => ({
@@ -506,9 +527,7 @@ const mapDeviceToken = (value: DeviceTokenRecordValue): DeviceTokenRecord => ({
   lastSeenAt: value.lastSeenAt,
 });
 
-const mapInAppNotification = (
-  value: InAppNotificationRecordValue,
-): InAppNotificationRecord => ({
+const mapInAppNotification = (value: InAppNotificationRecordValue): InAppNotificationRecord => ({
   id: value.id,
   type: value.type,
   title: value.title,
@@ -526,8 +545,6 @@ const decodeNotificationCursor = (cursor?: string): string | undefined => {
     if (!id) throw new Error();
     return id;
   } catch {
-    throw new NotificationQueryError(
-      'El cursor de notificaciones no es válido.',
-    );
+    throw new NotificationQueryError('El cursor de notificaciones no es válido.');
   }
 };

@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import type {
-  CreateMobilePaymentMethodInput,
-  MobilePaymentMethod,
-  MobilePaymentMethodRepository,
-} from '../domain/mobile-payment-method.repository';
+import type { CreateMobilePaymentMethodInput, MobilePaymentMethod, MobilePaymentMethodRepository } from '../domain/mobile-payment-method.repository';
 import { MobilePaymentMethodError } from '../domain/mobile-payment-method.repository';
 
 @Injectable()
@@ -20,10 +16,7 @@ export class PrismaMobilePaymentMethodRepository implements MobilePaymentMethodR
     return methods.map(mapPaymentMethod);
   }
 
-  public async create(
-    customerId: string,
-    input: CreateMobilePaymentMethodInput,
-  ): Promise<MobilePaymentMethod> {
+  public async create(customerId: string, input: CreateMobilePaymentMethodInput): Promise<MobilePaymentMethod> {
     return this.prisma.$transaction(async (transaction) => {
       if (input.isDefault)
         await transaction.savedPaymentMethod.updateMany({
@@ -55,16 +48,10 @@ export class PrismaMobilePaymentMethodRepository implements MobilePaymentMethodR
       where: { id, customerId, active: true },
       data: { active: false, isDefault: false },
     });
-    if (result.count !== 1)
-      throw new MobilePaymentMethodError(
-        'El método de pago no existe o no tienes acceso.',
-      );
+    if (result.count !== 1) throw new MobilePaymentMethodError('El método de pago no existe o no tienes acceso.');
   }
 
-  public async findOwned(
-    id: string,
-    customerId: string,
-  ): Promise<MobilePaymentMethod | null> {
+  public async findOwned(id: string, customerId: string): Promise<MobilePaymentMethod | null> {
     const method = await this.prisma.savedPaymentMethod.findFirst({
       where: { id, customerId, active: true },
     });
@@ -72,9 +59,7 @@ export class PrismaMobilePaymentMethodRepository implements MobilePaymentMethodR
   }
 }
 
-const mapPaymentMethod = (
-  value: Prisma.SavedPaymentMethodGetPayload<Prisma.SavedPaymentMethodDefaultArgs>,
-): MobilePaymentMethod => ({
+const mapPaymentMethod = (value: Prisma.SavedPaymentMethodGetPayload<Prisma.SavedPaymentMethodDefaultArgs>): MobilePaymentMethod => ({
   id: value.id,
   provider: value.provider as MobilePaymentMethod['provider'],
   type: value.type,

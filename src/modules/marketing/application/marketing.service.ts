@@ -1,8 +1,5 @@
 import type { MarketingProvider } from '../../../shared/application/ports/marketing-provider.interface';
-import type {
-  MarketingEventPersistenceInput,
-  MarketingEventRepository,
-} from '../domain/marketing.repository';
+import type { MarketingEventPersistenceInput, MarketingEventRepository } from '../domain/marketing.repository';
 
 export class MarketingService {
   public constructor(
@@ -17,10 +14,7 @@ export class MarketingService {
       await this.repository.markSent(event.id);
       return { accepted: true, duplicate: false };
     } catch (error) {
-      await this.repository.markFailed(
-        event.id,
-        error instanceof Error ? error.message : 'Proveedor no disponible',
-      );
+      await this.repository.markFailed(event.id, error instanceof Error ? error.message : 'Proveedor no disponible');
       return { accepted: false, duplicate: false };
     }
   }

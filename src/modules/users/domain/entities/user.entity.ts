@@ -22,11 +22,7 @@ export class User extends Entity {
     super(id);
   }
 
-  public static create(
-    email: string,
-    id: string = randomUUID(),
-    role: UserRole = UserRole.CUSTOMER,
-  ): User {
+  public static create(email: string, id: string = randomUUID(), role: UserRole = UserRole.CUSTOMER): User {
     const normalizedEmail = this.normalizeEmail(email);
     const now = new Date();
     return new User(id, {

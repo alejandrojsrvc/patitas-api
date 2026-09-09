@@ -7,10 +7,7 @@ import { validateEnvironment } from './environment.validation';
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
-      envFilePath:
-        process.env['NODE_ENV'] === 'test'
-          ? ['.env.test', '.env.local', '.env.dist']
-          : ['.env.local', '.env.dist'],
+      envFilePath: process.env['NODE_ENV'] === 'production' ? [] : process.env['NODE_ENV'] === 'test' ? ['.env.test', '.env.local'] : ['.env.local'],
       validate: validateEnvironment,
     }),
   ],

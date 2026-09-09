@@ -3,10 +3,7 @@ import type { PaymentProviderConfigurationService } from '../../payments/applica
 import type { CheckoutOwner } from '../domain/checkout.types';
 import type { CheckoutService } from './checkout.service';
 import type { UserRole } from '../../users/domain/entities/user.entity';
-import {
-  toAuthenticatedViewer,
-  toLocationSummary,
-} from '../../storefront/application/storefront-shell';
+import { toAuthenticatedViewer, toLocationSummary } from '../../storefront/application/storefront-shell';
 
 export class CheckoutBootstrapService {
   public constructor(
@@ -15,28 +12,15 @@ export class CheckoutBootstrapService {
     private readonly paymentConfigurations: PaymentProviderConfigurationService,
   ) {}
 
-  public async get(input: {
-    id: string;
-    owner: CheckoutOwner;
-    user?: { userId: string; email: string; role: UserRole };
-  }) {
+  public async get(input: { id: string; owner: CheckoutOwner; user?: { userId: string; email: string; role: UserRole } }) {
     const session = await this.checkout.find(input.id, input.owner);
-    const [shippingOptions, paymentMethods, savedAddresses] = await Promise.all(
-      [
-        session.stage === 'CONTACT'
-          ? Promise.resolve([])
-          : this.checkout.shippingOptionsForSession(session),
-        this.paymentConfigurations.availableMethods(),
-        input.owner.customerId
-          ? this.addresses.listForUserByCustomerId(input.owner.customerId)
-          : Promise.resolve([]),
-      ],
-    );
+    const [shippingOptions, paymentMethods, savedAddresses] = await Promise.all([
+      session.stage === 'CONTACT' ? Promise.resolve([]) : this.checkout.shippingOptionsForSession(session),
+      this.paymentConfigurations.availableMethods(),
+      input.owner.customerId ? this.addresses.listForUserByCustomerId(input.owner.customerId) : Promise.resolve([]),
+    ]);
 
-    const defaultAddress =
-      savedAddresses.find((address) => address.isDefault) ??
-      savedAddresses[0] ??
-      null;
+    const defaultAddress = savedAddresses.find((address) => address.isDefault) ?? savedAddresses[0] ?? null;
     return {
       shell: {
         viewer: input.user
@@ -48,22 +32,47 @@ export class CheckoutBootstrapService {
         location: toLocationSummary(defaultAddress),
         cart: {
           id: session.cartId,
-          itemCount: session.items.reduce(
-            (total, item) => total + item.quantity,
-            0,
-          ),
+          itemCount: session.items.reduce((total, item) => total + item.quantity, 0),
           subtotal: session.subtotal,
           currency: 'ARS' as const,
         },
       },
       session,
-      shippingOptions: shippingOptions
-        .filter((option) => option.available)
-        .map(({ id, cost, deliverySlots }) => ({
+      shippingOptions: shippingOptions.map(
+        ({
           id,
           cost,
+          tariff,
+          deliveryCount,
+          zoneId,
+          zoneName,
+          estimate,
+          available,
+          message,
+          reasonCode,
           deliverySlots,
-        })),
+          freeShippingFrom,
+          eligibleAmount,
+          remainingForFreeShipping,
+          benefit,
+        }) => ({
+          id,
+          cost,
+          tariff,
+          deliveryCount,
+          zoneId,
+          zoneName,
+          estimate,
+          available,
+          message,
+          reasonCode,
+          deliverySlots,
+          freeShippingFrom,
+          eligibleAmount,
+          remainingForFreeShipping,
+          benefit,
+        }),
+      ),
       paymentMethods,
       savedAddresses,
     };

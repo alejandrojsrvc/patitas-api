@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import pg from 'pg';
@@ -8,20 +8,14 @@ loadEnv({ path: ['.env.local', '.env.dist'], quiet: true });
 
 /** @typedef {Record<string, unknown>} DatabaseRow */
 
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error('DATABASE_URL es obligatoria.');
 
-const outputArgument = process.argv.find((value) =>
-  value.startsWith('--output='),
-);
+const outputArgument = process.argv.find((value) => value.startsWith('--output='));
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-const outputDirectory = resolve(
-  outputArgument?.slice('--output='.length) ??
-    `exports/production-catalog-${timestamp}`,
-);
+const outputDirectory = resolve(outputArgument?.slice('--output='.length) ?? `exports/production-catalog-${timestamp}`);
 
 const client = new pg.Client({ connectionString: databaseUrl });
 
@@ -35,12 +29,10 @@ const queryRows = async (sql) => (await client.query(sql)).rows;
 const sqlValue = (value) => {
   if (value === null || value === undefined) return 'NULL';
   if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
-  if (typeof value === 'number')
-    return Number.isFinite(value) ? String(value) : 'NULL';
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : 'NULL';
   if (typeof value === 'string') return sqlString(value);
   if (typeof value === 'bigint') return value.toString();
-  if (value instanceof Date)
-    return `${sqlString(value.toISOString())}::timestamptz`;
+  if (value instanceof Date) return `${sqlString(value.toISOString())}::timestamptz`;
   if (typeof value === 'object') {
     const serialized = JSON.stringify(value);
     if (serialized === undefined) {
@@ -62,12 +54,7 @@ const sqlString = (value) => `'${value.replaceAll("'", "''")}'`;
  */
 const insertRows = (table, columns, rows, updateColumns = columns) => {
   if (rows.length === 0) return `-- ${table}: sin registros\n`;
-  const values = rows
-    .map(
-      (row) =>
-        `  (${columns.map((column) => sqlValue(row[column])).join(', ')})`,
-    )
-    .join(',\n');
+  const values = rows.map((row) => `  (${columns.map((column) => sqlValue(row[column])).join(', ')})`).join(',\n');
   const updates = updateColumns
     .filter((column) => column !== 'id')
     .map((column) => `"${column}" = EXCLUDED."${column}"`)
@@ -87,8 +74,7 @@ try {
     ORDER BY p.created_at, p.id
   `);
   const productIds = products.map((product) => sourceId(product, 'id'));
-  if (productIds.length === 0)
-    throw new Error('No hay productos reales para exportar.');
+  if (productIds.length === 0) throw new Error('No hay productos reales para exportar.');
 
   const ids = productIds.map(sqlString).join(', ');
   const categories = await queryRows(`
@@ -108,8 +94,7 @@ try {
   `);
   categories.sort((left, right) => {
     if (optionalSourceId(left, 'parent_id') === sourceId(right, 'id')) return 1;
-    if (optionalSourceId(right, 'parent_id') === sourceId(left, 'id'))
-      return -1;
+    if (optionalSourceId(right, 'parent_id') === sourceId(left, 'id')) return -1;
     return stringField(left, 'slug').localeCompare(stringField(right, 'slug'));
   });
 
@@ -145,7 +130,7 @@ try {
 
   // Production uses UUID columns. Preserve valid IDs and remap legacy IDs
   // (for example category 1000) consistently across every foreign key.
-  const categoryIdMap = createIdMap(categories, 'categories');
+  const categoryIdMap = createIdMap(categories, 'categories', true);
   const brandIdMap = createIdMap(brands, 'brands');
   const productIdMap = createIdMap(products, 'products');
   const variantIdMap = createIdMap(variants, 'product_variants');
@@ -154,46 +139,19 @@ try {
   const inventoryIdMap = createIdMap(inventory, 'inventory_items');
   const mediaIdMap = createIdMap(media, 'product_media');
 
-  const normalizedCategories = remapRows(
-    categories,
-    categoryIdMap,
-    ['parent_id'],
-    { parent_id: categoryIdMap },
-  );
+  const normalizedCategories = remapRows(categories, categoryIdMap, ['parent_id'], { parent_id: categoryIdMap });
   const normalizedBrands = remapRows(brands, brandIdMap);
-  const normalizedProducts = remapRows(
-    products,
-    productIdMap,
-    ['brand_id', 'category_id'],
-    {
-      brand_id: brandIdMap,
-      category_id: categoryIdMap,
-    },
-  );
-  const normalizedVariants = remapRows(
-    variants,
-    variantIdMap,
-    ['product_id', 'preferred_supplier_offer_id'],
-    { product_id: productIdMap, preferred_supplier_offer_id: offerIdMap },
-  );
-  const normalizedInventory = remapRows(
-    inventory,
-    inventoryIdMap,
-    ['variant_id'],
-    { variant_id: variantIdMap },
-  );
-  const normalizedMedia = remapRows(
-    media,
-    mediaIdMap,
-    ['product_id', 'variant_id'],
-    { product_id: productIdMap, variant_id: variantIdMap },
-  );
-  const normalizedOffers = remapRows(
-    offers,
-    offerIdMap,
-    ['supplier_id', 'variant_id'],
-    { supplier_id: supplierIdMap, variant_id: variantIdMap },
-  );
+  const normalizedProducts = remapRows(products, productIdMap, ['brand_id', 'category_id'], {
+    brand_id: brandIdMap,
+    category_id: categoryIdMap,
+  });
+  const normalizedVariants = remapRows(variants, variantIdMap, ['product_id', 'preferred_supplier_offer_id'], {
+    product_id: productIdMap,
+    preferred_supplier_offer_id: offerIdMap,
+  });
+  const normalizedInventory = remapRows(inventory, inventoryIdMap, ['variant_id'], { variant_id: variantIdMap });
+  const normalizedMedia = remapRows(media, mediaIdMap, ['product_id', 'variant_id'], { product_id: productIdMap, variant_id: variantIdMap });
+  const normalizedOffers = remapRows(offers, offerIdMap, ['supplier_id', 'variant_id'], { supplier_id: supplierIdMap, variant_id: variantIdMap });
   const normalizedSuppliers = remapRows(suppliers, supplierIdMap);
 
   const categoryColumns = [
@@ -272,32 +230,13 @@ try {
     'created_at',
     'updated_at',
   ];
-  const inventoryColumns = [
-    'id',
-    'variant_id',
-    'on_hand',
-    'reserved',
-    'updated_at',
-  ];
-  const mediaColumns = [
-    'id',
-    'product_id',
-    'variant_id',
-    'url',
-    'alt_text',
-    'display_order',
-    'created_at',
-  ];
+  const inventoryColumns = ['id', 'variant_id', 'on_hand', 'reserved', 'updated_at'];
+  const mediaColumns = ['id', 'product_id', 'variant_id', 'url', 'alt_text', 'display_order', 'created_at'];
 
-  const normalizedOfferIds = new Set(
-    normalizedOffers.map((offer) => sourceId(offer, 'id')),
-  );
+  const normalizedOfferIds = new Set(normalizedOffers.map((offer) => sourceId(offer, 'id')));
   const preferredOffers = normalizedVariants
     .filter((variant) => {
-      const offerId = optionalStringField(
-        variant,
-        'preferred_supplier_offer_id',
-      );
+      const offerId = optionalStringField(variant, 'preferred_supplier_offer_id');
       return offerId !== null && normalizedOfferIds.has(offerId);
     })
     .map((variant) => {
@@ -347,9 +286,7 @@ try {
           const logoUrl = stringField(brand, 'logo_url');
           return {
             path: logoUrl,
-            kind: /^https?:\/\//i.test(logoUrl)
-              ? 'external_url'
-              : 'storage_path',
+            kind: /^https?:\/\//i.test(logoUrl) ? 'external_url' : 'storage_path',
             owner: 'brand_logo',
             brandId: stringField(brand, 'id'),
           };
@@ -360,8 +297,7 @@ try {
   const report = {
     generatedAt: new Date().toISOString(),
     outputDirectory,
-    excludedFilter:
-      "products.name = 'Test Product' OR brands.name = 'Test <uuid>'",
+    excludedFilter: "products.name = 'Test Product' OR brands.name = 'Test <uuid>'",
     counts: {
       categories: categories.length,
       brands: brands.length,
@@ -371,12 +307,8 @@ try {
       productMedia: media.length,
       suppliers: suppliers.length,
       supplierOffers: offers.length,
-      storageObjects: imageManifest.objects.filter(
-        ({ kind }) => kind === 'storage_path',
-      ).length,
-      externalImages: imageManifest.objects.filter(
-        ({ kind }) => kind === 'external_url',
-      ).length,
+      storageObjects: imageManifest.objects.filter(({ kind }) => kind === 'storage_path').length,
+      externalImages: imageManifest.objects.filter(({ kind }) => kind === 'external_url').length,
     },
   };
   const instructions = `# Importación del catálogo en producción
@@ -387,7 +319,7 @@ Este paquete excluye los productos y marcas identificados inequívocamente como 
 
 - Aplicar primero todas las migraciones de Prisma en producción.
 - Tomar un respaldo de la base productiva.
-- Confirmar que el bucket privado \`product-media\` existe en Supabase Storage.
+- Confirmar que el bucket público \`product-media\` existe en el almacenamiento S3 configurado.
 - Configurarlo con límite de 10 MB y MIME: \`image/jpeg\`, \`image/png\`, \`image/webp\`, \`image/gif\`.
 
 ## 2. Datos
@@ -405,28 +337,14 @@ Antes de ejecutarlo, \`DATABASE_URL\` debe apuntar explícitamente a producción
 Las rutas almacenadas en \`product_media.url\` son relativas al bucket y el SQL no contiene los binarios.
 Las credenciales se pasan por variables de entorno y no deben guardarse en el repositorio:
 
-\`\`\`bash
-export PRODUCTION_SUPABASE_URL="https://<proyecto>.supabase.co"
-export PRODUCTION_SUPABASE_SECRET_KEY="<secret-key>"
-pnpm catalog:copy-media -- --manifest=${outputDirectory}/product-media-manifest.json --apply
-\`\`\`
-
-El comando sin \`--apply\` verifica todos los objetos del origen y no escribe en producción. Usa \`--overwrite\` únicamente para reemplazar objetos que ya existan en el destino.
+Subir los objetos listados en \`${outputDirectory}/product-media-manifest.json\` conservando exactamente sus object keys mediante las credenciales S3 del entorno de destino.
 `;
 
   await mkdir(outputDirectory, { recursive: true });
   await Promise.all([
     writeFile(resolve(outputDirectory, 'catalog-data.sql'), sql, 'utf8'),
-    writeFile(
-      resolve(outputDirectory, 'product-media-manifest.json'),
-      `${JSON.stringify(imageManifest, null, 2)}\n`,
-      'utf8',
-    ),
-    writeFile(
-      resolve(outputDirectory, 'export-report.json'),
-      `${JSON.stringify(report, null, 2)}\n`,
-      'utf8',
-    ),
+    writeFile(resolve(outputDirectory, 'product-media-manifest.json'), `${JSON.stringify(imageManifest, null, 2)}\n`, 'utf8'),
+    writeFile(resolve(outputDirectory, 'export-report.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8'),
     writeFile(resolve(outputDirectory, 'README.md'), instructions, 'utf8'),
   ]);
 
@@ -438,16 +356,15 @@ El comando sin \`--apply\` verifica todos los objetos del origen y no escribe en
 /**
  * @param {DatabaseRow[]} rows
  * @param {string} entity
+ * @param {boolean} [replaceValidIds]
  * @returns {Map<string, string>}
  */
-function createIdMap(rows, entity) {
+function createIdMap(rows, entity, replaceValidIds = false) {
   const result = new Map();
   const used = new Set();
   for (const row of rows) {
     const original = sourceId(row, 'id');
-    const normalized = uuidPattern.test(original)
-      ? original
-      : stableUuid(entity, original);
+    const normalized = replaceValidIds ? randomUUID() : uuidPattern.test(original) ? original : stableUuid(entity, original);
     if (used.has(normalized)) {
       throw new Error(`Colisión de UUID al exportar ${entity}: ${original}.`);
     }
@@ -468,16 +385,11 @@ function createIdMap(rows, entity) {
  * @param {string} original
  */
 function stableUuid(entity, original) {
-  const bytes = createHash('sha1')
-    .update(`patitas-catalog:${entity}:${original}`)
-    .digest();
+  const bytes = createHash('sha1').update(`patitas-catalog:${entity}:${original}`).digest();
   bytes[6] = (bytes[6] & 0x0f) | 0x50;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   const hex = bytes.toString('hex').slice(0, 32);
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(
-    12,
-    16,
-  )}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 /**
@@ -499,9 +411,7 @@ function remapRows(rows, idMap, foreignKeys = [], foreignMaps = {}) {
       const map = foreignMaps[field];
       const mapped = map?.get(value);
       if (!mapped) {
-        throw new Error(
-          `No se encontró la referencia ${field}=${value} al exportar el catálogo.`,
-        );
+        throw new Error(`No se encontró la referencia ${field}=${value} al exportar el catálogo.`);
       }
       normalized[field] = mapped;
     }
@@ -540,12 +450,7 @@ function optionalStringField(row, field) {
  */
 function sourceId(row, field) {
   const value = row[field];
-  if (
-    (typeof value !== 'string' &&
-      typeof value !== 'number' &&
-      typeof value !== 'bigint') ||
-    String(value).length === 0
-  ) {
+  if ((typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'bigint') || String(value).length === 0) {
     throw new Error(`El campo ${field} debe ser un identificador válido.`);
   }
   return String(value);

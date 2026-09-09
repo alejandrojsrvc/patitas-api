@@ -61,35 +61,25 @@ const parseCsv = (contents: string): CsvRow[] => {
     }
   }
 
-  if (quoted)
-    throw new Error('El CSV termina dentro de un campo entrecomillado.');
+  if (quoted) throw new Error('El CSV termina dentro de un campo entrecomillado.');
   if (field.length > 0 || row.length > 0) {
     row.push(field.replace(/\r$/, ''));
     rows.push(row);
   }
 
-  const headers =
-    rows.shift()?.map((header) => header.replace(/^\uFEFF/, '').trim()) ?? [];
-  const missingHeaders = REQUIRED_HEADERS.filter(
-    (header) => !headers.includes(header),
-  );
+  const headers = rows.shift()?.map((header) => header.replace(/^\uFEFF/, '').trim()) ?? [];
+  const missingHeaders = REQUIRED_HEADERS.filter((header) => !headers.includes(header));
   if (missingHeaders.length > 0) {
-    throw new Error(
-      `Faltan columnas obligatorias: ${missingHeaders.join(', ')}.`,
-    );
+    throw new Error(`Faltan columnas obligatorias: ${missingHeaders.join(', ')}.`);
   }
 
   return rows
     .filter((values) => values.some((value) => value.trim() !== ''))
     .map((values, rowIndex) => {
       if (values.length !== headers.length) {
-        throw new Error(
-          `La fila ${rowIndex + 2} tiene ${values.length} columnas; se esperaban ${headers.length}.`,
-        );
+        throw new Error(`La fila ${rowIndex + 2} tiene ${values.length} columnas; se esperaban ${headers.length}.`);
       }
-      return Object.fromEntries(
-        headers.map((header, index) => [header, values[index].trim()]),
-      );
+      return Object.fromEntries(headers.map((header, index) => [header, values[index].trim()]));
     });
 };
 
@@ -106,8 +96,7 @@ const categorySlug = (value: string): string => {
     DRY_FOOD: 'alimento-seco',
   };
   const slug = categories[value];
-  if (!slug)
-    throw new Error(`La categoría ${value} no tiene un mapeo persistente.`);
+  if (!slug) throw new Error(`La categoría ${value} no tiene un mapeo persistente.`);
   return slug;
 };
 
@@ -120,9 +109,7 @@ const requiredValue = (row: CsvRow, key: string, rowNumber: number): string => {
 const parseWeight = (row: CsvRow, rowNumber: number): number => {
   const value = Number(requiredValue(row, 'weight_grams', rowNumber));
   if (!Number.isInteger(value) || value <= 0) {
-    throw new Error(
-      `La fila ${rowNumber} tiene un peso inválido: ${row.weight_grams}.`,
-    );
+    throw new Error(`La fila ${rowNumber} tiene un peso inválido: ${row.weight_grams}.`);
   }
   return value;
 };
@@ -155,16 +142,13 @@ const validateRows = (rows: CsvRow[]): void => {
 };
 
 const main = async (): Promise<void> => {
-  if (!CSV_PATH)
-    throw new Error('Uso: pnpm catalog:import -- <archivo.csv> [--dry-run].');
+  if (!CSV_PATH) throw new Error('Uso: pnpm catalog:import -- <archivo.csv> [--dry-run].');
 
   const rows = parseCsv(readFileSync(resolve(CSV_PATH), 'utf8'));
   validateRows(rows);
 
   const productSlugs = new Set(rows.map((row) => row.slug));
-  console.log(
-    `CSV válido: ${rows.length} variantes, ${productSlugs.size} productos.`,
-  );
+  console.log(`CSV válido: ${rows.length} variantes, ${productSlugs.size} productos.`);
   if (DRY_RUN) return;
 
   const connectionString = process.env['DATABASE_URL'];
@@ -186,10 +170,7 @@ const main = async (): Promise<void> => {
         const category = await tx.category.findUnique({
           where: { slug: categorySlug(row.category) },
         });
-        if (!category)
-          throw new Error(
-            `No existe la categoría ${categorySlug(row.category)}.`,
-          );
+        if (!category) throw new Error(`No existe la categoría ${categorySlug(row.category)}.`);
 
         let productId = products.get(row.slug);
         if (!productId) {
@@ -258,17 +239,13 @@ const main = async (): Promise<void> => {
       }
     });
 
-    console.log(
-      `Importación completada: ${productSlugs.size} productos activos y ${rows.length} variantes activas.`,
-    );
+    console.log(`Importación completada: ${productSlugs.size} productos activos y ${rows.length} variantes activas.`);
   } finally {
     await prisma.$disconnect();
   }
 };
 
 main().catch((error: unknown) => {
-  console.error(
-    error instanceof Error ? error.message : 'No se pudo importar el catálogo.',
-  );
+  console.error(error instanceof Error ? error.message : 'No se pudo importar el catálogo.');
   process.exit(1);
 });

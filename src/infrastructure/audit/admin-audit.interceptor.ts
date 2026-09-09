@@ -1,10 +1,4 @@
-import {
-  HttpException,
-  Injectable,
-  type CallHandler,
-  type ExecutionContext,
-  type NestInterceptor,
-} from '@nestjs/common';
+import { HttpException, Injectable, type CallHandler, type ExecutionContext, type NestInterceptor } from '@nestjs/common';
 import { tap } from 'rxjs';
 import { PrismaService } from '../database/prisma.service';
 import type { Prisma } from '../database/generated/prisma/client';
@@ -16,24 +10,16 @@ export class AdminAuditInterceptor implements NestInterceptor {
 
   public intercept(context: ExecutionContext, next: CallHandler) {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const response = context
-      .switchToHttp()
-      .getResponse<{ statusCode: number }>();
+    const response = context.switchToHttp().getResponse<{ statusCode: number }>();
     const route = request.route as { path?: string } | undefined;
     const action = `${request.method} ${route?.path ?? request.path}`;
     return next.handle().pipe(
       tap({
         next: () => {
-          void this.persist(
-            request,
-            action,
-            response.statusCode,
-            sanitizeRequest(request),
-          );
+          void this.persist(request, action, response.statusCode, sanitizeRequest(request));
         },
         error: (error: unknown) => {
-          const statusCode =
-            error instanceof HttpException ? error.getStatus() : 500;
+          const statusCode = error instanceof HttpException ? error.getStatus() : 500;
           void this.persist(request, action, statusCode, {
             ...sanitizeRequest(request),
             error: error instanceof Error ? error.name : 'UnknownError',
@@ -43,12 +29,7 @@ export class AdminAuditInterceptor implements NestInterceptor {
     );
   }
 
-  private async persist(
-    request: AuthenticatedRequest,
-    action: string,
-    statusCode: number,
-    metadata: Prisma.InputJsonObject,
-  ) {
+  private async persist(request: AuthenticatedRequest, action: string, statusCode: number, metadata: Prisma.InputJsonObject) {
     await this.prisma.adminAuditLog
       .create({
         data: {
@@ -64,33 +45,18 @@ export class AdminAuditInterceptor implements NestInterceptor {
   }
 }
 
-const sanitizeRequest = (
-  request: AuthenticatedRequest,
-): Prisma.InputJsonObject => {
-  const safeParams = Object.fromEntries(
-    Object.entries(request.params ?? {}).filter(([key]) => SAFE_KEYS.has(key)),
-  );
-  const safeQuery = Object.fromEntries(
-    Object.entries(request.query ?? {}).filter(([key]) => SAFE_KEYS.has(key)),
-  );
+const sanitizeRequest = (request: AuthenticatedRequest): Prisma.InputJsonObject => {
+  const safeParams = Object.fromEntries(Object.entries(request.params ?? {}).filter(([key]) => SAFE_KEYS.has(key)));
+  const safeQuery = Object.fromEntries(Object.entries(request.query ?? {}).filter(([key]) => SAFE_KEYS.has(key)));
   return { params: toJsonObject(safeParams), query: toJsonObject(safeQuery) };
 };
 
-const toJsonObject = (
-  value: Record<string, unknown>,
-): Prisma.InputJsonObject => {
+const toJsonObject = (value: Record<string, unknown>): Prisma.InputJsonObject => {
   const entries: Array<[string, Prisma.InputJsonValue]> = [];
   for (const [key, raw] of Object.entries(value)) {
-    if (
-      typeof raw === 'string' ||
-      typeof raw === 'number' ||
-      typeof raw === 'boolean'
-    ) {
+    if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean') {
       entries.push([key, raw]);
-    } else if (
-      Array.isArray(raw) &&
-      raw.every((item): item is string => typeof item === 'string')
-    ) {
+    } else if (Array.isArray(raw) && raw.every((item): item is string => typeof item === 'string')) {
       entries.push([key, raw]);
     }
   }

@@ -1,8 +1,5 @@
 import { hashAnonymousToken } from '../../../shared/application/anonymous-token';
-import {
-  CheckoutConflictError,
-  CheckoutValidationError,
-} from '../domain/checkout.error';
+import { CheckoutConflictError, CheckoutValidationError } from '../domain/checkout.error';
 import type { CheckoutOwner, CheckoutSession } from '../domain/checkout.types';
 import type { CheckoutRepository } from '../domain/checkout.repository';
 import type { StorageProvider } from '../../../shared/application/ports/storage-provider.interface';
@@ -27,10 +24,7 @@ export class CheckoutService {
   public async find(id: string, owner: CheckoutOwner) {
     return this.resolveMedia(await this.repository.find(id, owner));
   }
-  public async shippingOptions(
-    id: string,
-    owner: CheckoutOwner,
-  ): Promise<ShippingOptionQuote[]> {
+  public async shippingOptions(id: string, owner: CheckoutOwner): Promise<ShippingOptionQuote[]> {
     const session = await this.repository.find(id, owner);
     return this.shippingOptionsForSession(session);
   }
@@ -38,6 +32,18 @@ export class CheckoutService {
     shippingAddress: Record<string, string> | null;
     subtotal: string;
     discountTotal: string;
+    productDiscountTotal?: string;
+    pricing?: {
+      productDiscountTotal: string;
+      benefits: Array<{
+        type: string;
+        origin: string;
+        description: string;
+        amount: string;
+      }>;
+    };
+    shippingOptionId?: string | null;
+    shippingCost: string;
     items: Array<{
       weightGrams?: number | null;
       quantity: number;
@@ -48,27 +54,35 @@ export class CheckoutService {
     const address = session.shippingAddress ?? {};
     const weightGrams = session.items.reduce<number | undefined>(
       (total, item) =>
-        total === undefined ||
-        item.weightGrams === null ||
-        item.weightGrams === undefined
-          ? undefined
-          : total + item.weightGrams * item.quantity,
+        total === undefined || item.weightGrams === null || item.weightGrams === undefined ? undefined : total + item.weightGrams * item.quantity,
       0,
     );
-    return this.shipping.quoteOptions({
+    const options = await this.shipping.quoteOptions({
       postalCode: address.postalCode,
       neighborhood: address.neighborhood,
       city: address.city,
       province: address.province,
       subtotal: Math.max(
         0,
-        Number(session.subtotal) - Number(session.discountTotal),
+        Number(session.subtotal) - Number(session.productDiscountTotal ?? session.pricing?.productDiscountTotal ?? session.discountTotal),
       ).toFixed(2),
       weightGrams,
-      stockAvailable: session.items.every(
-        (item) => item.availableQuantity >= item.quantity,
-      ),
+      stockAvailable: session.items.every((item) => item.availableQuantity >= item.quantity),
     });
+    const shippingBenefit = session.pricing?.benefits.find((benefit) => benefit.type === 'SHIPPING') ?? null;
+    const optionBenefit = shippingBenefit
+      ? {
+          type: shippingBenefit.type,
+          origin: shippingBenefit.origin,
+          description: shippingBenefit.description,
+          amount: shippingBenefit.amount,
+        }
+      : null;
+    return options.map((option) => ({
+      ...option,
+      cost: session.shippingOptionId === option.id && optionBenefit ? session.shippingCost : option.cost,
+      benefit: session.shippingOptionId === option.id ? optionBenefit : null,
+    }));
   }
   public setContact(
     id: string,
@@ -79,13 +93,8 @@ export class CheckoutService {
       contactPhone?: string | null;
     },
   ) {
-    if (
-      !input.contactName.trim() ||
-      !/^\S+@\S+\.\S+$/.test(input.contactEmail.trim())
-    )
-      throw new CheckoutValidationError(
-        'Los datos de contacto no son válidos.',
-      );
+    if (!input.contactName.trim() || !/^\S+@\S+\.\S+$/.test(input.contactEmail.trim()))
+      throw new CheckoutValidationError('Los datos de contacto no son válidos.');
     return this.repository
       .setContact(id, owner, {
         ...input,
@@ -103,133 +112,60 @@ export class CheckoutService {
       contactPhone?: string | null;
     },
   ) {
-    return this.recoverableMutation(id, owner, () =>
-      this.setContact(id, owner, input),
-    );
+    return this.recoverableMutation(id, owner, () => this.setContact(id, owner, input));
   }
-  public setAddress(
-    id: string,
-    owner: CheckoutOwner,
-    address: Record<string, string>,
-    deliveryInstructions?: string | null,
-  ) {
-    const required = [
-      'recipientName',
-      'street',
-      'number',
-      'city',
-      'province',
-      'postalCode',
-    ];
-    if (required.some((key) => !address[key]?.trim()))
-      throw new CheckoutValidationError(
-        'La dirección de envío está incompleta.',
-      );
-    return this.repository
-      .setAddress(id, owner, address, deliveryInstructions)
-      .then((session) => this.resolveMedia(session));
+  public setAddress(id: string, owner: CheckoutOwner, address: Record<string, string>, deliveryInstructions?: string | null) {
+    const required = ['recipientName', 'street', 'number', 'city', 'province', 'postalCode'];
+    if (required.some((key) => !address[key]?.trim())) throw new CheckoutValidationError('La dirección de envío está incompleta.');
+    return this.repository.setAddress(id, owner, address, deliveryInstructions).then((session) => this.resolveMedia(session));
   }
-  public async setAddressWithState(
-    id: string,
-    owner: CheckoutOwner,
-    address: Record<string, string>,
-  ) {
+  public async setAddressWithState(id: string, owner: CheckoutOwner, address: Record<string, string>) {
     return this.recoverableMutation(id, owner, async () => {
       let session = await this.setAddress(id, owner, address);
       let shippingOptions = await this.publicShippingOptions(session);
       if (shippingOptions.length === 1) {
         const onlyOption = shippingOptions[0];
-        const deliverySlotId =
-          onlyOption.deliverySlots.length === 1
-            ? onlyOption.deliverySlots[0].id
-            : undefined;
+        const deliverySlotId = onlyOption.deliverySlots.length === 1 ? onlyOption.deliverySlots[0].id : undefined;
         if (onlyOption.deliverySlots.length <= 1) {
-          session = await this.setShippingOption(
-            id,
-            owner,
-            onlyOption.id,
-            deliverySlotId,
-          );
+          session = await this.setShippingOption(id, owner, onlyOption.id, deliverySlotId);
           shippingOptions = await this.publicShippingOptions(session);
         }
       }
       return { session, shippingOptions };
     });
   }
-  public setShippingOption(
-    id: string,
-    owner: CheckoutOwner,
-    shippingOptionId: string,
-    deliverySlotId?: string,
-  ) {
-    return this.repository
-      .setShippingOption(id, owner, shippingOptionId, deliverySlotId)
-      .then((session) => this.resolveMedia(session));
+  public setShippingOption(id: string, owner: CheckoutOwner, shippingOptionId: string, deliverySlotId?: string, deliveryDate?: string) {
+    return this.repository.setShippingOption(id, owner, shippingOptionId, deliverySlotId, deliveryDate).then((session) => this.resolveMedia(session));
   }
   public async setShippingOptionWithState(
     id: string,
     owner: CheckoutOwner,
     shippingOptionId: string,
     deliverySlotId?: string,
+    deliveryDate?: string,
   ) {
-    return this.recoverableMutation(id, owner, () =>
-      this.setShippingOption(id, owner, shippingOptionId, deliverySlotId),
-    );
+    return this.recoverableMutation(id, owner, () => this.setShippingOption(id, owner, shippingOptionId, deliverySlotId, deliveryDate));
   }
-  public setPaymentMethod(
-    id: string,
-    owner: CheckoutOwner,
-    paymentMethod: string,
-    savedPaymentMethodId?: string | null,
-  ) {
-    if (
-      ![
-        'SIMULATED_CARD',
-        'SIMULATED_TRANSFER',
-        'SIMULATED_CASH',
-        'MERCADO_PAGO',
-        'PAYWAY',
-      ].includes(paymentMethod)
-    )
-      throw new CheckoutValidationError('El método de pago no es válido.');
-    return this.repository
-      .setPaymentMethod(id, owner, paymentMethod, savedPaymentMethodId)
-      .then((session) => this.resolveMedia(session));
+  public async setPaymentMethod(id: string, owner: CheckoutOwner, paymentMethod: string, savedPaymentMethodId?: string | null) {
+    if (!['BANK_TRANSFER', 'MERCADO_PAGO', 'PAYWAY'].includes(paymentMethod)) throw new CheckoutValidationError('El método de pago no es válido.');
+    if (paymentMethod === 'BANK_TRANSFER' && this.payments) await this.payments.assertMethodAvailable(paymentMethod);
+    return this.resolveMedia(await this.repository.setPaymentMethod(id, owner, paymentMethod, savedPaymentMethodId));
   }
-  public async setPaymentMethodWithState(
-    id: string,
-    owner: CheckoutOwner,
-    paymentMethod: string,
-  ) {
-    return this.recoverableMutation(id, owner, () =>
-      this.setPaymentMethod(id, owner, paymentMethod),
-    );
+  public async setPaymentMethodWithState(id: string, owner: CheckoutOwner, paymentMethod: string) {
+    return this.recoverableMutation(id, owner, () => this.setPaymentMethod(id, owner, paymentMethod));
   }
   public applyCoupon(id: string, owner: CheckoutOwner, code: string) {
-    if (!code.trim())
-      throw new CheckoutValidationError('El cupón es obligatorio.');
-    return this.repository
-      .applyCoupon(id, owner, code)
-      .then((session) => this.resolveMedia(session));
+    if (!code.trim()) throw new CheckoutValidationError('El cupón es obligatorio.');
+    return this.repository.applyCoupon(id, owner, code).then((session) => this.resolveMedia(session));
   }
-  public async applyCouponWithState(
-    id: string,
-    owner: CheckoutOwner,
-    code: string,
-  ) {
-    return this.recoverableMutation(id, owner, () =>
-      this.applyCoupon(id, owner, code),
-    );
+  public async applyCouponWithState(id: string, owner: CheckoutOwner, code: string) {
+    return this.recoverableMutation(id, owner, () => this.applyCoupon(id, owner, code));
   }
   public clearCoupon(id: string, owner: CheckoutOwner) {
-    return this.repository
-      .clearCoupon(id, owner)
-      .then((session) => this.resolveMedia(session));
+    return this.repository.clearCoupon(id, owner).then((session) => this.resolveMedia(session));
   }
   public async clearCouponWithState(id: string, owner: CheckoutOwner) {
-    return this.recoverableMutation(id, owner, () =>
-      this.clearCoupon(id, owner),
-    );
+    return this.recoverableMutation(id, owner, () => this.clearCoupon(id, owner));
   }
 
   public async mutationState(session: CheckoutSession) {
@@ -238,51 +174,40 @@ export class CheckoutService {
       shippingOptions: await this.publicShippingOptions(session),
     };
   }
-  public async confirm(
-    id: string,
-    owner: CheckoutOwner,
-    paymentMethod?: TokenizedCardPayment,
-    idempotencyKey?: string,
-  ) {
+  public async confirm(id: string, owner: CheckoutOwner, paymentMethod?: TokenizedCardPayment, idempotencyKey?: string) {
     const session = await this.repository.find(id, owner);
-    if (session.status !== 'COMPLETED' && this.payments)
-      await this.payments.assertMethodAvailable(session.paymentMethod);
-    if (
-      session.status !== 'COMPLETED' &&
-      ['MERCADO_PAGO', 'PAYWAY'].includes(session.paymentMethod ?? '') &&
-      !idempotencyKey?.trim()
-    )
-      throw new PaymentValidationError(
-        'Idempotency-Key es obligatorio para iniciar un pago externo.',
-      );
-    if (
-      session.status !== 'COMPLETED' &&
-      session.paymentMethod === 'PAYWAY' &&
-      !paymentMethod
-    )
-      throw new CheckoutValidationError(
-        'Payway requiere el token de tarjeta generado por el frontend.',
-      );
+    if (session.status !== 'COMPLETED' && this.payments) await this.payments.assertMethodAvailable(session.paymentMethod);
+    if (session.status !== 'COMPLETED' && ['MERCADO_PAGO', 'PAYWAY'].includes(session.paymentMethod ?? '') && !idempotencyKey?.trim())
+      throw new PaymentValidationError('Idempotency-Key es obligatorio para iniciar un pago externo.');
+    if (session.status !== 'COMPLETED' && session.paymentMethod === 'PAYWAY' && !paymentMethod)
+      throw new CheckoutValidationError('Payway requiere el token de tarjeta generado por el frontend.');
     const result = await this.repository.confirm(id, owner);
     if (!result.paymentRequired || !this.payments) return result;
-    const payment = await this.payments.initiate(
-      result.order.id,
-      owner.customerId
-        ? { customerId: owner.customerId }
-        : { publicTokenHash: hashAnonymousToken(result.publicToken) },
-      paymentMethod,
-      idempotencyKey,
-    );
+    const paymentOwner = owner.customerId ? { customerId: owner.customerId } : { publicTokenHash: hashAnonymousToken(result.publicToken) };
+    if (session.paymentMethod === 'BANK_TRANSFER')
+      return {
+        ...result,
+        payment: undefined,
+        transfer: await this.payments.transferStatus(result.order.id, paymentOwner),
+      };
+    const payment = await this.payments.initiate(result.order.id, paymentOwner, paymentMethod, idempotencyKey);
     return {
       ...result,
       order:
         payment.status === 'APPROVED' && payment.paymentStatus === 'PAID'
           ? { ...result.order, status: 'PAID', paymentStatus: 'PAID' }
-          : {
-              ...result.order,
-              paymentStatus: payment.status,
-              canRetry: payment.canRetry,
-            },
+          : payment.provider === 'payway' && payment.status !== 'APPROVED'
+            ? {
+                ...result.order,
+                status: 'CANCELLED',
+                paymentStatus: payment.paymentStatus,
+                canRetry: false,
+              }
+            : {
+                ...result.order,
+                paymentStatus: payment.paymentStatus,
+                canRetry: payment.canRetry,
+              },
       payment,
     };
   }
@@ -302,9 +227,7 @@ export class CheckoutService {
     return this.repository.findPetPurchaseHistory(customerId, petId);
   }
 
-  private resolveMedia<T extends { items: Array<{ imageUrl: string | null }> }>(
-    session: T,
-  ): Promise<T> {
+  private resolveMedia<T extends { items: Array<{ imageUrl: string | null }> }>(session: T): Promise<T> {
     const storage = this.storage;
     if (!storage) return Promise.resolve(session);
     return Promise.resolve({
@@ -333,6 +256,10 @@ export class CheckoutService {
             id: string;
             cost: string;
             deliverySlots: ShippingOptionQuote['deliverySlots'];
+            freeShippingFrom: string | null;
+            eligibleAmount: string;
+            remainingForFreeShipping: string | null;
+            benefit?: ShippingOptionQuote['benefit'];
           }>;
         }
     >,
@@ -344,16 +271,9 @@ export class CheckoutService {
       if (!(error instanceof CheckoutConflictError)) throw error;
       try {
         const current = await this.find(id, owner);
-        throw new CheckoutConflictError(
-          error.message,
-          await this.mutationState(current),
-        );
+        throw new CheckoutConflictError(error.message, await this.mutationState(current));
       } catch (recoveryError) {
-        if (
-          recoveryError instanceof CheckoutConflictError &&
-          recoveryError.currentState
-        )
-          throw recoveryError;
+        if (recoveryError instanceof CheckoutConflictError && recoveryError.currentState) throw recoveryError;
         throw error;
       }
     }
@@ -361,8 +281,40 @@ export class CheckoutService {
 
   private async publicShippingOptions(session: CheckoutSession) {
     if (session.stage === 'CONTACT') return [];
-    return (await this.shippingOptionsForSession(session))
-      .filter((option) => option.available)
-      .map(({ id, cost, deliverySlots }) => ({ id, cost, deliverySlots }));
+    return (await this.shippingOptionsForSession(session)).map(
+      ({
+        id,
+        cost,
+        tariff,
+        deliveryCount,
+        zoneId,
+        zoneName,
+        estimate,
+        available,
+        message,
+        reasonCode,
+        deliverySlots,
+        freeShippingFrom,
+        eligibleAmount,
+        remainingForFreeShipping,
+        benefit,
+      }) => ({
+        id,
+        cost,
+        tariff,
+        deliveryCount,
+        zoneId,
+        zoneName,
+        estimate,
+        available,
+        message,
+        reasonCode,
+        deliverySlots,
+        freeShippingFrom,
+        eligibleAmount,
+        remainingForFreeShipping,
+        benefit,
+      }),
+    );
   }
 }

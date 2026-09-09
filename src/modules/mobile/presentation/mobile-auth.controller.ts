@@ -1,19 +1,6 @@
-import {
-  BadRequestException,
-  Body,
-  ConflictException,
-  Controller,
-  Headers,
-  HttpCode,
-  Logger,
-  Post,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import {
-  ProviderAuthenticationError,
-  ProviderOperationError,
-} from '../../../shared/application/provider-error';
+import { BadRequestException, Body, ConflictException, Controller, Headers, HttpCode, Logger, Post, UnauthorizedException } from '@nestjs/common';
+import { ApiHeader, ApiTags } from '@nestjs/swagger';
+import { ProviderAuthenticationError, ProviderOperationError } from '../../../shared/application/provider-error';
 import { LoginUseCase } from '../../auth/application/use-cases/login.use-case';
 import { ConfirmEmailUseCase } from '../../auth/application/use-cases/confirm-email.use-case';
 import { RequestPasswordRecoveryUseCase } from '../../auth/application/use-cases/request-password-recovery.use-case';
@@ -21,23 +8,17 @@ import { ResendEmailConfirmationUseCase } from '../../auth/application/use-cases
 import { ResetPasswordUseCase } from '../../auth/application/use-cases/reset-password.use-case';
 import { RefreshSessionUseCase } from '../../auth/application/use-cases/refresh-session.use-case';
 import { RegisterUseCase } from '../../auth/application/use-cases/register.use-case';
+import { LogoutUseCase } from '../../auth/application/use-cases/logout.use-case';
 import { ExternalIdentityConflictError } from '../../auth/domain/errors/external-identity-conflict.error';
 import { CustomerService } from '../../customers/application/customer.service';
 import { MobileAccessService } from '../application/mobile-access.service';
-import {
-  MobileLoginDto,
-  MobileRefreshDto,
-  MobileRegisterDto,
-} from './mobile.dto';
+import { MobileLoginDto, MobileRefreshDto, MobileRegisterDto } from './mobile.dto';
 import { toMobileSession, toMobileUser } from './mobile.mapper';
 import type { CustomerProfile } from '../../customers/domain/customer.types';
-import {
-  AuthEmailDto,
-  ConfirmEmailDto,
-  ResetPasswordDto,
-} from '../../auth/presentation/dto/auth-email-action.dto';
+import { AuthEmailDto, ConfirmEmailDto, ResetPasswordDto } from '../../auth/presentation/dto/auth-email-action.dto';
 
 @ApiTags('Mobile auth')
+@ApiHeader({ name: 'X-Turnstile-Token', required: false })
 @Controller('mobile/auth')
 export class MobileAuthController {
   private readonly logger = new Logger(MobileAuthController.name);
@@ -50,6 +31,7 @@ export class MobileAuthController {
     private readonly resendEmailConfirmation: ResendEmailConfirmationUseCase,
     private readonly requestPasswordRecovery: RequestPasswordRecoveryUseCase,
     private readonly resetUserPassword: ResetPasswordUseCase,
+    private readonly logoutUser: LogoutUseCase,
     private readonly customers: CustomerService,
     private readonly accesses: MobileAccessService,
   ) {}
@@ -91,17 +73,12 @@ export class MobileAuthController {
     @Headers('x-app-version') appVersion?: string,
   ) {
     try {
-      const result = await this.confirmUserEmail.execute(
-        input.token,
-        input.type,
-      );
+      const result = await this.confirmUserEmail.execute(input.token, input.type);
       this.recordAccess(result.user, deviceId, platform, appVersion);
       return this.authResponse(result.user, result.session, false);
     } catch (error) {
       if (error instanceof ProviderAuthenticationError) {
-        throw new UnauthorizedException(
-          'El enlace de confirmación no es válido o venció.',
-        );
+        throw new UnauthorizedException('El enlace de confirmación no es válido o venció.');
       }
       throw error;
     }
@@ -113,10 +90,7 @@ export class MobileAuthController {
     try {
       await this.resendEmailConfirmation.execute(input.email);
     } catch (error) {
-      this.logger.error(
-        'No fue posible procesar un reenvío de confirmación móvil.',
-        error instanceof Error ? error.stack : undefined,
-      );
+      this.logger.error('No fue posible procesar un reenvío de confirmación móvil.', error instanceof Error ? error.stack : undefined);
     }
     return {
       message: 'Si la cuenta requiere confirmación, enviaremos un correo.',
@@ -129,10 +103,7 @@ export class MobileAuthController {
     try {
       await this.requestPasswordRecovery.execute(input.email);
     } catch (error) {
-      this.logger.error(
-        'No fue posible procesar una recuperación de contraseña móvil.',
-        error instanceof Error ? error.stack : undefined,
-      );
+      this.logger.error('No fue posible procesar una recuperación de contraseña móvil.', error instanceof Error ? error.stack : undefined);
     }
     return {
       message: 'Si la cuenta existe, enviaremos un correo de recuperación.',
@@ -146,9 +117,7 @@ export class MobileAuthController {
       await this.resetUserPassword.execute(input.token, input.newPassword);
     } catch (error) {
       if (error instanceof ProviderAuthenticationError) {
-        throw new UnauthorizedException(
-          'El enlace de recuperación no es válido o venció.',
-        );
+        throw new UnauthorizedException('El enlace de recuperación no es válido o venció.');
       }
       throw error;
     }
@@ -196,12 +165,19 @@ export class MobileAuthController {
     }
   }
 
-  private recordAccess(
-    user: Parameters<typeof toMobileUser>[0],
-    deviceId?: string,
-    platform?: string,
-    appVersion?: string,
-  ): void {
+  @Post('logout')
+  @HttpCode(204)
+  public logout(@Headers('authorization') authorization?: string): Promise<void> {
+    return this.logoutUser.execute(readBearerToken(authorization));
+  }
+
+  @Post('logout-all')
+  @HttpCode(204)
+  public logoutAll(@Headers('authorization') authorization?: string): Promise<void> {
+    return this.logoutUser.execute(readBearerToken(authorization), true);
+  }
+
+  private recordAccess(user: Parameters<typeof toMobileUser>[0], deviceId?: string, platform?: string, appVersion?: string): void {
     void this.accesses
       .record({
         userId: user.id,
@@ -219,8 +195,7 @@ export class MobileAuthController {
     verificationRequired: boolean,
     customer?: CustomerProfile,
   ) {
-    const resolvedCustomer =
-      customer ?? (await this.customers.findProfileByUserId(user.id));
+    const resolvedCustomer = customer ?? (await this.customers.findProfileByUserId(user.id));
     return {
       user: toMobileUser(user, resolvedCustomer),
       session: toMobileSession(session),
@@ -228,3 +203,9 @@ export class MobileAuthController {
     };
   }
 }
+
+const readBearerToken = (authorization?: string): string => {
+  const [scheme, token] = authorization?.split(' ') ?? [];
+  if (scheme !== 'Bearer' || !token) throw new UnauthorizedException('Se requiere un bearer token válido.');
+  return token;
+};

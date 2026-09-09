@@ -1,17 +1,19 @@
-import type {
-  CheckoutOwner,
-  CheckoutSession,
-  CustomerOrderListItem,
-  OrderSummary,
-} from './checkout.types';
+import type { CheckoutOwner, CheckoutSession, CustomerOrderListItem, OrderSummary } from './checkout.types';
+import type { TransferPayment } from '../../payments/domain/payment.repository';
+import type { PaymentInitiation } from '../../payments/domain/payment.repository';
+
+export interface CheckoutConfirmation {
+  order: OrderSummary;
+  publicToken: string;
+  paymentRequired?: boolean;
+  payment?: PaymentInitiation;
+  transfer?: TransferPayment;
+}
 
 export const CHECKOUT_REPOSITORY = Symbol('CHECKOUT_REPOSITORY');
 
 export interface CheckoutRepository {
-  create(
-    cartId: string,
-    owner: CheckoutOwner,
-  ): Promise<{ session: CheckoutSession; token: string }>;
+  create(cartId: string, owner: CheckoutOwner): Promise<{ session: CheckoutSession; token: string }>;
   find(id: string, owner: CheckoutOwner): Promise<CheckoutSession>;
   setContact(
     id: string,
@@ -22,38 +24,18 @@ export interface CheckoutRepository {
       contactPhone?: string | null;
     },
   ): Promise<CheckoutSession>;
-  setAddress(
-    id: string,
-    owner: CheckoutOwner,
-    address: Record<string, string>,
-    deliveryInstructions?: string | null,
-  ): Promise<CheckoutSession>;
+  setAddress(id: string, owner: CheckoutOwner, address: Record<string, string>, deliveryInstructions?: string | null): Promise<CheckoutSession>;
   setShippingOption(
     id: string,
     owner: CheckoutOwner,
     shippingOptionId: string,
     deliverySlotId?: string,
+    deliveryDate?: string,
   ): Promise<CheckoutSession>;
-  setPaymentMethod(
-    id: string,
-    owner: CheckoutOwner,
-    paymentMethod: string,
-    savedPaymentMethodId?: string | null,
-  ): Promise<CheckoutSession>;
-  applyCoupon(
-    id: string,
-    owner: CheckoutOwner,
-    code: string,
-  ): Promise<CheckoutSession>;
+  setPaymentMethod(id: string, owner: CheckoutOwner, paymentMethod: string, savedPaymentMethodId?: string | null): Promise<CheckoutSession>;
+  applyCoupon(id: string, owner: CheckoutOwner, code: string): Promise<CheckoutSession>;
   clearCoupon(id: string, owner: CheckoutOwner): Promise<CheckoutSession>;
-  confirm(
-    id: string,
-    owner: CheckoutOwner,
-  ): Promise<{
-    order: OrderSummary;
-    publicToken: string;
-    paymentRequired?: boolean;
-  }>;
+  confirm(id: string, owner: CheckoutOwner): Promise<CheckoutConfirmation>;
   findPublicOrder(id: string, token: string): Promise<OrderSummary>;
   listCustomerOrders(customerId: string): Promise<OrderSummary[]>;
   listCustomerOrderPage(

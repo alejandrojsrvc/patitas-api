@@ -1,5 +1,4 @@
-export type ReplenishmentPlanStatus =
-  'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'COMPLETED';
+export type ReplenishmentPlanStatus = 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'COMPLETED';
 export type NotificationChannel = 'EMAIL' | 'WHATSAPP' | 'PUSH';
 export type RemainingBucket = 'FEW_DAYS' | 'ABOUT_WEEK' | 'MORE_THAN_WEEK';
 

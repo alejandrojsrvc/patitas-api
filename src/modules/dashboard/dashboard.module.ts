@@ -5,10 +5,7 @@ import { PricingModule } from '../pricing/pricing.module';
 import { PricingService } from '../pricing/application/pricing.service';
 import { DashboardService } from './application/dashboard.service';
 import { DashboardController } from './presentation/dashboard.controller';
-import {
-  DASHBOARD_REPOSITORY,
-  type DashboardRepository,
-} from './domain/dashboard.types';
+import { DASHBOARD_REPOSITORY, type DashboardRepository } from './domain/dashboard.types';
 import { PrismaDashboardRepository } from './infrastructure/prisma-dashboard.repository';
 
 @Module({
@@ -19,8 +16,7 @@ import { PrismaDashboardRepository } from './infrastructure/prisma-dashboard.rep
     {
       provide: DashboardService,
       inject: [DASHBOARD_REPOSITORY, PricingService],
-      useFactory: (repository: DashboardRepository, pricing: PricingService) =>
-        new DashboardService(repository, pricing),
+      useFactory: (repository: DashboardRepository, pricing: PricingService) => new DashboardService(repository, pricing),
     },
   ],
 })

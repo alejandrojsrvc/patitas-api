@@ -1,12 +1,5 @@
-import type {
-  Product,
-  ProductVariant,
-  VariantFulfillment,
-} from '../../catalog/domain/catalog.types';
-import type {
-  FulfillmentRepository,
-  FulfillmentSettingsInput,
-} from '../domain/fulfillment.types';
+import type { Product, ProductVariant, VariantFulfillment } from '../../catalog/domain/catalog.types';
+import type { FulfillmentRepository, FulfillmentSettingsInput } from '../domain/fulfillment.types';
 
 export class FulfillmentValidationError extends Error {
   public constructor(message: string) {
@@ -23,20 +16,10 @@ export class FulfillmentService {
   }
 
   public updateSettings(input: FulfillmentSettingsInput) {
-    if (input.depotCutoff !== undefined && !isTime(input.depotCutoff))
-      throw new FulfillmentValidationError(
-        'El corte del depósito no es válido.',
-      );
-    if (
-      input.depotHandlingMinutes !== undefined &&
-      (!Number.isInteger(input.depotHandlingMinutes) ||
-        input.depotHandlingMinutes < 0)
-    )
-      throw new FulfillmentValidationError(
-        'El tiempo de preparación debe ser un entero no negativo.',
-      );
-    if (input.timezone !== undefined && !input.timezone.trim())
-      throw new FulfillmentValidationError('La zona horaria es obligatoria.');
+    if (input.depotCutoff !== undefined && !isTime(input.depotCutoff)) throw new FulfillmentValidationError('El corte del depósito no es válido.');
+    if (input.depotHandlingMinutes !== undefined && (!Number.isInteger(input.depotHandlingMinutes) || input.depotHandlingMinutes < 0))
+      throw new FulfillmentValidationError('El tiempo de preparación debe ser un entero no negativo.');
+    if (input.timezone !== undefined && !input.timezone.trim()) throw new FulfillmentValidationError('La zona horaria es obligatoria.');
     return this.repository.updateSettings({
       ...input,
       timezone: input.timezone?.trim(),
@@ -53,11 +36,7 @@ export class FulfillmentService {
       ...product,
       variants: product.variants.map((variant) => ({
         ...variant,
-        fulfillment: calculateVariantFulfillment(
-          variant,
-          resolvedSettings,
-          now,
-        ),
+        fulfillment: calculateVariantFulfillment(variant, resolvedSettings, now),
       })),
     };
   }
@@ -73,11 +52,7 @@ export const calculateVariantFulfillment = (
   const supplierCutoff = variant.supplierCutoff ?? null;
   const supplierToDepotMinutes = variant.supplierToDepotMinutes ?? null;
   const supplierFulfillmentCost = variant.supplierFulfillmentCost ?? null;
-  const beforeDepotCutoff = isBeforeCutoff(
-    now,
-    settings.depotCutoff,
-    settings.timezone,
-  );
+  const beforeDepotCutoff = isBeforeCutoff(now, settings.depotCutoff, settings.timezone);
   if (available > 0) {
     const today = settings.sameDayEnabled && beforeDepotCutoff;
     return {
@@ -93,9 +68,7 @@ export const calculateVariantFulfillment = (
     };
   }
 
-  const supplierAvailable = ['AVAILABLE', 'ON_REQUEST'].includes(
-    variant.supplierStockStatus ?? '',
-  );
+  const supplierAvailable = ['AVAILABLE', 'ON_REQUEST'].includes(variant.supplierStockStatus ?? '');
   const express =
     supplierAvailable &&
     supplierMode === 'EXPRESS' &&
@@ -105,8 +78,7 @@ export const calculateVariantFulfillment = (
     variant.supplierLeadTimeHours <= 24 &&
     isBeforeCutoff(now, supplierCutoff, settings.timezone) &&
     beforeDepotCutoff &&
-    minutesUntilCutoff(now, settings.depotCutoff, settings.timezone) >=
-      supplierToDepotMinutes + settings.depotHandlingMinutes;
+    minutesUntilCutoff(now, settings.depotCutoff, settings.timezone) >= supplierToDepotMinutes + settings.depotHandlingMinutes;
   if (express) {
     return {
       status: 'SUPPLIER_EXPRESS',
@@ -149,11 +121,9 @@ export const calculateVariantFulfillment = (
   };
 };
 
-const isBeforeCutoff = (now: Date, cutoff: string, timezone: string) =>
-  minutesInTimezone(now, timezone) < timeToMinutes(cutoff);
+const isBeforeCutoff = (now: Date, cutoff: string, timezone: string) => minutesInTimezone(now, timezone) < timeToMinutes(cutoff);
 
-const minutesUntilCutoff = (now: Date, cutoff: string, timezone: string) =>
-  timeToMinutes(cutoff) - minutesInTimezone(now, timezone);
+const minutesUntilCutoff = (now: Date, cutoff: string, timezone: string) => timeToMinutes(cutoff) - minutesInTimezone(now, timezone);
 
 const minutesInTimezone = (date: Date, timezone: string): number => {
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -163,9 +133,7 @@ const minutesInTimezone = (date: Date, timezone: string): number => {
     hourCycle: 'h23',
   }).formatToParts(date);
   const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? 0);
-  const minute = Number(
-    parts.find((part) => part.type === 'minute')?.value ?? 0,
-  );
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? 0);
   return hour * 60 + minute;
 };
 
@@ -186,5 +154,4 @@ const dateOnly = (date: Date, days: number, timezone: string): string => {
   return result.toISOString().slice(0, 10);
 };
 
-const isTime = (value: string): boolean =>
-  /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+const isTime = (value: string): boolean => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);

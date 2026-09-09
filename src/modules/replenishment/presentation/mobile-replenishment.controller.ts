@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Headers,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../../auth/presentation/guards/auth.guard';
 import { RolesGuard } from '../../auth/presentation/guards/roles.guard';
@@ -20,10 +9,7 @@ import type { AuthenticatedUser } from '../../auth/presentation/authenticated-us
 import { CustomerService } from '../../customers/application/customer.service';
 import { PetService } from '../../pets/application/pet.service';
 import { EstimateService } from '../application/estimate.service';
-import {
-  ReplenishmentService,
-  ReplenishmentValidationError,
-} from '../application/replenishment.service';
+import { ReplenishmentService, ReplenishmentValidationError } from '../application/replenishment.service';
 import { CartService } from '../../cart/application/cart.service';
 import type { NotificationChannel } from '../domain/replenishment.types';
 import { toMobileCart } from '../../cart/presentation/mobile-cart.mapper';
@@ -55,9 +41,7 @@ export class MobileReplenishmentController {
   @Get('me/replenishment-plans')
   public async list(@CurrentUser() user: AuthenticatedUser) {
     const customer = await this.customers.findByUserId(user.userId);
-    return (await this.plans.list({ customerId: customer.id })).map(
-      toMobilePlan,
-    );
+    return (await this.plans.list({ customerId: customer.id })).map(toMobilePlan);
   }
 
   @Post('me/replenishment-plans')
@@ -69,28 +53,13 @@ export class MobileReplenishmentController {
   ) {
     const customer = await this.customers.findByUserId(user.userId);
     const pet = await this.pets.findOwned(input.petId, customer.id);
-    const estimate = await this.estimates.findOwned(
-      input.estimateId,
-      customer.id,
-    );
+    const estimate = await this.estimates.findOwned(input.estimateId, customer.id);
     if (!estimate.productId || !estimate.variantId)
-      throw new ReplenishmentValidationError(
-        'Un alimento personalizado todavía no puede crear un plan de reposición.',
-      );
-    if (
-      (input.productId && input.productId !== estimate.productId) ||
-      (input.variantId && input.variantId !== estimate.variantId)
-    )
-      throw new ReplenishmentValidationError(
-        'El producto no coincide con la estimación seleccionada.',
-      );
-    const channels = [
-      ...new Set(
-        input.reminderChannels.map((channel) => channel.toUpperCase()),
-      ),
-    ] as NotificationChannel[];
-    if (!channels.length)
-      throw new Error('Selecciona al menos un canal de recordatorio.');
+      throw new ReplenishmentValidationError('Un alimento personalizado todavía no puede crear un plan de reposición.');
+    if ((input.productId && input.productId !== estimate.productId) || (input.variantId && input.variantId !== estimate.variantId))
+      throw new ReplenishmentValidationError('El producto no coincide con la estimación seleccionada.');
+    const channels = [...new Set(input.reminderChannels.map((channel) => channel.toUpperCase()))] as NotificationChannel[];
+    if (!channels.length) throw new Error('Selecciona al menos un canal de recordatorio.');
     const plan = await this.plans.create(
       {
         idempotencyKey: idempotencyKey ?? null,
@@ -103,10 +72,7 @@ export class MobileReplenishmentController {
         petBreed: pet.breed,
         productId: estimate.productId,
         variantId: estimate.variantId,
-        dailyConsumption: (
-          (estimate.dailyGrams.min + estimate.dailyGrams.max) /
-          2
-        ).toString(),
+        dailyConsumption: ((estimate.dailyGrams.min + estimate.dailyGrams.max) / 2).toString(),
         dailyGramsMin: estimate.dailyGrams.min,
         dailyGramsMax: estimate.dailyGrams.max,
         consumptionUnit: 'GRAMS_PER_DAY',
@@ -134,21 +100,14 @@ export class MobileReplenishmentController {
   }
 
   @Patch('me/replenishment-plans/:planId')
-  public async update(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('planId') id: string,
-    @Body() input: UpdateMobileReplenishmentPlanDto,
-  ) {
+  public async update(@CurrentUser() user: AuthenticatedUser, @Param('planId') id: string, @Body() input: UpdateMobileReplenishmentPlanDto) {
     const customerId = (await this.customers.findByUserId(user.userId)).id;
     const plan = await this.plans.updateMobileState(
       id,
       { customerId },
       {
         status: input.status,
-        nextReminderAt:
-          input.nextReminderAt === undefined
-            ? undefined
-            : new Date(input.nextReminderAt),
+        nextReminderAt: input.nextReminderAt === undefined ? undefined : new Date(input.nextReminderAt),
         remindersEnabled: input.remindersEnabled,
         leadDays: input.leadDays,
       },
@@ -165,19 +124,10 @@ export class MobileReplenishmentController {
     const customerId = (await this.customers.findByUserId(user.userId)).id;
     const plan = await this.plans.find(id, { customerId });
     const remainingBucket = input.remainingBucket ?? input.bucket;
-    if (!remainingBucket)
-      throw new ReplenishmentValidationError(
-        'Se requiere indicar cuánto alimento queda.',
-      );
+    if (!remainingBucket) throw new ReplenishmentValidationError('Se requiere indicar cuánto alimento queda.');
     const days = daysForBucket(remainingBucket, plan.durationDaysMax);
     return toMobilePlan(
-      await this.plans.recalibrate(
-        id,
-        { customerId },
-        days,
-        remainingBucket,
-        input.observedAt ? new Date(input.observedAt) : undefined,
-      ),
+      await this.plans.recalibrate(id, { customerId }, days, remainingBucket, input.observedAt ? new Date(input.observedAt) : undefined),
     );
   }
 
@@ -189,27 +139,15 @@ export class MobileReplenishmentController {
   ) {
     const customerId = (await this.customers.findByUserId(user.userId)).id;
     return toMobilePlan(
-      await this.plans.changeProduct(
-        id,
-        { customerId },
-        input.productId,
-        input.variantId,
-        {
-          bagStartedAt: input.bagStartedAt
-            ? new Date(input.bagStartedAt)
-            : undefined,
-          remainingBucket: input.remainingBucket,
-        },
-      ),
+      await this.plans.changeProduct(id, { customerId }, input.productId, input.variantId, {
+        bagStartedAt: input.bagStartedAt ? new Date(input.bagStartedAt) : undefined,
+        remainingBucket: input.remainingBucket,
+      }),
     );
   }
 
   @Post('me/replenishment-plans/:planId/start-bag')
-  public async startBag(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('planId') id: string,
-    @Body() input: StartMobileReplenishmentBagDto,
-  ) {
+  public async startBag(@CurrentUser() user: AuthenticatedUser, @Param('planId') id: string, @Body() input: StartMobileReplenishmentBagDto) {
     const customerId = (await this.customers.findByUserId(user.userId)).id;
     const plan = await this.plans.startBag(
       id,
@@ -234,15 +172,9 @@ export class MobileReplenishmentController {
   }
 
   @Post('replenishment-plans/:id/reorder-cart')
-  public async reorder(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-    @Body() input: ReorderMobileCartDto,
-  ) {
+  public async reorder(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() input: ReorderMobileCartDto) {
     const customerId = (await this.customers.findByUserId(user.userId)).id;
-    const plan = this.plans.assertReorderable(
-      await this.plans.find(id, { customerId }),
-    );
+    const plan = this.plans.assertReorderable(await this.plans.find(id, { customerId }));
     const cart = await this.carts.reorder(
       { customerId, source: 'MOBILE' },
       plan.variantId,
@@ -251,9 +183,7 @@ export class MobileReplenishmentController {
     );
     return {
       ...toMobileCart(cart),
-      ...('cartToken' in cart && cart.cartToken
-        ? { cartToken: cart.cartToken }
-        : {}),
+      ...('cartToken' in cart && cart.cartToken ? { cartToken: cart.cartToken } : {}),
     };
   }
 }

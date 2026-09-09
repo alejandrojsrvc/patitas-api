@@ -2,20 +2,17 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import type { ReplenishmentEstimateRepository } from '../domain/estimate.repository';
-import type {
-  CreateEstimateInput,
-  ReplenishmentEstimate,
-} from '../domain/estimate.types';
+import type { CreateEstimateInput, ReplenishmentEstimate } from '../domain/estimate.types';
 
-type EstimateRecord =
-  Prisma.ReplenishmentEstimateGetPayload<Prisma.ReplenishmentEstimateDefaultArgs>;
+type EstimateRecord = Prisma.ReplenishmentEstimateGetPayload<Prisma.ReplenishmentEstimateDefaultArgs>;
 
 @Injectable()
 export class PrismaEstimateRepository implements ReplenishmentEstimateRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
   public async create(input: {
-    customerId: string;
+    customerId?: string | null;
+    guestTokenHash?: string | null;
     petId?: string | null;
     request: CreateEstimateInput;
     result: {
@@ -30,7 +27,8 @@ export class PrismaEstimateRepository implements ReplenishmentEstimateRepository
   }) {
     const row = await this.prisma.replenishmentEstimate.create({
       data: {
-        customerId: input.customerId,
+        customerId: input.customerId ?? null,
+        guestAccessTokenHash: input.guestTokenHash ?? null,
         petId: input.petId ?? null,
         petName: input.request.pet.name.trim(),
         petSpecies: input.request.pet.species,
@@ -78,9 +76,7 @@ const mapEstimate = (value: EstimateRecord): ReplenishmentEstimate => ({
   sourceLabel: value.sourceLabel,
   sourceUrl: value.sourceUrl,
   estimatedDepletionDate: value.estimatedDepletionDate,
-  assumptions: Array.isArray(value.assumptions)
-    ? (value.assumptions as string[])
-    : [],
+  assumptions: Array.isArray(value.assumptions) ? (value.assumptions as string[]) : [],
   productId: value.productId,
   variantId: value.variantId,
   custom:

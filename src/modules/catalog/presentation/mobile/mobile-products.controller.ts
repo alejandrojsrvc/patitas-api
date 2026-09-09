@@ -1,14 +1,11 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Header, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../../auth/presentation/decorators/current-user.decorator';
 import { OptionalAuthGuard } from '../../../auth/presentation/guards/optional-auth.guard';
 import type { AuthenticatedUser } from '../../../auth/presentation/authenticated-user';
 import { MobileCatalogService } from '../../application/mobile-catalog.service';
-import { MobileCatalogQueryDto } from './mobile-catalog.dto';
-import {
-  MobileCursorPageResponseDto,
-  MobileProductResponseDto,
-} from './mobile-catalog-response.dto';
+import { MobileCatalogQueryDto, MobileProductAutocompleteQueryDto } from './mobile-catalog.dto';
+import { MobileCursorPageResponseDto, MobileProductAutocompleteResponseDto, MobileProductResponseDto } from './mobile-catalog-response.dto';
 import { toMobileProduct } from './mobile-catalog.mapper';
 
 @ApiTags('Mobile products')
@@ -20,28 +17,23 @@ export class MobileProductsController {
 
   @Get()
   @ApiOkResponse({ type: MobileCursorPageResponseDto })
-  public list(
-    @Query() query: MobileCatalogQueryDto,
-    @CurrentUser() user?: AuthenticatedUser,
-  ) {
-    return this.mobileCatalog
-      .listProducts(query, user?.userId)
-      .then((page) => ({
-        ...page,
-        items: page.items.map((item) =>
-          toMobileProduct(item.product, item.shippingQuotes),
-        ),
-      }));
+  public list(@Query() query: MobileCatalogQueryDto, @CurrentUser() user?: AuthenticatedUser) {
+    return this.mobileCatalog.listProducts(query, user?.userId).then((page) => ({
+      ...page,
+      items: page.items.map((item) => toMobileProduct(item.product, item.shippingQuotes)),
+    }));
+  }
+
+  @Get('autocomplete')
+  @ApiOkResponse({ type: MobileProductAutocompleteResponseDto })
+  @Header('Cache-Control', 'public, max-age=10, s-maxage=30, stale-while-revalidate=60')
+  public async autocomplete(@Query() query: MobileProductAutocompleteQueryDto) {
+    return { items: await this.mobileCatalog.autocompleteProducts(query.q) };
   }
 
   @Get(':slug')
   @ApiOkResponse({ type: MobileProductResponseDto })
-  public product(
-    @Param('slug') slug: string,
-    @Query() query: MobileCatalogQueryDto,
-  ) {
-    return this.mobileCatalog
-      .getProduct(slug, query)
-      .then((item) => toMobileProduct(item.product, item.shippingQuotes));
+  public product(@Param('slug') slug: string, @Query() query: MobileCatalogQueryDto) {
+    return this.mobileCatalog.getProduct(slug, query).then((item) => toMobileProduct(item.product, item.shippingQuotes));
   }
 }

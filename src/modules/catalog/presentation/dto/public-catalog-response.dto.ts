@@ -6,13 +6,11 @@ export class PublicReferenceResponseDto {
   @ApiProperty() public slug!: string;
   @ApiPropertyOptional({ nullable: true }) public description!: string | null;
   @ApiPropertyOptional({ nullable: true }) public seoTitle!: string | null;
-  @ApiPropertyOptional({ nullable: true }) public seoDescription!:
-    string | null;
+  @ApiPropertyOptional({ nullable: true }) public seoDescription!: string | null;
 }
 
 export class PublicCategoryResponseDto extends PublicReferenceResponseDto {
-  @ApiPropertyOptional({ format: 'uuid', nullable: true }) public parentId!:
-    string | null;
+  @ApiPropertyOptional({ format: 'uuid', nullable: true }) public parentId!: string | null;
   @ApiProperty({ type: () => [PublicCategoryResponseDto] })
   public children!: PublicCategoryResponseDto[];
 }
@@ -24,8 +22,7 @@ export class PublicBrandResponseDto extends PublicReferenceResponseDto {
 export class PublicProductMediaResponseDto {
   @ApiProperty() public url!: string;
   @ApiProperty() public altText!: string;
-  @ApiPropertyOptional({ format: 'uuid', nullable: true }) public variantId!:
-    string | null;
+  @ApiPropertyOptional({ format: 'uuid', nullable: true }) public variantId!: string | null;
 }
 
 export class PublicFulfillmentResponseDto {
@@ -45,8 +42,7 @@ export class PublicProductVariantResponseDto {
   @ApiPropertyOptional({ nullable: true }) public presentation!: string | null;
   @ApiPropertyOptional({ nullable: true }) public weightGrams!: number | null;
   @ApiProperty() public salePrice!: string;
-  @ApiPropertyOptional({ nullable: true }) public compareAtPrice!:
-    string | null;
+  @ApiPropertyOptional({ nullable: true }) public compareAtPrice!: string | null;
   @ApiProperty({ example: 'ARS' }) public currency!: 'ARS';
   @ApiProperty({ type: PublicFulfillmentResponseDto })
   public fulfillment!: PublicFulfillmentResponseDto;
@@ -84,8 +80,7 @@ export class PublicFeedingGuideEntryResponseDto {
   })
   public petWeightKg!: number;
   @ApiProperty() public petWeightKgMin!: number;
-  @ApiPropertyOptional({ nullable: true }) public petWeightKgMax!:
-    number | null;
+  @ApiPropertyOptional({ nullable: true }) public petWeightKgMax!: number | null;
   @ApiPropertyOptional({ nullable: true }) public lifeStage!: string | null;
   @ApiProperty({ type: Object }) public conditions!: Record<string, string>;
   @ApiProperty() public dailyGramsMin!: number;
@@ -106,8 +101,7 @@ export class PublicProductTechnicalSheetResponseDto {
   @ApiPropertyOptional({ nullable: true }) public lifeStage!: string | null;
   @ApiPropertyOptional({ nullable: true }) public breedSize!: string | null;
   @ApiPropertyOptional({ nullable: true }) public line!: string | null;
-  @ApiPropertyOptional({ nullable: true }) public ingredientsText!:
-    string | null;
+  @ApiPropertyOptional({ nullable: true }) public ingredientsText!: string | null;
   @ApiPropertyOptional({ type: [Object], nullable: true })
   public analyticalComposition!: Record<string, unknown> | null;
   @ApiPropertyOptional({ nullable: true })
@@ -181,6 +175,40 @@ export class PublicProductPageResponseDto {
   public items!: PublicProductResponseDto[];
   @ApiProperty({ type: PublicPageMetaResponseDto })
   public meta!: PublicPageMetaResponseDto;
+}
+
+export class PublicProductAutocompleteBrandResponseDto {
+  @ApiProperty({ format: 'uuid' }) public id!: string;
+  @ApiProperty() public name!: string;
+  @ApiProperty() public slug!: string;
+}
+
+export class PublicProductAutocompleteImageResponseDto {
+  @ApiProperty() public url!: string;
+  @ApiProperty() public altText!: string;
+}
+
+export class PublicProductAutocompleteItemResponseDto {
+  @ApiProperty({ format: 'uuid' }) public id!: string;
+  @ApiProperty({ format: 'uuid' }) public productId!: string;
+  @ApiProperty() public slug!: string;
+  @ApiProperty() public name!: string;
+  @ApiPropertyOptional({ nullable: true }) public presentation!: string | null;
+  @ApiProperty() public displayName!: string;
+  @ApiProperty({ type: PublicProductAutocompleteBrandResponseDto })
+  public brand!: PublicProductAutocompleteBrandResponseDto;
+  @ApiPropertyOptional({
+    type: PublicProductAutocompleteImageResponseDto,
+    nullable: true,
+  })
+  public image!: PublicProductAutocompleteImageResponseDto | null;
+  @ApiProperty() public salePrice!: string;
+  @ApiProperty({ example: 'ARS' }) public currency!: 'ARS';
+}
+
+export class PublicProductAutocompleteResponseDto {
+  @ApiProperty({ type: [PublicProductAutocompleteItemResponseDto] })
+  public items!: PublicProductAutocompleteItemResponseDto[];
 }
 
 export class PublicCalculatorVariantProjectionResponseDto {

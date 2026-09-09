@@ -22,28 +22,14 @@ export class ReferralService {
   }
   public async createCode(customerId: string, campaignId: string) {
     const campaign = await this.repository.findActiveCampaign(campaignId);
-    if (!campaign)
-      throw new ReferralValidationError(
-        'La campaña de referidos no existe o está inactiva.',
-      );
-    return this.repository.createCode(
-      customerId,
-      campaignId,
-      `PAT-${randomBytes(5).toString('hex').toUpperCase()}`,
-    );
+    if (!campaign) throw new ReferralValidationError('La campaña de referidos no existe o está inactiva.');
+    return this.repository.createCode(customerId, campaignId, `PAT-${randomBytes(5).toString('hex').toUpperCase()}`);
   }
   public async attribute(code: string, referredId: string) {
-    const referral = await this.repository.findActiveCode(
-      code.trim().toUpperCase(),
-    );
-    if (
-      !referral ||
-      !referral.campaign.active ||
-      (referral.campaign.expiresAt && referral.campaign.expiresAt < new Date())
-    )
+    const referral = await this.repository.findActiveCode(code.trim().toUpperCase());
+    if (!referral || !referral.campaign.active || (referral.campaign.expiresAt && referral.campaign.expiresAt < new Date()))
       throw new ReferralValidationError('El código de referido no es válido.');
-    if (referral.referrerId === referredId)
-      throw new ReferralValidationError('No puedes referirte a ti mismo.');
+    if (referral.referrerId === referredId) throw new ReferralValidationError('No puedes referirte a ti mismo.');
     return this.repository.attribute(referral.id, referredId);
   }
   public async mine(customerId: string) {

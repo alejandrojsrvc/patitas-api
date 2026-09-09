@@ -1,29 +1,8 @@
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
-import {
-  extractAttribute,
-  extractJsonLd,
-  extractMeta,
-  extractSectionText,
-  extractTables,
-  flattenJsonLd,
-  htmlToText,
-  normalizeText,
-} from './html';
-import {
-  normalizeAttribute,
-  normalizeMoney,
-  normalizeWeightGrams,
-  parseCompositionRows,
-  parseFeedingTables,
-} from './normalizers';
-import type {
-  CanonicalProductExtraction,
-  CatalogResearchProductInput,
-  FieldProvenance,
-  RetailPriceObservation,
-  RetailerCode,
-} from './types';
+import { extractAttribute, extractJsonLd, extractMeta, extractSectionText, extractTables, flattenJsonLd, htmlToText, normalizeText } from './html';
+import { normalizeAttribute, normalizeMoney, normalizeWeightGrams, parseCompositionRows, parseFeedingTables } from './normalizers';
+import type { CanonicalProductExtraction, CatalogResearchProductInput, FieldProvenance, RetailPriceObservation, RetailerCode } from './types';
 
 const requireOptional = createRequire(__filename);
 
@@ -35,24 +14,17 @@ export interface FetchedPage {
   method: FieldProvenance['method'];
 }
 
-export const fetchPage = async (
-  url: string,
-  userAgent: string,
-): Promise<FetchedPage> => {
+export const fetchPage = async (url: string, userAgent: string): Promise<FetchedPage> => {
   const response = await fetch(url, {
     headers: {
       'user-agent': userAgent,
-      accept:
-        'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8',
+      accept: 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
   });
   if (!response.ok) throw new Error(`HTTP ${response.status} al leer ${url}.`);
   const staticHtml = await response.text();
-  const browserPage =
-    process.env['CATALOG_RESEARCH_USE_BROWSER'] === '1'
-      ? await tryRenderWithPlaywright(url, userAgent)
-      : null;
+  const browserPage = process.env['CATALOG_RESEARCH_USE_BROWSER'] === '1' ? await tryRenderWithPlaywright(url, userAgent) : null;
   const html = browserPage ?? staticHtml;
   return {
     url,
@@ -63,19 +35,13 @@ export const fetchPage = async (
   };
 };
 
-const tryRenderWithPlaywright = async (
-  url: string,
-  userAgent: string,
-): Promise<string | null> => {
+const tryRenderWithPlaywright = async (url: string, userAgent: string): Promise<string | null> => {
   try {
     const module = requireOptional('playwright') as {
       chromium?: {
         launch: (options: { headless: boolean }) => Promise<{
           newPage: (options: { userAgent: string }) => Promise<{
-            goto: (
-              target: string,
-              options: { waitUntil: string },
-            ) => Promise<unknown>;
+            goto: (target: string, options: { waitUntil: string }) => Promise<unknown>;
             content: () => Promise<string>;
           }>;
           close: () => Promise<void>;
@@ -106,20 +72,14 @@ export const extractManufacturer = (
   const tables = extractTables(page.html);
   const text = htmlToText(page.html);
   const tableRows = tables.flat();
-  const compositionRows = tableRows.filter((row) =>
-    /%|energía|em\b/i.test(row),
-  );
+  const compositionRows = tableRows.filter((row) => /%|energía|em\b/i.test(row));
   const ingredientSection = extractSectionText(page.html, 'Ingredientes');
   const presentationSection =
     extractSectionText(page.html, 'Presentaciones') ??
     extractSectionText(page.html, 'Tamaños disponibles') ??
     extractSectionText(page.html, 'Tamaños');
-  const title = normalizeText(
-    page.html.match(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/i)?.[1],
-  );
-  const productJson = flattenJsonLd(extractJsonLd(page.html)).find((item) =>
-    isProductType(item['@type']),
-  );
+  const title = normalizeText(page.html.match(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/i)?.[1]);
+  const productJson = flattenJsonLd(extractJsonLd(page.html)).find((item) => isProductType(item['@type']));
   const primaryImage = [
     extractRoyalCaninMainImage(page.html),
     extractWooCommerceGalleryImage(page.html),
@@ -130,11 +90,7 @@ export const extractManufacturer = (
   ]
     .map((value) => (value ? toAbsoluteUrl(page.url, value) : null))
     .find((value): value is string => Boolean(value));
-  const presentations = [
-    ...(presentationSection ?? '').matchAll(
-      /\b(\d+(?:[.,]\d+)?)\s*(kg|kilos?|g|gr)\b/gi,
-    ),
-  ]
+  const presentations = [...(presentationSection ?? '').matchAll(/\b(\d+(?:[.,]\d+)?)\s*(kg|kilos?|g|gr)\b/gi)]
     .map((match) => normalizeWeightGrams(`${match[1]} ${match[2]}`))
     .filter((value): value is number => value !== null)
     .filter((value, index, values) => values.indexOf(value) === index);
@@ -156,15 +112,9 @@ export const extractManufacturer = (
       : [],
     attributes: {
       brand: title?.match(/old prince/i)?.[0] ?? null,
-      species: /gato|cat/i.test(text)
-        ? 'CAT'
-        : /perro|dog/i.test(text)
-          ? 'DOG'
-          : null,
-      line:
-        title?.match(/premium|equilibrium|prote[ií]nas noveles/i)?.[0] ?? null,
-      lifeStage:
-        title?.match(/adult|cachorro|kitten|senior|puppy/i)?.[0] ?? null,
+      species: /gato|cat/i.test(text) ? 'CAT' : /perro|dog/i.test(text) ? 'DOG' : null,
+      line: title?.match(/premium|equilibrium|prote[ií]nas noveles/i)?.[0] ?? null,
+      lifeStage: title?.match(/adult|cachorro|kitten|senior|puppy/i)?.[0] ?? null,
       breedSize: null,
       recipe: null,
     },
@@ -197,39 +147,27 @@ export const extractManufacturer = (
     },
   };
   const warnings: string[] = [];
-  if (!product.ingredientsText)
-    warnings.push('No se encontró una sección de ingredientes.');
-  if (product.analyticalComposition.length === 0)
-    warnings.push('No se encontró composición centesimal.');
-  if (product.feedingGuide.length === 0)
-    warnings.push('No se encontró tabla diaria.');
+  if (!product.ingredientsText) warnings.push('No se encontró una sección de ingredientes.');
+  if (product.analyticalComposition.length === 0) warnings.push('No se encontró composición centesimal.');
+  if (product.feedingGuide.length === 0) warnings.push('No se encontró tabla diaria.');
   return { product, provenance, warnings };
 };
 
-export const extractRetailObservation = (
-  page: FetchedPage,
-  retailer: RetailerCode,
-  input: CatalogResearchProductInput,
-): RetailPriceObservation => {
+export const extractRetailObservation = (page: FetchedPage, retailer: RetailerCode, input: CatalogResearchProductInput): RetailPriceObservation => {
   const jsonLd = flattenJsonLd(extractJsonLd(page.html));
   const productJson = jsonLd.find((item) => item['@type'] === 'Product') ?? {};
   const offer = asRecord(productJson['offers']);
   const text = htmlToText(page.html);
-  const title =
-    normalizeText(asString(productJson['name'])) ?? extractTitle(page.html);
-  const externalProductId =
-    asString(productJson['sku']) ?? extractReference(text);
-  const price =
-    normalizeMoney(asString(offer['price'])) ?? firstVisiblePrice(text);
+  const title = normalizeText(asString(productJson['name'])) ?? extractTitle(page.html);
+  const externalProductId = asString(productJson['sku']) ?? extractReference(text);
+  const price = normalizeMoney(asString(offer['price'])) ?? firstVisiblePrice(text);
   const listPrice = extractListPrice(text, price);
   const weightGrams = extractExpectedWeight(title, input.expected.weightsGrams);
   const warnings: string[] = [];
   if (!price) warnings.push('No se pudo determinar un precio público.');
-  if (!weightGrams)
-    warnings.push('No se pudo determinar el peso de la variante.');
+  if (!weightGrams) warnings.push('No se pudo determinar el peso de la variante.');
   const matchStatus = matchRetailProduct(title, weightGrams, input);
-  if (matchStatus !== 'MATCHED')
-    warnings.push(`La coincidencia quedó ${matchStatus}.`);
+  if (matchStatus !== 'MATCHED') warnings.push(`La coincidencia quedó ${matchStatus}.`);
   return {
     retailer,
     sourceUrl: page.url,
@@ -241,15 +179,8 @@ export const extractRetailObservation = (
     price,
     listPrice,
     currency: 'ARS',
-    availability: /sin stock|agotado|no disponible/i.test(text)
-      ? 'OUT_OF_STOCK'
-      : price
-        ? 'AVAILABLE'
-        : 'UNKNOWN',
-    priceCondition:
-      retailer === 'puppis' && /env[ií]o programado/i.test(text)
-        ? 'web_public_no_programado'
-        : null,
+    availability: /sin stock|agotado|no disponible/i.test(text) ? 'OUT_OF_STOCK' : price ? 'AVAILABLE' : 'UNKNOWN',
+    priceCondition: retailer === 'puppis' && /env[ií]o programado/i.test(text) ? 'web_public_no_programado' : null,
     matchStatus,
     warnings,
     observedAt: page.fetchedAt,
@@ -257,18 +188,13 @@ export const extractRetailObservation = (
   };
 };
 
-const extractDescription = (html: string): string | null =>
-  extractMeta(html, 'description') ?? extractSectionText(html, 'Descripción');
+const extractDescription = (html: string): string | null => extractMeta(html, 'description') ?? extractSectionText(html, 'Descripción');
 
-const extractTitle = (html: string): string | null =>
-  normalizeText(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]) ??
-  extractMeta(html, 'og:title');
+const extractTitle = (html: string): string | null => normalizeText(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]) ?? extractMeta(html, 'og:title');
 
-const extractReference = (text: string): string | null =>
-  text.match(/(?:referencia|sku|c[oó]digo)\s*:?\s*([A-Z0-9-]+)/i)?.[1] ?? null;
+const extractReference = (text: string): string | null => text.match(/(?:referencia|sku|c[oó]digo)\s*:?\s*([A-Z0-9-]+)/i)?.[1] ?? null;
 
-const isProductType = (value: unknown): boolean =>
-  value === 'Product' || (Array.isArray(value) && value.includes('Product'));
+const isProductType = (value: unknown): boolean => value === 'Product' || (Array.isArray(value) && value.includes('Product'));
 
 const imageFromJsonLd = (value: unknown): string | null => {
   if (typeof value === 'string') return value;
@@ -280,9 +206,7 @@ const imageFromJsonLd = (value: unknown): string | null => {
 };
 
 const extractWooCommerceGalleryImage = (html: string): string | null => {
-  const galleryTag = html.match(
-    /<[^>]*class=["'][^"']*woocommerce-product-gallery__image[^"']*["'][^>]*>/i,
-  );
+  const galleryTag = html.match(/<[^>]*class=["'][^"']*woocommerce-product-gallery__image[^"']*["'][^>]*>/i);
   if (!galleryTag || galleryTag.index === undefined) return null;
   const galleryHtml = html.slice(galleryTag.index, galleryTag.index + 5000);
   return (
@@ -294,9 +218,7 @@ const extractWooCommerceGalleryImage = (html: string): string | null => {
 };
 
 const extractRoyalCaninMainImage = (html: string): string | null => {
-  const mainTag = html.match(
-    /<[^>]*data-qa=["']product-images-main["'][^>]*>/i,
-  );
+  const mainTag = html.match(/<[^>]*data-qa=["']product-images-main["'][^>]*>/i);
   if (!mainTag || mainTag.index === undefined) return null;
   const mainHtml = html.slice(mainTag.index, mainTag.index + 8000);
   return (
@@ -326,40 +248,26 @@ const firstVisiblePrice = (text: string): number | null => {
   return null;
 };
 
-const extractListPrice = (
-  text: string,
-  currentPrice: number | null,
-): number | null => {
+const extractListPrice = (text: string, currentPrice: number | null): number | null => {
   const values = [...text.matchAll(/\$\s*([\d.]+(?:,\d{2})?)/g)]
     .map((match) => normalizeMoney(match[1]))
     .filter((value): value is number => value !== null && value > 100);
-  return (
-    values.find(
-      (value) => value !== currentPrice && value > (currentPrice ?? 0),
-    ) ?? null
-  );
+  return values.find((value) => value !== currentPrice && value > (currentPrice ?? 0)) ?? null;
 };
 
-const extractExpectedWeight = (
-  title: string | null,
-  expected: number[] | undefined,
-): number | null => {
+const extractExpectedWeight = (title: string | null, expected: number[] | undefined): number | null => {
   const fromTitle = normalizeWeightGrams(title);
   if (fromTitle) return fromTitle;
   return expected?.length === 1 ? expected[0] : null;
 };
 
 const extractBonusWeight = (text: string): number | null => {
-  const match = text.match(
-    /\+\s*(\d+(?:[.,]\d+)?)\s*(kg|kilos?|g|gr)\s*(?:gratis|de regalo)/i,
-  );
+  const match = text.match(/\+\s*(\d+(?:[.,]\d+)?)\s*(kg|kilos?|g|gr)\s*(?:gratis|de regalo)/i);
   return match ? normalizeWeightGrams(`${match[1]} ${match[2]}`) : null;
 };
 
 const extractVariantId = (url: string, text: string): string | null =>
-  new URL(url).searchParams.get('variacion') ??
-  text.match(/variant(?:Id)?["'=: ]+(\d+)/i)?.[1] ??
-  null;
+  new URL(url).searchParams.get('variacion') ?? text.match(/variant(?:Id)?["'=: ]+(\d+)/i)?.[1] ?? null;
 
 const matchRetailProduct = (
   title: string | null,
@@ -369,23 +277,13 @@ const matchRetailProduct = (
   if (!title) return 'AMBIGUOUS';
   const normalizedTitle = normalizeAttribute(title) ?? '';
   const expectedBrand = normalizeAttribute(input.expected.brand);
-  if (expectedBrand && !normalizedTitle.includes(expectedBrand))
-    return 'MISMATCH';
-  if (
-    input.expected.weightsGrams?.length &&
-    weightGrams &&
-    !input.expected.weightsGrams.includes(weightGrams)
-  )
-    return 'MISMATCH';
-  if (!weightGrams && input.expected.weightsGrams?.length !== 1)
-    return 'AMBIGUOUS';
+  if (expectedBrand && !normalizedTitle.includes(expectedBrand)) return 'MISMATCH';
+  if (input.expected.weightsGrams?.length && weightGrams && !input.expected.weightsGrams.includes(weightGrams)) return 'MISMATCH';
+  if (!weightGrams && input.expected.weightsGrams?.length !== 1) return 'AMBIGUOUS';
   return 'MATCHED';
 };
 
 const asRecord = (value: unknown): Record<string, unknown> =>
-  value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 
-const asString = (value: unknown): string | null =>
-  typeof value === 'string' || typeof value === 'number' ? String(value) : null;
+const asString = (value: unknown): string | null => (typeof value === 'string' || typeof value === 'number' ? String(value) : null);

@@ -1,7 +1,7 @@
 # Catalog research CLI
 
 CLI independiente para extraer fichas de fabricantes y observaciones públicas de
-retails. No importa NestJS, Prisma ni Supabase y no escribe en la base de datos.
+retails. No importa NestJS, Prisma ni SDKs de infraestructura y no escribe en la base de datos.
 
 También acepta un manifest de marca: visita sus categorías, descubre las fichas
 de producto y genera un único JSON sin cargar cada producto manualmente.

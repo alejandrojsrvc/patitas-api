@@ -45,15 +45,8 @@ export interface ReferralRepository {
   }): Promise<ReferralCampaignRecord>;
   findActiveCampaign(id: string): Promise<ReferralCampaignRecord | null>;
   findActiveCode(code: string): Promise<ReferralCodeRecord | null>;
-  createCode(
-    customerId: string,
-    campaignId: string,
-    code: string,
-  ): Promise<ReferralCodeRecord>;
-  attribute(
-    codeId: string,
-    referredId: string,
-  ): Promise<{ id: string; referralCodeId: string; referredId: string }>;
+  createCode(customerId: string, campaignId: string, code: string): Promise<ReferralCodeRecord>;
+  attribute(codeId: string, referredId: string): Promise<{ id: string; referralCodeId: string; referredId: string }>;
   mine(customerId: string): Promise<{
     codes: ReferralCodeRecord[];
     ledger: ReferralLedgerRecord[];

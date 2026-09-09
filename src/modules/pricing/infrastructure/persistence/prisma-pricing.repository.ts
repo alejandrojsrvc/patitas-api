@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import type { Prisma } from '../../../../infrastructure/database/generated/prisma/client';
-import {
-  PricingNotFoundError,
-  PricingPreconditionError,
-  StalePricingReviewError,
-} from '../../domain/errors/pricing.error';
+import { PricingNotFoundError, PricingPreconditionError, StalePricingReviewError } from '../../domain/errors/pricing.error';
 import { PricingScenarioCalculator } from '../../domain/pricing-scenario-calculator';
 import type { PricingRepository } from '../../domain/repositories/pricing.repository';
 import type {
@@ -106,9 +102,7 @@ export class PrismaPricingRepository implements PricingRepository {
     return rules.map(mapRules);
   }
 
-  public async updateDraft(
-    input: Partial<PricingRuleValues>,
-  ): Promise<PricingRules> {
+  public async updateDraft(input: Partial<PricingRuleValues>): Promise<PricingRules> {
     return this.prisma.$transaction(async (transaction) => {
       const draft = await transaction.pricingRuleSet.findFirst({
         where: { status: 'DRAFT' },
@@ -160,10 +154,7 @@ export class PrismaPricingRepository implements PricingRepository {
         where: { status: 'DRAFT' },
         orderBy: { version: 'desc' },
       });
-      if (!draft)
-        throw new PricingPreconditionError(
-          'No existe una configuración borrador.',
-        );
+      if (!draft) throw new PricingPreconditionError('No existe una configuración borrador.');
       await transaction.pricingRuleSet.updateMany({
         where: { status: 'ACTIVE' },
         data: { status: 'SUPERSEDED' },
@@ -177,10 +168,7 @@ export class PrismaPricingRepository implements PricingRepository {
     });
   }
 
-  public async getContext(
-    variantId: string,
-    supplierOfferId?: string,
-  ): Promise<PricingContext | null> {
+  public async getContext(variantId: string, supplierOfferId?: string): Promise<PricingContext | null> {
     const variant = await this.prisma.productVariant.findUnique({
       where: { id: variantId },
       select: {
@@ -247,18 +235,13 @@ export class PrismaPricingRepository implements PricingRepository {
     });
   }
 
-  public async setPreferredSupplierOffer(
-    variantId: string,
-    supplierOfferId: string,
-  ): Promise<void> {
+  public async setPreferredSupplierOffer(variantId: string, supplierOfferId: string): Promise<void> {
     const offer = await this.prisma.supplierOffer.findUnique({
       where: { id: supplierOfferId },
       select: { variantId: true, active: true },
     });
     if (!offer || offer.variantId !== variantId || !offer.active) {
-      throw new PricingPreconditionError(
-        'La oferta preferida no pertenece a la variante o está inactiva.',
-      );
+      throw new PricingPreconditionError('La oferta preferida no pertenece a la variante o está inactiva.');
     }
     await this.prisma.productVariant.update({
       where: { id: variantId },
@@ -275,15 +258,11 @@ export class PrismaPricingRepository implements PricingRepository {
     effectiveRules: PricingRuleValues,
     calculation: PricingCalculation,
   ): Promise<PricingReview> {
-    const [review] = await this.saveReviews([
-      { context, rules, effectiveRules, calculation },
-    ]);
+    const [review] = await this.saveReviews([{ context, rules, effectiveRules, calculation }]);
     return review;
   }
 
-  public async saveReviews(
-    inputs: PricingReviewSaveInput[],
-  ): Promise<PricingReview[]> {
+  public async saveReviews(inputs: PricingReviewSaveInput[]): Promise<PricingReview[]> {
     return this.prisma.$transaction(async (transaction) => {
       const reviews: PricingReview[] = [];
       for (const input of inputs) {
@@ -304,8 +283,7 @@ export class PrismaPricingRepository implements PricingRepository {
               pricingRuleVersion: input.rules.version,
               effectiveRules: input.effectiveRules,
             },
-            breakdown: input.calculation
-              .breakdown as unknown as Prisma.InputJsonObject,
+            breakdown: input.calculation.breakdown as unknown as Prisma.InputJsonObject,
             recommendedPrice: input.calculation.recommendedPrice,
             commercialPrice: input.calculation.commercialPrice,
           },
@@ -324,12 +302,7 @@ export class PrismaPricingRepository implements PricingRepository {
     return reviews.map(mapReview);
   }
 
-  public async listAllReviews(filter: {
-    status?: PricingReview['status'];
-    q?: string;
-    page: number;
-    perPage: number;
-  }): Promise<PricingReviewPage> {
+  public async listAllReviews(filter: { status?: PricingReview['status']; q?: string; page: number; perPage: number }): Promise<PricingReviewPage> {
     const q = filter.q?.trim();
     const where: Prisma.PricingReviewWhereInput = {
       ...(filter.status ? { status: filter.status } : {}),
@@ -375,11 +348,7 @@ export class PrismaPricingRepository implements PricingRepository {
           presentation: review.variant.presentation,
           salePrice: decimal(review.variant.salePrice),
         },
-        currentMarginPercent: calculateMargin(
-          review.variant.salePrice,
-          review.supplierOffer,
-          review.pricingRuleSet,
-        ),
+        currentMarginPercent: calculateMargin(review.variant.salePrice, review.supplierOffer, review.pricingRuleSet),
       })),
       page: filter.page,
       perPage: filter.perPage,
@@ -387,11 +356,7 @@ export class PrismaPricingRepository implements PricingRepository {
     };
   }
 
-  public async applyReview(
-    variantId: string,
-    reviewId: string,
-    options: { activateProduct?: boolean } = {},
-  ): Promise<PricingReview> {
+  public async applyReview(variantId: string, reviewId: string, options: { activateProduct?: boolean } = {}): Promise<PricingReview> {
     return this.prisma.$transaction(async (transaction) => {
       const review = await transaction.pricingReview.findUnique({
         where: { id: reviewId },
@@ -420,23 +385,16 @@ export class PrismaPricingRepository implements PricingRepository {
         review.variant.revision !== review.variantRevision ||
         review.supplierOffer.revision !== review.supplierRevision ||
         review.pricingRuleSet.status !== 'ACTIVE' ||
-        (review.variant.preferredSupplierOfferId !== null &&
-          review.variant.preferredSupplierOfferId !== review.supplierOfferId);
+        (review.variant.preferredSupplierOfferId !== null && review.variant.preferredSupplierOfferId !== review.supplierOfferId);
       if (stale) {
-        throw new StalePricingReviewError(
-          'La revisión quedó obsoleta; recalcula antes de aplicar el precio.',
-        );
+        throw new StalePricingReviewError('La revisión quedó obsoleta; recalcula antes de aplicar el precio.');
       }
       if (options.activateProduct) {
         const product = review.variant.product;
         const sellable = product.variants.some((variant) =>
           variant.id === variantId
-            ? variant.active &&
-              Boolean(variant.sku) &&
-              Number(review.commercialPrice) > 0
-            : variant.active &&
-              Boolean(variant.sku) &&
-              Number(variant.salePrice) > 0,
+            ? variant.active && Boolean(variant.sku) && Number(review.commercialPrice) > 0
+            : variant.active && Boolean(variant.sku) && Number(variant.salePrice) > 0,
         );
         if (
           !product.categoryId ||
@@ -445,9 +403,7 @@ export class PrismaPricingRepository implements PricingRepository {
           !sellable ||
           !product.media.some((media) => media.url.trim())
         ) {
-          throw new PricingPreconditionError(
-            'No se puede activar el producto: requiere categoría, marca, imagen, SKU y precio de venta.',
-          );
+          throw new PricingPreconditionError('No se puede activar el producto: requiere categoría, marca, imagen, SKU y precio de venta.');
         }
       }
       await transaction.productVariant.update({
@@ -472,9 +428,7 @@ export class PrismaPricingRepository implements PricingRepository {
     });
   }
 
-  public async listPaymentFeeSchedules(
-    active?: boolean,
-  ): Promise<PaymentFeeSchedule[]> {
+  public async listPaymentFeeSchedules(active?: boolean): Promise<PaymentFeeSchedule[]> {
     const schedules = await this.prisma.paymentFeeSchedule.findMany({
       where: active === undefined ? undefined : { active },
       orderBy: [{ settlementDays: 'asc' }, { effectiveFrom: 'desc' }],
@@ -482,28 +436,21 @@ export class PrismaPricingRepository implements PricingRepository {
     return schedules.map(mapPaymentFeeSchedule);
   }
 
-  public async getPaymentFeeSchedule(
-    id: string,
-  ): Promise<PaymentFeeSchedule | null> {
+  public async getPaymentFeeSchedule(id: string): Promise<PaymentFeeSchedule | null> {
     const schedule = await this.prisma.paymentFeeSchedule.findUnique({
       where: { id },
     });
     return schedule ? mapPaymentFeeSchedule(schedule) : null;
   }
 
-  public async createPaymentFeeSchedule(
-    input: PaymentFeeScheduleInput,
-  ): Promise<PaymentFeeSchedule> {
+  public async createPaymentFeeSchedule(input: PaymentFeeScheduleInput): Promise<PaymentFeeSchedule> {
     const schedule = await this.prisma.paymentFeeSchedule.create({
       data: input,
     });
     return mapPaymentFeeSchedule(schedule);
   }
 
-  public async updatePaymentFeeSchedule(
-    id: string,
-    input: Partial<PaymentFeeScheduleInput>,
-  ): Promise<PaymentFeeSchedule> {
+  public async updatePaymentFeeSchedule(id: string, input: Partial<PaymentFeeScheduleInput>): Promise<PaymentFeeSchedule> {
     try {
       const schedule = await this.prisma.paymentFeeSchedule.update({
         where: { id },
@@ -526,17 +473,12 @@ export class PrismaPricingRepository implements PricingRepository {
     return costs.map(mapOperatingCost);
   }
 
-  public async createOperatingCost(
-    input: OperatingCostInput,
-  ): Promise<OperatingCost> {
+  public async createOperatingCost(input: OperatingCostInput): Promise<OperatingCost> {
     const cost = await this.prisma.operatingCost.create({ data: input });
     return mapOperatingCost(cost);
   }
 
-  public async updateOperatingCost(
-    id: string,
-    input: Partial<OperatingCostInput>,
-  ): Promise<OperatingCost> {
+  public async updateOperatingCost(id: string, input: Partial<OperatingCostInput>): Promise<OperatingCost> {
     try {
       const cost = await this.prisma.operatingCost.update({
         where: { id },
@@ -559,19 +501,14 @@ export class PrismaPricingRepository implements PricingRepository {
     return scenarios.map(mapPricingScenario);
   }
 
-  public async createPricingScenario(
-    input: PricingScenarioInput,
-  ): Promise<PricingScenario> {
+  public async createPricingScenario(input: PricingScenarioInput): Promise<PricingScenario> {
     const scenario = await this.prisma.pricingScenario.create({
       data: input,
     });
     return mapPricingScenario(scenario);
   }
 
-  public async updatePricingScenario(
-    id: string,
-    input: Partial<PricingScenarioInput>,
-  ): Promise<PricingScenario> {
+  public async updatePricingScenario(id: string, input: Partial<PricingScenarioInput>): Promise<PricingScenario> {
     try {
       const scenario = await this.prisma.pricingScenario.update({
         where: { id },
@@ -586,9 +523,7 @@ export class PrismaPricingRepository implements PricingRepository {
     }
   }
 
-  public async analyzePricingScenario(
-    id: string,
-  ): Promise<PricingScenarioAnalysis> {
+  public async analyzePricingScenario(id: string): Promise<PricingScenarioAnalysis> {
     const scenario = await this.prisma.pricingScenario.findUnique({
       where: { id },
       include: { paymentFeeSchedule: true },
@@ -596,68 +531,59 @@ export class PrismaPricingRepository implements PricingRepository {
     if (!scenario) {
       throw new PricingNotFoundError('El escenario de pricing no existe.');
     }
-    const [activeRules, operatingCosts, variants, previousPeriodOrders] =
-      await Promise.all([
-        this.prisma.pricingRuleSet.findFirst({
-          where: { status: 'ACTIVE' },
-          orderBy: { version: 'desc' },
-        }),
-        this.prisma.operatingCost.findMany({
-          where: {
-            active: true,
-            effectiveFrom: { lt: scenario.periodEnd },
-            OR: [
-              { effectiveTo: null },
-              { effectiveTo: { gt: scenario.periodStart } },
-            ],
-          },
-          orderBy: { type: 'asc' },
-        }),
-        this.prisma.productVariant.findMany({
-          where: { active: true, salePrice: { not: null } },
-          select: {
-            id: true,
-            productId: true,
-            sku: true,
-            presentation: true,
-            weightGrams: true,
-            salePrice: true,
-            product: {
-              select: {
-                id: true,
-                name: true,
-                status: true,
-              },
-            },
-            inventory: {
-              select: {
-                onHand: true,
-                reserved: true,
-              },
-            },
-            supplierOffers: {
-              where: { active: true },
-              select: {
-                id: true,
-                unitCost: true,
-                supplier: {
-                  select: { name: true },
-                },
-              },
-              orderBy: { unitCost: 'asc' },
-              take: 1,
+    const [activeRules, operatingCosts, variants, previousPeriodOrders] = await Promise.all([
+      this.prisma.pricingRuleSet.findFirst({
+        where: { status: 'ACTIVE' },
+        orderBy: { version: 'desc' },
+      }),
+      this.prisma.operatingCost.findMany({
+        where: {
+          active: true,
+          effectiveFrom: { lt: scenario.periodEnd },
+          OR: [{ effectiveTo: null }, { effectiveTo: { gt: scenario.periodStart } }],
+        },
+        orderBy: { type: 'asc' },
+      }),
+      this.prisma.productVariant.findMany({
+        where: { active: true, salePrice: { not: null } },
+        select: {
+          id: true,
+          productId: true,
+          sku: true,
+          presentation: true,
+          weightGrams: true,
+          salePrice: true,
+          product: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
             },
           },
-        }),
-        this.countPreviousPeriodOrders(
-          scenario.periodStart,
-          scenario.periodEnd,
-        ),
-      ]);
+          inventory: {
+            select: {
+              onHand: true,
+              reserved: true,
+            },
+          },
+          supplierOffers: {
+            where: { active: true },
+            select: {
+              id: true,
+              unitCost: true,
+              supplier: {
+                select: { name: true },
+              },
+            },
+            orderBy: { unitCost: 'asc' },
+            take: 1,
+          },
+        },
+      }),
+      this.countPreviousPeriodOrders(scenario.periodStart, scenario.periodEnd),
+    ]);
     if (!activeRules) {
-      throw new PricingPreconditionError(
-        'No existe una configuración activa de pricing.',
-      );
+      throw new PricingPreconditionError('No existe una configuración activa de pricing.');
     }
     const catalogVariants = variants.flatMap((variant) =>
       variant.salePrice && variant.supplierOffers[0]
@@ -671,9 +597,7 @@ export class PrismaPricingRepository implements PricingRepository {
         : [],
     );
     const mappedScenario = mapPricingScenario(scenario);
-    const mappedFeeSchedule = scenario.paymentFeeSchedule
-      ? mapPaymentFeeScheduleSummary(scenario.paymentFeeSchedule)
-      : null;
+    const mappedFeeSchedule = scenario.paymentFeeSchedule ? mapPaymentFeeScheduleSummary(scenario.paymentFeeSchedule) : null;
     const rules = mapRules(activeRules);
     const scenarioRules = scenario.paymentFeeSchedule
       ? {
@@ -681,8 +605,7 @@ export class PrismaPricingRepository implements PricingRepository {
           paymentFixedCost: scenario.paymentFeeSchedule.fixedFee.toString(),
           paymentFeePercent: scenario.paymentFeeSchedule.feePercent.toString(),
           paymentFeeVatApplies: scenario.paymentFeeSchedule.vatApplies,
-          paymentFeeVatPercent:
-            scenario.paymentFeeSchedule.vatPercent.toString(),
+          paymentFeeVatPercent: scenario.paymentFeeSchedule.vatPercent.toString(),
           paymentFeeScheduleId: scenario.paymentFeeSchedule.id,
         }
       : rules;
@@ -698,22 +621,15 @@ export class PrismaPricingRepository implements PricingRepository {
     return analysis;
   }
 
-  public async getPricingScenarioAllocation(
-    id: string,
-  ): Promise<PricingScenarioAllocation> {
+  public async getPricingScenarioAllocation(id: string): Promise<PricingScenarioAllocation> {
     const analysis = await this.analyzePricingScenario(id);
     if (analysis.ordersUsed <= 0) {
-      throw new PricingPreconditionError(
-        'El escenario debe tener al menos un pedido para asignar costos fijos.',
-      );
+      throw new PricingPreconditionError('El escenario debe tener al menos un pedido para asignar costos fijos.');
     }
     const items = Number(analysis.scenario.averageItemsPerOrder);
     return {
       scenarioId: id,
-      fixedCostPerUnit: (
-        Number(analysis.fixedMonthlyCosts) /
-        (analysis.ordersUsed * items)
-      ).toFixed(2),
+      fixedCostPerUnit: (Number(analysis.fixedMonthlyCosts) / (analysis.ordersUsed * items)).toFixed(2),
       projectedOrders: analysis.ordersUsed,
       averageItemsPerOrder: analysis.scenario.averageItemsPerOrder,
       paymentFeeOverrides: analysis.paymentFeeSchedule
@@ -728,10 +644,7 @@ export class PrismaPricingRepository implements PricingRepository {
     };
   }
 
-  private async countPreviousPeriodOrders(
-    periodStart: Date,
-    periodEnd: Date,
-  ): Promise<number> {
+  private async countPreviousPeriodOrders(periodStart: Date, periodEnd: Date): Promise<number> {
     const duration = periodEnd.getTime() - periodStart.getTime();
     const previousStart = new Date(periodStart.getTime() - duration);
     return this.prisma.order.count({
@@ -911,11 +824,7 @@ const mapReview = (review: PersistenceReview): PricingReview => ({
   appliedAt: review.appliedAt,
 });
 
-const calculateMargin = (
-  salePrice: DecimalValue | null,
-  offer: SupplierOfferCost | null,
-  rules: PersistenceRules | null,
-): string | null => {
+const calculateMargin = (salePrice: DecimalValue | null, offer: SupplierOfferCost | null, rules: PersistenceRules | null): string | null => {
   const price = Number(salePrice);
   if (
     !salePrice ||
@@ -943,16 +852,9 @@ const calculateMargin = (
   const cost =
     fixed +
     (price * Number(rules.paymentFeePercent)) / 100 +
-    (rules.paymentFeeVatApplies === false
-      ? 0
-      : ((price * Number(rules.paymentFeePercent)) / 100) *
-        (Number(rules.paymentFeeVatPercent ?? 0) / 100)) +
+    (rules.paymentFeeVatApplies === false ? 0 : ((price * Number(rules.paymentFeePercent)) / 100) * (Number(rules.paymentFeeVatPercent ?? 0) / 100)) +
     (price * Number(rules.taxPercent)) / 100;
   return (((price - cost) / price) * 100).toFixed(2);
 };
 
-const isPrismaNotFound = (error: unknown): boolean =>
-  typeof error === 'object' &&
-  error !== null &&
-  'code' in error &&
-  error.code === 'P2025';
+const isPrismaNotFound = (error: unknown): boolean => typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2025';

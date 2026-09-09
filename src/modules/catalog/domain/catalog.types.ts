@@ -49,14 +49,12 @@ export interface InventoryMovement {
   createdAt: Date;
 }
 
-export type SupplierStockStatus =
-  'AVAILABLE' | 'OUT_OF_STOCK' | 'ON_REQUEST' | 'UNKNOWN';
+export type SupplierStockStatus = 'AVAILABLE' | 'OUT_OF_STOCK' | 'ON_REQUEST' | 'UNKNOWN';
 
 export type SupplierFulfillmentMode = 'STANDARD' | 'EXPRESS';
 
 export interface VariantFulfillment {
-  status:
-    'IN_STOCK' | 'SUPPLIER_EXPRESS' | 'SUPPLIER_STANDARD' | 'OUT_OF_STOCK';
+  status: 'IN_STOCK' | 'SUPPLIER_EXPRESS' | 'SUPPLIER_STANDARD' | 'OUT_OF_STOCK';
   purchasable: boolean;
   availability: 'TODAY' | 'TOMORROW' | 'LATER' | 'OUT_OF_STOCK';
   label: string;
@@ -111,6 +109,28 @@ export interface Product {
   category: Category | null;
   variants: ProductVariant[];
   media: ProductMedia[];
+}
+
+export interface ProductAutocompleteItem {
+  id: string;
+  productId: string;
+  slug: string;
+  species: string | null;
+  categorySlug: string;
+  name: string;
+  presentation: string | null;
+  displayName: string;
+  brand: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  image: {
+    url: string;
+    altText: string;
+  } | null;
+  salePrice: string;
+  currency: 'ARS';
 }
 
 export interface FeedingGuideEntry {
@@ -298,11 +318,12 @@ export interface CreateVariantInput {
   sku?: string | null;
   barcode?: string | null;
   presentation?: string | null;
-  weightGrams?: number | null;
+  weightGrams: number;
   active?: boolean;
 }
 
-export interface UpdateVariantInput extends CreateVariantInput {
+export interface UpdateVariantInput extends Omit<CreateVariantInput, 'weightGrams'> {
+  weightGrams?: number;
   salePrice?: string | null;
   compareAtPrice?: string | null;
   preferredSupplierOfferId?: string | null;

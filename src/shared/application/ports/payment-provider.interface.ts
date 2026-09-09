@@ -1,18 +1,8 @@
 export const PAYMENT_PROVIDER_RESOLVER = Symbol('PAYMENT_PROVIDER_RESOLVER');
 
-import type {
-  NormalizedPaymentStatus,
-  PaymentProviderName,
-  PaymentWebhookReceipt,
-  TokenizedCardPayment,
-} from '../../domain/payment.types';
+import type { NormalizedPaymentStatus, PaymentProviderName, PaymentWebhookReceipt, TokenizedCardPayment } from '../../domain/payment.types';
 
-export type {
-  NormalizedPaymentStatus,
-  PaymentProviderName,
-  PaymentWebhookReceipt,
-  TokenizedCardPayment,
-} from '../../domain/payment.types';
+export type { NormalizedPaymentStatus, PaymentProviderName, PaymentWebhookReceipt, TokenizedCardPayment } from '../../domain/payment.types';
 
 export interface InitiatePaymentInput {
   attemptId: string;
@@ -66,17 +56,14 @@ export interface PaymentWebhookResult {
 
 export interface PaymentProvider {
   readonly name: PaymentProviderName;
-  createExternalReference(input: {
-    orderId: string;
-    attemptId: string;
-  }): string;
-  initiatePayment(
-    input: InitiatePaymentInput,
-  ): Promise<PaymentInitiationResult>;
+  assertReady?(): void;
+  createExternalReference(input: { orderId: string; attemptId: string }): string;
+  initiatePayment(input: InitiatePaymentInput): Promise<PaymentInitiationResult>;
   refundPayment(input: RefundPaymentInput): Promise<PaymentRefundResult>;
   parseWebhook(input: {
     headers: Record<string, string | string[] | undefined>;
     body: unknown;
+    rawBody?: Buffer;
     dataId?: string | string[];
   }): Promise<PaymentWebhookReceipt>;
   resolveWebhook(receipt: PaymentWebhookReceipt): Promise<PaymentWebhookResult>;

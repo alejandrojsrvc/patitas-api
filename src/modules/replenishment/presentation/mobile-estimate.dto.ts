@@ -1,14 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  IsDateString,
-  IsIn,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUUID,
-  MaxLength,
-  ValidateNested,
-} from 'class-validator';
+import { IsDateString, IsIn, IsNumber, IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
 
 class MobileEstimatePetDto {
   @IsOptional() @IsUUID() public id?: string;
@@ -48,17 +39,6 @@ export class CreateMobileEstimateDto {
   public food?: MobileEstimateFoodDto;
   @IsOptional() @IsDateString() public bagStartedAt?: string;
   @IsOptional()
-  @IsIn([
-    'ALMOST_FULL',
-    'MORE_THAN_HALF',
-    'ABOUT_HALF',
-    'ALMOST_EMPTY',
-    'FINISHED',
-  ])
-  public remainingBucket?:
-    | 'ALMOST_FULL'
-    | 'MORE_THAN_HALF'
-    | 'ABOUT_HALF'
-    | 'ALMOST_EMPTY'
-    | 'FINISHED';
+  @IsIn(['ALMOST_FULL', 'MORE_THAN_HALF', 'ABOUT_HALF', 'ALMOST_EMPTY', 'FINISHED'])
+  public remainingBucket?: 'ALMOST_FULL' | 'MORE_THAN_HALF' | 'ABOUT_HALF' | 'ALMOST_EMPTY' | 'FINISHED';
 }

@@ -1,14 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  IsDateString,
-  IsIn,
-  IsInt,
-  IsOptional,
-  IsBoolean,
-  IsUUID,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsDateString, IsIn, IsInt, IsOptional, IsBoolean, IsUUID, Max, Min } from 'class-validator';
 
 export class CreateMobileReplenishmentPlanDto {
   @IsUUID() public petId!: string;
@@ -17,20 +8,12 @@ export class CreateMobileReplenishmentPlanDto {
   @IsOptional() @IsUUID() public variantId?: string;
   @IsOptional() @IsDateString() public bagStartedAt?: string;
   @IsOptional()
-  @IsIn([
-    'ALMOST_FULL',
-    'MORE_THAN_HALF',
-    'ABOUT_HALF',
-    'ALMOST_EMPTY',
-    'FINISHED',
-  ])
+  @IsIn(['ALMOST_FULL', 'MORE_THAN_HALF', 'ABOUT_HALF', 'ALMOST_EMPTY', 'FINISHED'])
   public remainingBucket?: string;
   @IsIn(['PUSH', 'EMAIL', 'WHATSAPP', 'push', 'email', 'whatsapp'], {
     each: true,
   })
-  public reminderChannels!: Array<
-    'PUSH' | 'EMAIL' | 'WHATSAPP' | 'push' | 'email' | 'whatsapp'
-  >;
+  public reminderChannels!: Array<'PUSH' | 'EMAIL' | 'WHATSAPP' | 'push' | 'email' | 'whatsapp'>;
   @Type(() => Number)
   @IsInt()
   @Min(0)
@@ -72,13 +55,7 @@ export class RecalibrateMobileReplenishmentPlanDto {
   @IsIn(['FEW_DAYS', 'ABOUT_WEEK', 'MORE_THAN_WEEK'])
   public bucket?: 'FEW_DAYS' | 'ABOUT_WEEK' | 'MORE_THAN_WEEK';
   @IsOptional()
-  @IsIn([
-    'ALMOST_FULL',
-    'MORE_THAN_HALF',
-    'ABOUT_HALF',
-    'ALMOST_EMPTY',
-    'FINISHED',
-  ])
+  @IsIn(['ALMOST_FULL', 'MORE_THAN_HALF', 'ABOUT_HALF', 'ALMOST_EMPTY', 'FINISHED'])
   public remainingBucket?: string;
   @IsOptional() @IsDateString() public observedAt?: string;
 }

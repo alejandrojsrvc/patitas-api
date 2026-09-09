@@ -114,10 +114,7 @@ export interface PaymentFeeSchedule {
   updatedAt: Date;
 }
 
-export type PaymentFeeScheduleInput = Omit<
-  PaymentFeeSchedule,
-  'id' | 'createdAt' | 'updatedAt'
->;
+export type PaymentFeeScheduleInput = Omit<PaymentFeeSchedule, 'id' | 'createdAt' | 'updatedAt'>;
 
 export interface OperatingCost {
   id: string;
@@ -133,10 +130,7 @@ export interface OperatingCost {
   updatedAt: Date;
 }
 
-export type OperatingCostInput = Omit<
-  OperatingCost,
-  'id' | 'createdAt' | 'updatedAt'
->;
+export type OperatingCostInput = Omit<OperatingCost, 'id' | 'createdAt' | 'updatedAt'>;
 
 export interface PricingScenario {
   id: string;
@@ -152,10 +146,7 @@ export interface PricingScenario {
   updatedAt: Date;
 }
 
-export type PricingScenarioInput = Omit<
-  PricingScenario,
-  'id' | 'createdAt' | 'updatedAt'
->;
+export type PricingScenarioInput = Omit<PricingScenario, 'id' | 'createdAt' | 'updatedAt'>;
 
 export interface PricingScenarioInventorySnapshot {
   onHand: number;
@@ -261,11 +252,7 @@ export interface PricingScenarioAllocation {
   averageItemsPerOrder: string;
   paymentFeeOverrides: Pick<
     PricingRuleValues,
-    | 'paymentFixedCost'
-    | 'paymentFeePercent'
-    | 'paymentFeeVatApplies'
-    | 'paymentFeeVatPercent'
-    | 'paymentFeeScheduleId'
+    'paymentFixedCost' | 'paymentFeePercent' | 'paymentFeeVatApplies' | 'paymentFeeVatPercent' | 'paymentFeeScheduleId'
   > | null;
 }
 

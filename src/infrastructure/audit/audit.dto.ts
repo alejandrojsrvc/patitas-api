@@ -1,13 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import {
-  IsDateString,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsDateString, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class AuditLogsQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsString() public q?: string;

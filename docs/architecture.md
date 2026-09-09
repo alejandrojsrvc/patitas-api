@@ -9,6 +9,7 @@ Patitas API
 │
 ├── Public API
 │   ├── /api/v1/products
+│   ├── /api/v1/products/autocomplete
 │   ├── /api/v1/categories
 │   ├── /api/v1/brands
 │   ├── /api/v1/offers
@@ -31,6 +32,7 @@ Patitas API
 │   ├── /api/v1/mobile/auth
 │   ├── /api/v1/mobile/me
 │   ├── /api/v1/mobile/products
+│   ├── /api/v1/mobile/products/autocomplete
 │   ├── /api/v1/mobile/cart
 │   ├── /api/v1/mobile/checkout
 │   ├── /api/v1/mobile/payments
@@ -83,11 +85,11 @@ controller -> use case -> port/repository -> adapter -> proveedor
 
 - `domain` contiene reglas, entidades y value objects.
 - `application` orquesta casos de uso y depende de ports.
-- `infrastructure` implementa ports con Prisma, Supabase u otra tecnología.
+- `infrastructure` implementa ports con Prisma y adapters concretos.
 - `presentation` adapta HTTP a los casos de uso y aplica autenticación y roles.
 
 No se permite invertir este flujo. Un controller no consulta Prisma; un caso de
-uso no conoce Supabase; un modelo Prisma no sale del repositorio concreto.
+uso no conoce proveedores concretos; un modelo Prisma no sale del repositorio concreto.
 
 La publicación de un producto es una invariante de aplicación: debe tener marca
 y categoría activas, al menos una variante con SKU, precio positivo, una imagen
@@ -98,28 +100,25 @@ romper esa condición la validan antes de persistir.
 
 ### Auth
 
-`IdentityProvider` es el contrato de aplicación. Inicialmente lo implementa
-`SupabaseIdentityAdapter`, que es el único componente autorizado para usar el
-cliente Supabase Auth. El módulo `auth`, sus guards y sus casos de uso reciben
-tipos neutrales.
+`IdentityProvider` es el contrato de aplicación. `JwtIdentityAdapter` implementa
+credenciales propias, Argon2id, JWT EdDSA y sesiones rotativas persistidas en
+PostgreSQL. El módulo `auth`, sus guards y sus casos de uso reciben tipos neutrales.
 
-Los correos de confirmación y recuperación no los envía Supabase. El adapter
-administrativo de Identity genera enlaces de un solo uso y entrega únicamente
-el token al caso de uso; `NotificationProvider` renderiza y envía el correo con
-Resend. Web y Mobile consumen el token mediante endpoints propios bajo
-`/api/v1/auth/**` y `/api/v1/mobile/auth/**`. La secret key permanece aislada en
-el cliente administrativo de Identity y nunca se expone a presentation.
+Identity genera tokens de confirmación, recuperación e invitación de un solo uso;
+`NotificationProvider` renderiza y envía los correos con Resend. Web y Mobile
+consumen el token mediante endpoints propios bajo `/api/v1/auth/**` y
+`/api/v1/mobile/auth/**`. La clave privada EdDSA permanece aislada en el adapter
+de Identity y nunca se expone a presentation.
 
 ### Storage
 
-`StorageProvider` es el contrato de aplicación. `STORAGE_PROVIDER=supabase`
-selecciona `SupabaseStorageAdapter` para el entorno local y
-`STORAGE_PROVIDER=r2` selecciona `CloudflareR2StorageAdapter` en producción.
-Así, desarrollo usa los buckets del Supabase local sin consumir transferencia
-ni lecturas de R2. El adapter R2 usa su endpoint S3 con credenciales limitadas
+`StorageProvider` es el contrato de aplicación. `MinioStorageAdapter` se usa con
+`STORAGE_PROVIDER=minio` en desarrollo y `CloudflareR2StorageAdapter` con
+`STORAGE_PROVIDER=r2` en producción. Ambos reutilizan internamente el protocolo
+S3 y usan credenciales limitadas
 a los buckets de la aplicación. `product-media` se publica exclusivamente
-mediante `R2_PUBLIC_BASE_URL`; `payment-proofs` permanece privado y se entrega
-mediante URLs S3 firmadas con vencimiento. Las credenciales R2 nunca se entregan
+mediante `R2_PUBLIC_BASE_URL` o `MINIO_PUBLIC_BASE_URL`; `payment-proofs` permanece privado y se entrega
+mediante URLs S3 firmadas con vencimiento. Las credenciales S3 nunca se entregan
 a clientes públicos ni a los módulos de negocio.
 
 Las rutas persistidas son neutrales al proveedor y conservan únicamente la
@@ -131,11 +130,11 @@ Los carritos y sesiones de checkout de invitados usan tokens opacos y almacenan
 se resuelven mediante URLs firmadas de `StorageProvider`.
 
 La confirmación del checkout es transaccional: recalcula precios, promociones,
-envío e inventario, registra la reserva y convierte el carrito. El método
-`SIMULATED_*` crea un pedido de demostración pagado. `MERCADO_PAGO` y `PAYWAY`
-crean pedidos `PENDING_PAYMENT`. Mercado Pago devuelve una redirección a
-Checkout Pro; Payway recibe exclusivamente el token temporal creado por su SDK
-en el frontend y puede aprobar el cobro en forma síncrona. Los webhooks se
+envío e inventario, registra la reserva y convierte el carrito. `MERCADO_PAGO`
+crea pedidos `PENDING_PAYMENT` y devuelve una redirección a Checkout Pro. Payway recibe
+exclusivamente el token temporal creado por su SDK en el frontend y procesa la
+compra en forma síncrona: solo `APPROVED` confirma la orden; cualquier otro
+estado cancela la orden y libera su reserva. Los webhooks se
 resuelven explícitamente por proveedor y Payway consulta el pago autenticado
 antes de aplicar el estado. No se almacenan datos ni tokens de tarjetas.
 
@@ -163,8 +162,8 @@ application.
 ## Investigación externa de catálogo
 
 La extracción de fabricantes y retails vive en `tools/catalog-research` como
-CLI independiente. Produce snapshots JSON y no importa NestJS, Prisma ni
-Supabase. El importador aprobado vive en `scripts/` y es el único componente
+CLI independiente. Produce snapshots JSON y no importa NestJS, Prisma ni SDKs
+de infraestructura. El importador aprobado vive en `scripts/` y es el único componente
 que persiste en PostgreSQL. Los precios de terceros se guardan como
 `RetailPriceObservation`, separados de `SupplierOffer` y del precio de venta
 propio de Patitas.
