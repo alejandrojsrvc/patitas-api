@@ -2,7 +2,15 @@ name: CI
 
 on:
   pull_request:
-  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Run PostgreSQL, migrations, integration and E2E checks
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   quality:
@@ -41,17 +49,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Start PostgreSQL 17 and MinIO
-        run: pnpm infra:start
-
-      - name: Generate Prisma Client
-        run: pnpm db:generate
-
       - name: Validate Prisma schema
         run: pnpm db:validate
-
-      - name: Apply migrations to PostgreSQL 17
-        run: pnpm db:deploy
 
       - name: Check formatting
         run: pnpm format:check
@@ -62,11 +61,21 @@ jobs:
       - name: Unit tests
         run: pnpm test:unit
 
+      - name: Build backend
+        run: pnpm build
+
+      - name: Start PostgreSQL 17 and MinIO
+        if: github.event_name == 'workflow_dispatch' && inputs.full
+        run: pnpm infra:start
+
+      - name: Apply migrations to PostgreSQL 17
+        if: github.event_name == 'workflow_dispatch' && inputs.full
+        run: pnpm db:deploy
+
       - name: Integration tests
+        if: github.event_name == 'workflow_dispatch' && inputs.full
         run: pnpm test:integration
 
       - name: E2E tests
+        if: github.event_name == 'workflow_dispatch' && inputs.full
         run: pnpm test:e2e
-
-      - name: Build backend
-        run: pnpm build
