@@ -14,13 +14,7 @@ describe('catalogCacheKeys', () => {
   });
 
   it('deduplicates a batch and lets a full catalog purge subsume granular keys', () => {
-    expect(
-      catalogCacheKeys([
-        { scope: 'product', slug: 'royal-canin-mini-adult' },
-        { scope: 'catalog' },
-        { scope: 'facets' },
-      ]),
-    ).toEqual(['catalog']);
+    expect(catalogCacheKeys([{ scope: 'product', slug: 'royal-canin-mini-adult' }, { scope: 'catalog' }, { scope: 'facets' }])).toEqual(['catalog']);
   });
 
   it('keeps brand invalidation bounded', () => {

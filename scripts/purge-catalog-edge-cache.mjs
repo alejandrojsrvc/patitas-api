@@ -35,9 +35,7 @@ async function main() {
   if (Boolean(cloudflareZoneId) !== Boolean(cloudflareToken)) {
     throw new Error('CLOUDFLARE_ZONE_ID y CLOUDFLARE_CACHE_PURGE_TOKEN deben configurarse juntos.');
   }
-  const cloudflare = cloudflareZoneId && cloudflareToken
-    ? await purgeCloudflare(cloudflareZoneId, cloudflareToken, keys)
-    : { skipped: true };
+  const cloudflare = cloudflareZoneId && cloudflareToken ? await purgeCloudflare(cloudflareZoneId, cloudflareToken, keys) : { skipped: true };
   console.log(JSON.stringify({ ok: true, keys, varnish, cloudflare }));
 }
 
@@ -51,15 +49,7 @@ function keysForScope(selectedScope, selectedSlug) {
   if (selectedScope === 'brand') {
     return [`brand:${selectedSlug}`, 'catalog:brands', 'catalog:list', 'catalog:home', 'catalog:sitemap'];
   }
-  return [
-    `product:${selectedSlug}`,
-    'catalog:products',
-    'catalog:brands',
-    'catalog:list',
-    'catalog:home',
-    'catalog:sitemap',
-    'catalog:calculator',
-  ];
+  return [`product:${selectedSlug}`, 'catalog:products', 'catalog:brands', 'catalog:list', 'catalog:home', 'catalog:sitemap', 'catalog:calculator'];
 }
 
 function normalizeKeys(values) {
