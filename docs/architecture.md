@@ -9,7 +9,10 @@ Patitas API
 │
 ├── Public API
 │   ├── /api/v1/products
+│   ├── /api/v1/products/facets
 │   ├── /api/v1/products/autocomplete
+│   ├── /api/v1/catalog/taxonomy/resolve
+│   ├── /api/v1/catalog/taxonomy/landings
 │   ├── /api/v1/categories
 │   ├── /api/v1/brands
 │   ├── /api/v1/offers
@@ -158,6 +161,22 @@ Cada módulo define repositorios orientados a su negocio. Prisma implementa esos
 contratos en `infrastructure/persistence` y convierte siempre mediante mappers.
 No se crea un repositorio CRUD genérico ni se expone una transacción Prisma a
 application.
+
+### Taxonomía pública del catálogo
+
+`CatalogTaxonomyService` es la fuente de verdad para las rutas SEO del catálogo.
+El servicio traduce slugs comerciales a `Species`, `ProductCategory`, `FoodType`
+y `LifeStage`, construye el camino inverso y solo expone combinaciones declaradas
+como indexables. Las marcas se agregan como último segmento únicamente sobre
+alimentos balanceados o húmedos y la combinación debe tener al menos un producto
+`ACTIVE`; pesos, precios, disponibilidad, orden y selecciones múltiples continúan
+siendo filtros de query.
+
+`CatalogQueryService` transforma esos filtros técnicos a la jerarquía persistida
+de `Category`. `ProductCategory` y `FoodType` no se guardan como columnas: se
+derivan de `alimentos`, `alimento-seco` y `alimento-humedo`. La presentación
+permanece en `ProductVariant.weightGrams` y nunca participa del canonical del
+producto.
 
 ## Investigación externa de catálogo
 

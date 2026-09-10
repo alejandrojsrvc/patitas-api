@@ -48,7 +48,8 @@ const policies: RateLimitPolicy[] = [
     windowMs: 60_000,
     scope: 'client',
     matches: ({ method, path }) =>
-      method === 'GET' && /^\/api\/v1\/(?:products|categories|brands|offers|mobile\/(?:products|categories|offers|pet-breeds))(?:\/|$)/.test(path),
+      method === 'GET' &&
+      /^\/api\/v1\/(?:products|categories|brands|offers|catalog\/taxonomy|mobile\/(?:products|categories|offers|pet-breeds))(?:\/|$)/.test(path),
   },
   {
     id: 'catalog-search-client',
@@ -77,7 +78,8 @@ const policies: RateLimitPolicy[] = [
     windowMs: 60_000,
     scope: 'instance',
     matches: ({ method, path }) =>
-      method === 'GET' && /^\/api\/v1\/(?:products|categories|brands|offers|mobile\/(?:products|categories|offers|pet-breeds))(?:\/|$)/.test(path),
+      method === 'GET' &&
+      /^\/api\/v1\/(?:products|categories|brands|offers|catalog\/taxonomy|mobile\/(?:products|categories|offers|pet-breeds))(?:\/|$)/.test(path),
   },
   {
     id: 'anonymous-write-client',

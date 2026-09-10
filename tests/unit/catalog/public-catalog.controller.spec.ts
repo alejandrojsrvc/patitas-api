@@ -6,7 +6,11 @@ import { PromotionService } from '../../../src/modules/promotions/application/pr
 
 describe('Public catalog autocomplete controller', () => {
   const autocompleteProducts = jest.fn();
-  const controller = new PublicCatalogController({ autocompleteProducts } as unknown as CatalogService, {} as unknown as PromotionService);
+  const controller = new PublicCatalogController(
+    { autocompleteProducts } as unknown as CatalogService,
+    {} as unknown as PromotionService,
+    { resolve: jest.fn((input: unknown): unknown => input) } as never,
+  );
 
   beforeEach(() => {
     autocompleteProducts.mockReset();

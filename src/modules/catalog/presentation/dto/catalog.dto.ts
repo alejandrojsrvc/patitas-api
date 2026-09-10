@@ -20,6 +20,8 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
 } from 'class-validator';
+import { FoodType, LifeStage, ProductCategory, Species, type CatalogAvailability } from '../../domain/catalog.types';
+import { normalizeCatalogLifeStage, normalizeCatalogSpecies } from '../../domain/catalog-classification';
 
 export class ReferenceDto {
   @ApiProperty() @IsString() @MaxLength(160) public name!: string;
@@ -80,9 +82,17 @@ export class CreateProductDto {
   public analyticalComposition?: Record<string, unknown> | null;
   @ApiProperty({ format: 'uuid' }) @IsUUID() public brandId!: string;
   @ApiProperty({ format: 'uuid' }) @IsUUID() public categoryId!: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() public species?: string | null;
+  @ApiPropertyOptional({ enum: Object.values(Species), nullable: true })
+  @IsOptional()
+  @Transform(({ value }) => normalizeEnumInput(value, normalizeCatalogSpecies))
+  @IsIn(Object.values(Species))
+  public species?: Species | null;
   @ApiPropertyOptional() @IsOptional() @IsString() public line?: string | null;
-  @ApiPropertyOptional() @IsOptional() @IsString() public lifeStage?: string | null;
+  @ApiPropertyOptional({ enum: Object.values(LifeStage), nullable: true })
+  @IsOptional()
+  @Transform(({ value }) => normalizeEnumInput(value, normalizeCatalogLifeStage))
+  @IsIn(Object.values(LifeStage))
+  public lifeStage?: LifeStage | null;
   @ApiPropertyOptional() @IsOptional() @IsString() public breedSize?: string | null;
   @ApiPropertyOptional()
   @IsOptional()
@@ -195,7 +205,11 @@ export class FeedingGuideEntryDto {
   @IsNumber()
   @Min(0.1)
   public petWeightKgMax?: number | null;
-  @ApiPropertyOptional() @IsOptional() @IsString() public lifeStage?: string | null;
+  @ApiPropertyOptional({ enum: Object.values(LifeStage), nullable: true })
+  @IsOptional()
+  @Transform(({ value }) => normalizeEnumInput(value, normalizeCatalogLifeStage))
+  @IsIn(Object.values(LifeStage))
+  public lifeStage?: LifeStage | null;
   @ApiPropertyOptional({ type: Object })
   @IsOptional()
   @IsObject()
@@ -248,12 +262,21 @@ export class PublicProductsQueryDto {
   @IsString()
   @MaxLength(80)
   public q?: string;
+  @ApiPropertyOptional({ enum: Object.values(ProductCategory) })
+  @IsOptional()
+  @IsIn(Object.values(ProductCategory))
+  public category?: ProductCategory;
+  @ApiPropertyOptional({ enum: Object.values(FoodType) })
+  @IsOptional()
+  @IsIn(Object.values(FoodType))
+  public foodType?: FoodType;
   @ApiPropertyOptional({ maxLength: 220 })
   @IsOptional()
   @Transform(({ value }) => normalizeQueryText(value))
   @IsString()
   @MaxLength(220)
-  public category?: string;
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  public categorySlug?: string;
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @Transform(({ value }) => toArray(value))
@@ -261,19 +284,16 @@ export class PublicProductsQueryDto {
   @IsString({ each: true })
   @MaxLength(220, { each: true })
   public brand?: string[];
-  @ApiPropertyOptional({ maxLength: 32 })
+  @ApiPropertyOptional({ enum: Object.values(Species) })
   @IsOptional()
-  @Transform(({ value }) => normalizeQueryText(value))
-  @IsString()
-  @MaxLength(32)
-  public species?: string;
-  @ApiPropertyOptional({ type: [String] })
+  @IsIn(Object.values(Species))
+  public species?: Species;
+  @ApiPropertyOptional({ enum: Object.values(LifeStage), isArray: true })
   @IsOptional()
   @Transform(({ value }) => toArray(value))
   @ArrayMaxSize(20)
-  @IsString({ each: true })
-  @MaxLength(120, { each: true })
-  public lifeStage?: string[];
+  @IsIn(Object.values(LifeStage), { each: true })
+  public lifeStage?: LifeStage[];
   @ApiPropertyOptional({ type: [Number] })
   @IsOptional()
   @Transform(({ value }) => toArray(value).map(Number))
@@ -294,6 +314,10 @@ export class PublicProductsQueryDto {
   @IsNumberString()
   @MaxLength(24)
   public maxPrice?: string;
+  @ApiPropertyOptional({ enum: ['AVAILABLE', 'OUT_OF_STOCK'] })
+  @IsOptional()
+  @IsIn(['AVAILABLE', 'OUT_OF_STOCK'])
+  public availability?: CatalogAvailability;
   @ApiPropertyOptional()
   @IsOptional()
   @Transform(({ value }) => parseBoolean(value))
@@ -355,6 +379,11 @@ const parseBoolean = (value: unknown): unknown => {
   return value;
 };
 
+const normalizeEnumInput = <T extends string>(value: unknown, normalize: (input: unknown) => T | null): unknown => {
+  if (value === undefined || value === null || value === '') return value;
+  return normalize(value) ?? value;
+};
+
 export class AdminProductsQueryDto {
   @ApiPropertyOptional({ enum: ['DRAFT', 'ACTIVE', 'ARCHIVED'] })
   @IsOptional()
@@ -369,7 +398,11 @@ export class AdminProductsQueryDto {
   @IsOptional()
   @IsUUID()
   public categoryId?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() public species?: string;
+  @ApiPropertyOptional({ enum: Object.values(Species) })
+  @IsOptional()
+  @Transform(({ value }) => normalizeEnumInput(value, normalizeCatalogSpecies))
+  @IsIn(Object.values(Species))
+  public species?: Species;
   @ApiPropertyOptional()
   @IsOptional()
   @Transform(({ value }) => parseBoolean(value))

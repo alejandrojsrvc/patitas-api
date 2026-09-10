@@ -39,6 +39,7 @@ COPY --from=build --chown=node:node /app/package.json /app/pnpm-lock.yaml /app/p
 COPY --from=build --chown=node:node /app/prisma ./prisma
 COPY --from=build --chown=node:node /app/prisma.config.ts ./
 COPY --from=build --chown=node:node /app/scripts/database-safety.ts ./scripts/database-safety.ts
+COPY --from=build --chown=node:node /app/scripts/create-production-admin.mjs ./scripts/create-production-admin.mjs
 COPY --chown=node:node docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 
 RUN chmod +x /usr/local/bin/docker-entrypoint
