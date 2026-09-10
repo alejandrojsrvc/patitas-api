@@ -190,6 +190,59 @@ export class NotificationService {
     return { scanned: carts.length, notified: processed };
   }
 
+  public async processOrderConfirmations() {
+    const deliveries = await this.repository.listDueOrderConfirmations(new Date());
+    let sent = 0;
+    for (const delivery of deliveries) {
+      const guestToken =
+        delivery.customerId || delivery.paymentStatus !== 'PAID'
+          ? undefined
+          : await this.repository.createGuestOrderActivationToken(delivery.orderId, delivery.email);
+      const status = delivery.paymentStatus === 'PAID' ? 'approved' : delivery.paymentStatus === 'FAILED' ? 'failed' : 'pending';
+      try {
+        const result = await this.provider.send({
+          channel: 'EMAIL',
+          destination: delivery.email,
+          template: 'order_confirmation',
+          idempotencyKey: delivery.idempotencyKey,
+          variables: {
+            status,
+            customerName: delivery.customerName,
+            orderNumber: delivery.orderNumber,
+            orderDate: delivery.orderDate.toLocaleString('es-AR'),
+            paymentStatus: delivery.paymentStatus,
+            paymentMethod: delivery.paymentMethod,
+            items: JSON.stringify(delivery.items),
+            subtotal: delivery.subtotal,
+            discount: delivery.discount,
+            shipping: delivery.shipping,
+            total: delivery.total,
+            address: delivery.address,
+            deliveryEstimate: delivery.deliveryEstimate,
+            ...(guestToken ? { token: guestToken } : { actionUrl: `/mi-cuenta/pedidos/${delivery.orderId}` }),
+            actionLabel: guestToken
+              ? 'Crear mi cuenta y ver mi pedido'
+              : status === 'failed'
+                ? 'Revisar pago'
+                : status === 'pending'
+                  ? 'Consultar estado'
+                  : 'Ver mi pedido',
+            orderId: delivery.orderId,
+          },
+        });
+        await this.repository.markDeliveryAttempt(delivery.id, true, undefined, result.providerMessageId);
+        sent += 1;
+      } catch (error) {
+        await this.repository.markDeliveryAttempt(delivery.id, false, error instanceof Error ? error.message : 'Proveedor no disponible');
+      }
+    }
+    return { scanned: deliveries.length, sent };
+  }
+
+  public retryOrderConfirmation(orderId: string) {
+    return this.repository.retryOrderConfirmation(orderId);
+  }
+
   public async processPlanReminders() {
     const plans = await this.repository.listDuePlans(new Date());
     let notified = 0;

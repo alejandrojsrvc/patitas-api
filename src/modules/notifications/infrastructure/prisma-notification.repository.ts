@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { randomBytes, createHash } from 'node:crypto';
 import type {
   AbandonedCartRecord,
   DeviceTokenRecord,
@@ -424,6 +425,86 @@ export class PrismaNotificationRepository implements NotificationRepository {
     });
   }
 
+  public async listDueOrderConfirmations(now: Date, limit = 50) {
+    const rows = await this.prisma.notificationDelivery.findMany({
+      where: { template: 'order_confirmation', status: 'PENDING', OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }] },
+      include: { order: { include: { lines: true } } },
+      orderBy: { createdAt: 'asc' },
+      take: limit,
+    });
+    return rows.flatMap((row) =>
+      row.order
+        ? [
+            {
+              id: row.id,
+              idempotencyKey: row.idempotencyKey,
+              orderId: row.order.id,
+              orderNumber: row.order.orderNumber.toString(),
+              orderDate: row.order.createdAt,
+              customerId: row.order.customerId,
+              customerName: row.order.contactName,
+              email: row.order.contactEmail,
+              paymentStatus: row.order.paymentStatus,
+              paymentMethod: row.order.paymentMethod ?? 'No informado',
+              subtotal: row.order.subtotal.toString(),
+              discount: row.order.discountTotal.toString(),
+              shipping: row.order.shippingCost.toString(),
+              total: row.order.total.toString(),
+              address: formatAddress(row.order.shippingAddress),
+              deliveryEstimate: row.order.shippingEstimate ?? row.order.shippingDeliverySlotLabel ?? 'Te informaremos la fecha de entrega.',
+              items: row.order.lines.map((line) => ({
+                name: line.productName,
+                quantity: line.quantity,
+                unitPrice: line.unitPrice.toString(),
+                total: line.lineTotal.toString(),
+              })),
+            },
+          ]
+        : [],
+    );
+  }
+
+  public async markDeliveryAttempt(id: string, success: boolean, message?: string, providerMessageId?: string): Promise<void> {
+    const current = await this.prisma.notificationDelivery.findUnique({ where: { id }, select: { attemptCount: true } });
+    if (!current) return;
+    await this.prisma.notificationDelivery.update({
+      where: { id },
+      data: success
+        ? { status: 'SENT', deliveredAt: new Date(), providerMessageId: providerMessageId ?? null }
+        : {
+            status: current.attemptCount >= 4 ? 'FAILED' : 'PENDING',
+            error: message ?? 'Proveedor no disponible',
+            nextAttemptAt: new Date(Date.now() + Math.min(60, 2 ** current.attemptCount) * 60_000),
+            attemptCount: { increment: 1 },
+          },
+    });
+  }
+
+  public async createGuestOrderActivationToken(orderId: string, email: string): Promise<string> {
+    const token = randomBytes(32).toString('base64url');
+    await this.prisma.$transaction(async (transaction) => {
+      await transaction.guestOrderActivationToken.updateMany({ where: { orderId, consumedAt: null }, data: { consumedAt: new Date() } });
+      await transaction.guestOrderActivationToken.create({
+        data: {
+          orderId,
+          email: email.trim().toLowerCase(),
+          tokenHash: createHash('sha256').update(token).digest('hex'),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60_000),
+        },
+      });
+    });
+    return token;
+  }
+
+  public retryOrderConfirmation(orderId: string): Promise<number> {
+    return this.prisma.notificationDelivery
+      .updateMany({
+        where: { orderId, template: 'order_confirmation', status: { in: ['FAILED', 'SENT'] } },
+        data: { status: 'PENDING', nextAttemptAt: null, error: null },
+      })
+      .then((result) => result.count);
+  }
+
   public async listDuePlans(now: Date): Promise<ReminderPlanRecord[]> {
     const plans = await this.prisma.replenishmentPlan.findMany({
       where: {
@@ -547,4 +628,15 @@ const decodeNotificationCursor = (cursor?: string): string | undefined => {
   } catch {
     throw new NotificationQueryError('El cursor de notificaciones no es válido.');
   }
+};
+
+const formatAddress = (value: unknown): string => {
+  if (!value || typeof value !== 'object') return 'Dirección de envío informada en checkout.';
+  const address = value as Record<string, unknown>;
+  return (
+    [address.street, address.number, address.apartment, address.neighborhood, address.city, address.province, address.postalCode]
+      .filter((part): part is string | number => typeof part === 'string' || typeof part === 'number')
+      .map(String)
+      .join(', ') || 'Dirección de envío informada en checkout.'
+  );
 };

@@ -1062,7 +1062,41 @@ export const applyWebhookResult = async (
       data: { status: 'CANCELLED' },
     });
   }
+  if (['PAID', 'PENDING', 'FAILED'].includes(paymentStatus)) {
+    await transaction.notificationDelivery.upsert({
+      where: { idempotencyKey: `order-confirmation:${order.id}:${paymentStatus}` },
+      create: {
+        id: randomUUID(),
+        channel: 'EMAIL',
+        template: 'order_confirmation',
+        destinationHash: createHash('sha256').update(order.contactEmail.trim().toLowerCase()).digest('hex'),
+        idempotencyKey: `order-confirmation:${order.id}:${paymentStatus}`,
+        orderId: order.id,
+        customerId: order.customerId,
+      },
+      update: {},
+    });
+  }
   if (paymentStatus === 'PAID') {
+    await transaction.shipment.upsert({
+      where: { orderId: order.id },
+      create: {
+        id: randomUUID(),
+        orderId: order.id,
+        status: 'PENDING',
+        estimatedDate: order.shippingDeliveryDate,
+        estimatedSlot: order.shippingDeliverySlot,
+        events: {
+          create: {
+            id: randomUUID(),
+            status: 'PENDING',
+            visibleMessage: 'Recibimos tu pedido.',
+          },
+        },
+      },
+      update: {},
+      select: { id: true },
+    });
     const schedule = transaction.purchaseSchedule
       ? await transaction.purchaseSchedule.findUnique({
           where: { initialOrderId: order.id },
@@ -1212,7 +1246,7 @@ const mapTransfer = (
     createdAt: Date;
   },
   order: {
-    number: string | null;
+    orderNumber: bigint;
     customerId: string | null;
     paymentStatus: PaymentStatus;
     customer?: { fullName: string; email: string } | null;
@@ -1229,7 +1263,7 @@ const mapTransfer = (
   reportedReference: attempt.reportedReference,
   proofUrl: attempt.proofUrl,
   instructions: transferInstructions(rawInstructions),
-  orderNumber: order.number,
+  orderNumber: order.orderNumber.toString(),
   customerId: order.customerId,
   customerName: order.customer?.fullName ?? null,
   customerEmail: order.customer?.email ?? null,

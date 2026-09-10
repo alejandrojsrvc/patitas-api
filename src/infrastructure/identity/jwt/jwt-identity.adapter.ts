@@ -119,6 +119,42 @@ export class JwtIdentityAdapter implements IdentityProvider {
     };
   }
 
+  public async activateGuest(credentials: IdentityCredentials): Promise<IdentitySession> {
+    const email = normalizeEmail(credentials.email);
+    const passwordHash = await this.hashPassword(credentials.password);
+    let userId = '';
+    await this.prisma.$transaction(async (transaction) => {
+      const existing = await transaction.user.findUnique({ where: { email }, include: { credential: true } });
+      if (existing) {
+        if (existing.role !== 'CUSTOMER' || existing.status !== 'ACTIVE')
+          throw this.operationError('guest activation', new Error('La cuenta no puede activarse.'));
+        userId = existing.id;
+        await transaction.user.update({
+          where: { id: existing.id },
+          data: {
+            credential: {
+              upsert: {
+                create: { passwordHash, emailVerifiedAt: new Date() },
+                update: { passwordHash, emailVerifiedAt: new Date(), passwordChangedAt: new Date(), failedLoginCount: 0, lockedUntil: null },
+              },
+            },
+          },
+        });
+        return;
+      }
+      const created = await transaction.user.create({
+        data: {
+          id: randomUUID(),
+          email,
+          customer: { create: { fullName: credentials.displayName?.trim() || email, email } },
+          credential: { create: { passwordHash, emailVerifiedAt: new Date() } },
+        },
+      });
+      userId = created.id;
+    });
+    return this.createSession(userId, email, new Date());
+  }
+
   public async login(credentials: IdentityCredentials): Promise<IdentitySession> {
     const email = normalizeEmail(credentials.email);
     const account = await this.prisma.user.findUnique({ where: { email }, include: { credential: true } });

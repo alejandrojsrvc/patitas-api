@@ -20,6 +20,7 @@ export class PaywayPaymentAdapter implements PaymentProvider {
 
   public constructor(config: ConfigService) {
     this.siteIds = {
+      default: readConfig(config, 'PAYWAY_SITE_ID'),
       visa: readConfig(config, 'PAYWAY_SITE_ID_VISA'),
       mastercard: readConfig(config, 'PAYWAY_SITE_ID_MASTERCARD'),
       americanExpress: readConfig(config, 'PAYWAY_SITE_ID_AMERICAN_EXPRESS'),
@@ -174,6 +175,7 @@ export class PaywayPaymentAdapter implements PaymentProvider {
 }
 
 type PaywaySiteIds = {
+  default?: string;
   visa?: string;
   mastercard?: string;
   americanExpress?: string;
@@ -182,15 +184,15 @@ type PaywaySiteIds = {
 };
 
 const PAYWAY_SITE_ID_BY_PAYMENT_METHOD: Record<number, (siteIds: PaywaySiteIds) => string | undefined> = {
-  1: (siteIds) => siteIds.visa,
-  31: (siteIds) => siteIds.visa,
-  6: (siteIds) => siteIds.americanExpress,
-  65: (siteIds) => siteIds.americanExpress,
-  15: (siteIds) => siteIds.mastercard,
-  66: (siteIds) => siteIds.mastercard,
-  27: (siteIds) => siteIds.cabal,
-  63: (siteIds) => siteIds.cabal,
-  67: (siteIds) => siteIds.cabal,
+  1: (siteIds) => siteIds.visa ?? siteIds.default,
+  31: (siteIds) => siteIds.visa ?? siteIds.default,
+  6: (siteIds) => siteIds.americanExpress ?? siteIds.default,
+  65: (siteIds) => siteIds.americanExpress ?? siteIds.default,
+  15: (siteIds) => siteIds.mastercard ?? siteIds.default,
+  66: (siteIds) => siteIds.mastercard ?? siteIds.default,
+  27: (siteIds) => siteIds.cabal ?? siteIds.default,
+  63: (siteIds) => siteIds.cabal ?? siteIds.default,
+  67: (siteIds) => siteIds.cabal ?? siteIds.default,
 };
 
 const readConfig = (config: ConfigService, key: string): string | undefined => config.get<string>(key)?.trim() || undefined;

@@ -32,6 +32,7 @@ export interface IdentityRegistration {
 
 export interface IdentityProvider {
   register(credentials: IdentityCredentials): Promise<IdentityRegistration>;
+  activateGuest(credentials: IdentityCredentials): Promise<IdentitySession>;
   login(credentials: IdentityCredentials): Promise<IdentitySession>;
   refresh(refreshToken: string): Promise<IdentitySession>;
   verifyToken(accessToken: string): Promise<ProviderIdentity>;

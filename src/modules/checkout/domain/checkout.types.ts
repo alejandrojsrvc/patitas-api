@@ -60,8 +60,11 @@ export interface CheckoutSession {
 
 export interface OrderSummary {
   id: string;
+  number: string | null;
   status: string;
   paymentStatus: string;
+  paymentMethod: string | null;
+  paymentProvider: string | null;
   canRetry: boolean;
   reconciliationRequired: boolean;
   reconciliationReason: string | null;
@@ -69,6 +72,12 @@ export interface OrderSummary {
   subtotal: string;
   discountTotal: string;
   shippingCost: string;
+  shippingAddress: Record<string, unknown>;
+  deliveryInstructions: string | null;
+  shippingEstimate: string | null;
+  shippingDeliveryDate: Date | null;
+  shippingDeliverySlot: string | null;
+  trackingNumber: string | null;
   total: string;
   currency: 'ARS';
   contactName: string;
@@ -98,6 +107,27 @@ export interface OrderSummary {
     createdAt: Date;
   }>;
   createdAt: Date;
+  payments: Array<{
+    id: string;
+    amount: string;
+    currency: string;
+    method: string;
+    provider: string | null;
+    externalPaymentId: string | null;
+    paidAt: Date | null;
+    createdAt: Date;
+  }>;
+  statusEvents: Array<{ id: string; status: string; occurredAt: Date }>;
+  shipment: {
+    id: string;
+    status: string;
+    carrier: string | null;
+    trackingNumber: string | null;
+    trackingUrl: string | null;
+    estimatedDate: Date | null;
+    estimatedSlot: string | null;
+    events: Array<{ id: string; status: string; visibleMessage: string; occurredAt: Date }>;
+  } | null;
 }
 
 export interface CustomerOrderListItem {

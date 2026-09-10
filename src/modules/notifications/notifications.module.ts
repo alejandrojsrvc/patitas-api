@@ -11,10 +11,11 @@ import { PrismaNotificationRepository } from './infrastructure/prisma-notificati
 import { NotificationController } from './presentation/notification.controller';
 import { NotificationJobsController } from './presentation/notification-jobs.controller';
 import { MobileNotificationController } from './presentation/mobile-notification.controller';
+import { AdminNotificationController } from './presentation/admin-notification.controller';
 
 @Module({
   imports: [ConfigModule, PrismaModule, NotificationInfrastructureModule, AuthModule, CustomersModule],
-  controllers: [NotificationController, NotificationJobsController, MobileNotificationController],
+  controllers: [NotificationController, NotificationJobsController, MobileNotificationController, AdminNotificationController],
   providers: [
     PrismaNotificationRepository,
     {

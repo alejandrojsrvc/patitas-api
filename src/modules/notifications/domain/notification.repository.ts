@@ -85,6 +85,25 @@ export interface PurchaseScheduleReminderRecord {
   nextReminderAt: Date;
   productName: string;
 }
+export interface OrderConfirmationDeliveryRecord {
+  id: string;
+  idempotencyKey: string;
+  orderId: string;
+  orderNumber: string;
+  orderDate: Date;
+  customerId: string | null;
+  customerName: string;
+  email: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  subtotal: string;
+  discount: string;
+  shipping: string;
+  total: string;
+  address: string;
+  deliveryEstimate: string;
+  items: Array<{ name: string; quantity: number; unitPrice: string; total: string }>;
+}
 export interface NotificationRepository {
   getPreferences(customerId: string): Promise<NotificationPreferences>;
   updatePreferences(customerId: string, input: NotificationPreferences): Promise<NotificationPreferences>;
@@ -149,4 +168,8 @@ export interface NotificationRepository {
   pauseReminderSubscription(id: string, at: Date): Promise<void>;
   listDuePurchaseSchedules(now: Date): Promise<PurchaseScheduleReminderRecord[]>;
   markPurchaseScheduleAwaitingConfirmation(id: string): Promise<void>;
+  listDueOrderConfirmations(now: Date, limit?: number): Promise<OrderConfirmationDeliveryRecord[]>;
+  markDeliveryAttempt(id: string, success: boolean, message?: string, providerMessageId?: string): Promise<void>;
+  createGuestOrderActivationToken(orderId: string, email: string): Promise<string>;
+  retryOrderConfirmation(orderId: string): Promise<number>;
 }

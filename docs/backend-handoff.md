@@ -155,7 +155,9 @@ Los proveedores habilitados y su prioridad se administran en la tabla
 `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`,
 `MERCADOPAGO_WEBHOOK_SECRET` y opcionalmente
 `MERCADOPAGO_NOTIFICATION_URL`. Payway API Payments usa
-`PAYWAY_SITE_ID_VISA`, `PAYWAY_SITE_ID_MASTERCARD`,
+Payway usa `PAYWAY_SITE_ID` para un único establecimiento (o, si se
+requieren establecimientos distintos, `PAYWAY_SITE_ID_VISA`,
+`PAYWAY_SITE_ID_MASTERCARD`,
 `PAYWAY_SITE_ID_AMERICAN_EXPRESS`, `PAYWAY_SITE_ID_DISCOVER` y
 `PAYWAY_SITE_ID_CABAL` para seleccionar el establecimiento según el medio,
 además de `PAYWAY_PRIVATE_API_KEY`, `PAYWAY_API_BASE_URL` y

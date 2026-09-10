@@ -20,10 +20,16 @@ import { CheckoutHandoffService } from './application/checkout-handoff.service';
 import { CHECKOUT_HANDOFF_REPOSITORY, type CheckoutHandoffRepository } from './domain/checkout-handoff.repository';
 import { PrismaCheckoutHandoffRepository } from './infrastructure/prisma-checkout-handoff.repository';
 import { CheckoutHandoffController } from './presentation/checkout-handoff.controller';
+import { GuestOrderActivationService } from './application/guest-order-activation.service';
+import { GUEST_ORDER_ACTIVATION_REPOSITORY, type GuestOrderActivationRepository } from './domain/guest-order-activation.repository';
+import { PrismaGuestOrderActivationRepository } from './infrastructure/prisma-guest-order-activation.repository';
+import { IDENTITY_PROVIDER, type IdentityProvider } from '../../shared/application/ports/identity-provider.interface';
+import { IdentityModule } from '../../infrastructure/identity/identity.module';
+import { GuestOrderActivationController } from './presentation/guest-order-activation.controller';
 
 @Module({
-  imports: [PrismaModule, AuthModule, CustomersModule, ShippingModule, StorageModule, PaymentsModule],
-  controllers: [CheckoutController, CustomerOrdersController, CheckoutHandoffController],
+  imports: [PrismaModule, AuthModule, IdentityModule, CustomersModule, ShippingModule, StorageModule, PaymentsModule],
+  controllers: [CheckoutController, CustomerOrdersController, CheckoutHandoffController, GuestOrderActivationController],
   providers: [
     { provide: CHECKOUT_REPOSITORY, useClass: PrismaCheckoutRepository },
     {
@@ -47,7 +53,13 @@ import { CheckoutHandoffController } from './presentation/checkout-handoff.contr
       inject: [CHECKOUT_HANDOFF_REPOSITORY],
       useFactory: (repository: CheckoutHandoffRepository) => new CheckoutHandoffService(repository),
     },
+    { provide: GUEST_ORDER_ACTIVATION_REPOSITORY, useClass: PrismaGuestOrderActivationRepository },
+    {
+      provide: GuestOrderActivationService,
+      inject: [GUEST_ORDER_ACTIVATION_REPOSITORY, IDENTITY_PROVIDER],
+      useFactory: (repository: GuestOrderActivationRepository, identity: IdentityProvider) => new GuestOrderActivationService(repository, identity),
+    },
   ],
-  exports: [CheckoutService, CheckoutBootstrapService, CheckoutHandoffService],
+  exports: [CheckoutService, CheckoutBootstrapService, CheckoutHandoffService, GuestOrderActivationService],
 })
 export class CheckoutModule {}
