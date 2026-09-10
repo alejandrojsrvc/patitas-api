@@ -1,5 +1,6 @@
 import type { Product, ProductVariant, VariantFulfillment } from '../../catalog/domain/catalog.types';
 import type { FulfillmentRepository, FulfillmentSettingsInput } from '../domain/fulfillment.types';
+import type { CatalogCacheInvalidationPort } from '../../../shared/application/ports/catalog-cache-invalidation.port';
 
 export class FulfillmentValidationError extends Error {
   public constructor(message: string) {
@@ -9,21 +10,26 @@ export class FulfillmentValidationError extends Error {
 }
 
 export class FulfillmentService {
-  public constructor(private readonly repository: FulfillmentRepository) {}
+  public constructor(
+    private readonly repository: FulfillmentRepository,
+    private readonly cacheInvalidation?: CatalogCacheInvalidationPort,
+  ) {}
 
   public getSettings() {
     return this.repository.getSettings();
   }
 
-  public updateSettings(input: FulfillmentSettingsInput) {
+  public async updateSettings(input: FulfillmentSettingsInput) {
     if (input.depotCutoff !== undefined && !isTime(input.depotCutoff)) throw new FulfillmentValidationError('El corte del depósito no es válido.');
     if (input.depotHandlingMinutes !== undefined && (!Number.isInteger(input.depotHandlingMinutes) || input.depotHandlingMinutes < 0))
       throw new FulfillmentValidationError('El tiempo de preparación debe ser un entero no negativo.');
     if (input.timezone !== undefined && !input.timezone.trim()) throw new FulfillmentValidationError('La zona horaria es obligatoria.');
-    return this.repository.updateSettings({
+    const settings = await this.repository.updateSettings({
       ...input,
       timezone: input.timezone?.trim(),
     });
+    this.invalidateCatalogCache();
+    return settings;
   }
 
   public async enrichProduct(
@@ -39,6 +45,11 @@ export class FulfillmentService {
         fulfillment: calculateVariantFulfillment(variant, resolvedSettings, now),
       })),
     };
+  }
+
+  private invalidateCatalogCache(): void {
+    if (!this.cacheInvalidation) return;
+    void this.cacheInvalidation.invalidate({ scope: 'catalog' }).catch(() => undefined);
   }
 }
 

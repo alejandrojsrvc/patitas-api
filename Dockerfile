@@ -40,6 +40,7 @@ COPY --from=build --chown=node:node /app/prisma ./prisma
 COPY --from=build --chown=node:node /app/prisma.config.ts ./
 COPY --from=build --chown=node:node /app/scripts/database-safety.ts ./scripts/database-safety.ts
 COPY --from=build --chown=node:node /app/scripts/create-production-admin.mjs ./scripts/create-production-admin.mjs
+COPY --from=build --chown=node:node /app/scripts/purge-catalog-edge-cache.mjs ./scripts/purge-catalog-edge-cache.mjs
 COPY --chown=node:node docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 
 RUN chmod +x /usr/local/bin/docker-entrypoint

@@ -39,7 +39,7 @@
     "catalog:export-production": "node scripts/export-production-catalog.mjs",
     "images:generate-variants": "node scripts/generate-product-image-variants.mjs",
     "images:upload-variants": "node scripts/upload-product-image-variants.mjs",
-    "catalog:cache:clear": "node scripts/invalidate-web-catalog-cache.mjs",
+    "catalog:cache:purge": "node scripts/purge-catalog-edge-cache.mjs",
     "pricing:apply-all": "tsx scripts/apply-pricing-catalog.ts",
     "db:reset": "node scripts/prisma-command.mjs migrate reset",
     "user:grant-admin": "tsx scripts/grant-admin.ts",

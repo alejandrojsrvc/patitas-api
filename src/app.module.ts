@@ -28,10 +28,12 @@ import { PurchaseSchedulesModule } from './modules/purchase-schedules/purchase-s
 import { FulfillmentModule } from './modules/fulfillment/fulfillment.module';
 import { StorefrontModule } from './modules/storefront/storefront.module';
 import { SecurityModule } from './infrastructure/security/security.module';
+import { CatalogCacheModule } from './infrastructure/cache/catalog-cache.module';
 
 @Module({
   imports: [
     AppConfigModule,
+    CatalogCacheModule,
     SecurityModule,
     IdentityModule,
     StorageModule,

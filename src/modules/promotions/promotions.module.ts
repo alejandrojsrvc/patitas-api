@@ -6,6 +6,7 @@ import { PROMOTION_REPOSITORY, type PromotionRepository } from './domain/promoti
 import { PrismaPromotionRepository } from './infrastructure/prisma-promotion.repository';
 import { PromotionController } from './presentation/promotion.controller';
 import { PublicPromotionController } from './presentation/public-promotion.controller';
+import { CATALOG_CACHE_INVALIDATION, type CatalogCacheInvalidationPort } from '../../shared/application/ports/catalog-cache-invalidation.port';
 
 @Module({
   imports: [PrismaModule, AuthModule],
@@ -14,8 +15,9 @@ import { PublicPromotionController } from './presentation/public-promotion.contr
     { provide: PROMOTION_REPOSITORY, useClass: PrismaPromotionRepository },
     {
       provide: PromotionService,
-      inject: [PROMOTION_REPOSITORY],
-      useFactory: (repository: PromotionRepository) => new PromotionService(repository),
+      inject: [PROMOTION_REPOSITORY, CATALOG_CACHE_INVALIDATION],
+      useFactory: (repository: PromotionRepository, cacheInvalidation: CatalogCacheInvalidationPort) =>
+        new PromotionService(repository, cacheInvalidation),
     },
   ],
   exports: [PromotionService, PROMOTION_REPOSITORY],

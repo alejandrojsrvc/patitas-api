@@ -13,7 +13,6 @@ import { ShippingService } from '../shipping/application/shipping.service';
 import { CustomerService } from '../customers/application/customer.service';
 import { FulfillmentModule } from '../fulfillment/fulfillment.module';
 import { FulfillmentService } from '../fulfillment/application/fulfillment.service';
-import { HttpCatalogCacheInvalidationAdapter } from '../../infrastructure/cache/http-catalog-cache-invalidation.adapter';
 import { CATALOG_CACHE_INVALIDATION, type CatalogCacheInvalidationPort } from '../../shared/application/ports/catalog-cache-invalidation.port';
 import { CatalogService } from './application/catalog.service';
 import { MobileCatalogService } from './application/mobile-catalog.service';
@@ -30,10 +29,6 @@ import { CatalogTaxonomyService } from './application/catalog-taxonomy.service';
   controllers: [PublicCatalogController, CatalogTaxonomyController, AdminCatalogController],
   providers: [
     { provide: CATALOG_REPOSITORY, useClass: PrismaCatalogRepository },
-    {
-      provide: CATALOG_CACHE_INVALIDATION,
-      useClass: HttpCatalogCacheInvalidationAdapter,
-    },
     {
       provide: CatalogQueryService,
       inject: [CATALOG_REPOSITORY],

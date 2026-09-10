@@ -41,7 +41,11 @@ export interface EnvironmentVariables {
   PAYWAY_API_BASE_URL?: string;
   PAYWAY_WEBHOOK_SECRET?: string;
   PUBLIC_WEB_URL?: string;
-  CATALOG_CACHE_INVALIDATION_SECRET?: string;
+  CATALOG_EDGE_CACHE_ENABLED: boolean;
+  VARNISH_PURGE_URL?: string;
+  VARNISH_PURGE_SECRET?: string;
+  CLOUDFLARE_ZONE_ID?: string;
+  CLOUDFLARE_CACHE_PURGE_TOKEN?: string;
   NOTIFICATION_PROVIDER?: 'noop' | 'resend' | 'http' | 'smtp';
   SMTP_HOST?: string;
   SMTP_PORT?: number;
@@ -128,7 +132,11 @@ export const validateEnvironment = (environment: Record<string, unknown>): Envir
   const mercadoPagoWebhookSecret = optionalValue(environment['MERCADOPAGO_WEBHOOK_SECRET']);
   const mercadoPagoNotificationUrl = optionalValue(environment['MERCADOPAGO_NOTIFICATION_URL']);
   const publicWebUrl = optionalValue(environment['PUBLIC_WEB_URL']);
-  const catalogCacheInvalidationSecret = optionalValue(environment['CATALOG_CACHE_INVALIDATION_SECRET']);
+  const catalogEdgeCacheEnabled = readBoolean(environment['CATALOG_EDGE_CACHE_ENABLED'], false, 'CATALOG_EDGE_CACHE_ENABLED');
+  const varnishPurgeUrl = optionalValue(environment['VARNISH_PURGE_URL']);
+  const varnishPurgeSecret = optionalValue(environment['VARNISH_PURGE_SECRET']);
+  const cloudflareZoneId = optionalValue(environment['CLOUDFLARE_ZONE_ID']);
+  const cloudflareCachePurgeToken = optionalValue(environment['CLOUDFLARE_CACHE_PURGE_TOKEN']);
   const notificationProvider = optionalValue(environment['NOTIFICATION_PROVIDER']) ?? (production ? 'resend' : 'noop');
   if (!['noop', 'resend', 'http', 'smtp'].includes(notificationProvider)) {
     throw new Error('NOTIFICATION_PROVIDER debe ser noop, resend, http o smtp.');
@@ -152,6 +160,13 @@ export const validateEnvironment = (environment: Record<string, unknown>): Envir
     validateUrl(requireValue(environment, 'SMTP_APP_URL'), 'SMTP_APP_URL', ['http:', 'https:']);
   }
   if (publicWebUrl) validateUrl(publicWebUrl, 'PUBLIC_WEB_URL', ['http:', 'https:']);
+  if (varnishPurgeUrl) validateUrl(varnishPurgeUrl, 'VARNISH_PURGE_URL', ['http:', 'https:']);
+  if (catalogEdgeCacheEnabled && (!varnishPurgeUrl || !varnishPurgeSecret)) {
+    throw new Error('VARNISH_PURGE_URL y VARNISH_PURGE_SECRET son obligatorias cuando CATALOG_EDGE_CACHE_ENABLED=true.');
+  }
+  if (Boolean(cloudflareZoneId) !== Boolean(cloudflareCachePurgeToken)) {
+    throw new Error('CLOUDFLARE_ZONE_ID y CLOUDFLARE_CACHE_PURGE_TOKEN deben configurarse juntos.');
+  }
   if (mercadoPagoNotificationUrl) validateUrl(mercadoPagoNotificationUrl, 'MERCADOPAGO_NOTIFICATION_URL', ['http:', 'https:']);
   if (paywayApiBaseUrl) validateUrl(paywayApiBaseUrl, 'PAYWAY_API_BASE_URL', ['https:']);
 
@@ -197,7 +212,11 @@ export const validateEnvironment = (environment: Record<string, unknown>): Envir
     ...(paywayApiBaseUrl ? { PAYWAY_API_BASE_URL: paywayApiBaseUrl } : {}),
     ...(paywayWebhookSecret ? { PAYWAY_WEBHOOK_SECRET: paywayWebhookSecret } : {}),
     ...(publicWebUrl ? { PUBLIC_WEB_URL: publicWebUrl } : {}),
-    ...(catalogCacheInvalidationSecret ? { CATALOG_CACHE_INVALIDATION_SECRET: catalogCacheInvalidationSecret } : {}),
+    CATALOG_EDGE_CACHE_ENABLED: catalogEdgeCacheEnabled,
+    ...(varnishPurgeUrl ? { VARNISH_PURGE_URL: varnishPurgeUrl } : {}),
+    ...(varnishPurgeSecret ? { VARNISH_PURGE_SECRET: varnishPurgeSecret } : {}),
+    ...(cloudflareZoneId ? { CLOUDFLARE_ZONE_ID: cloudflareZoneId } : {}),
+    ...(cloudflareCachePurgeToken ? { CLOUDFLARE_CACHE_PURGE_TOKEN: cloudflareCachePurgeToken } : {}),
     NOTIFICATION_PROVIDER: notificationProvider as EnvironmentVariables['NOTIFICATION_PROVIDER'],
     ...(smtpHost ? { SMTP_HOST: smtpHost } : {}),
     ...(notificationProvider === 'smtp' ? { SMTP_PORT: smtpPort } : {}),
@@ -215,6 +234,13 @@ const readInteger = (value: unknown, fallback: number, minimum: number, maximum:
     throw new Error(`El valor ${String(value)} debe ser un entero entre ${minimum} y ${maximum}.`);
   }
   return parsed;
+};
+
+const readBoolean = (value: unknown, fallback: boolean, key: keyof EnvironmentVariables): boolean => {
+  if (value === undefined || value === '') return fallback;
+  if (value === true || value === 'true') return true;
+  if (value === false || value === 'false') return false;
+  throw new Error(`La variable ${key} debe ser true o false.`);
 };
 
 const parseTurnstileHostnames = (value: unknown): string[] => {

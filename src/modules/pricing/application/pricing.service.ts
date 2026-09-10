@@ -9,11 +9,13 @@ import type {
   PricingScenarioInput,
   PricingRuleValues,
 } from '../domain/pricing.types';
+import type { CatalogCacheInvalidationPort } from '../../../shared/application/ports/catalog-cache-invalidation.port';
 
 export class PricingService {
   public constructor(
     private readonly repository: PricingRepository,
     private readonly calculator: PricingCalculator,
+    private readonly cacheInvalidation?: CatalogCacheInvalidationPort,
   ) {}
 
   public getRules() {
@@ -102,7 +104,9 @@ export class PricingService {
     return this.repository.listAllReviews(filter);
   }
   public async apply(variantId: string, reviewId: string, options?: { activateProduct?: boolean }) {
-    return this.repository.applyReview(variantId, reviewId, options);
+    const review = await this.repository.applyReview(variantId, reviewId, options);
+    this.invalidateCatalogCache();
+    return review;
   }
   public listPaymentFeeSchedules(active?: boolean) {
     return this.repository.listPaymentFeeSchedules(active);
@@ -165,6 +169,11 @@ export class PricingService {
     if (!schedule || !schedule.active) {
       throw new PricingPreconditionError('El escenario debe usar una tarifa de pago activa.');
     }
+  }
+
+  private invalidateCatalogCache(): void {
+    if (!this.cacheInvalidation) return;
+    void this.cacheInvalidation.invalidate({ scope: 'products' }).catch(() => undefined);
   }
 }
 
