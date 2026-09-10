@@ -4,6 +4,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { loadProjectEnv } from './load-project-env';
 import { assertLocalDatabaseUrl } from './database-safety';
 import { PrismaClient } from '../src/infrastructure/database/generated/prisma/client';
+import { normalizeCatalogLifeStage, normalizeCatalogSpecies } from '../src/modules/catalog/domain/catalog-classification';
 
 loadProjectEnv();
 
@@ -23,6 +24,19 @@ const REQUIRED_HEADERS = [
 ];
 
 type CsvRow = Record<string, string>;
+
+const requiredSpecies = (value: string) => {
+  const species = normalizeCatalogSpecies(value);
+  if (!species) throw new Error(`Especie de catálogo no reconocida: ${value}.`);
+  return species;
+};
+
+const optionalLifeStage = (value?: string | null) => {
+  if (!value?.trim()) return null;
+  const lifeStage = normalizeCatalogLifeStage(value);
+  if (!lifeStage) throw new Error(`Etapa de vida no reconocida: ${value}.`);
+  return lifeStage;
+};
 
 const parseCsv = (contents: string): CsvRow[] => {
   const rows: string[][] = [];
@@ -181,8 +195,8 @@ const main = async (): Promise<void> => {
               description: row.description,
               brandId: brand.id,
               categoryId: category.id,
-              species: row.species.toLowerCase(),
-              lifeStage: row.life_stage ? row.life_stage.toLowerCase() : null,
+              species: requiredSpecies(row.species),
+              lifeStage: optionalLifeStage(row.life_stage),
               breedSize: row.breed_size ? row.breed_size.toLowerCase() : null,
               status: 'ACTIVE',
             },
@@ -192,8 +206,8 @@ const main = async (): Promise<void> => {
               description: row.description,
               brandId: brand.id,
               categoryId: category.id,
-              species: row.species.toLowerCase(),
-              lifeStage: row.life_stage ? row.life_stage.toLowerCase() : null,
+              species: requiredSpecies(row.species),
+              lifeStage: optionalLifeStage(row.life_stage),
               breedSize: row.breed_size ? row.breed_size.toLowerCase() : null,
               status: 'ACTIVE',
             },

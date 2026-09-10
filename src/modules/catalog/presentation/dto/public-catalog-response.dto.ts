@@ -54,13 +54,15 @@ export class PublicProductResponseDto {
   @ApiProperty() public slug!: string;
   @ApiPropertyOptional({ nullable: true }) public description!: string | null;
   @ApiPropertyOptional({ nullable: true }) public line!: string | null;
-  @ApiPropertyOptional({ nullable: true }) public species!: string | null;
-  @ApiPropertyOptional({ nullable: true }) public lifeStage!: string | null;
+  @ApiPropertyOptional({ enum: ['DOG', 'CAT'], nullable: true }) public species!: string | null;
+  @ApiPropertyOptional({ enum: ['PUPPY', 'ADULT', 'SENIOR'], nullable: true }) public lifeStage!: string | null;
   @ApiPropertyOptional({ nullable: true }) public breedSize!: string | null;
   @ApiProperty({ type: PublicBrandResponseDto })
   public brand!: PublicBrandResponseDto;
   @ApiProperty({ type: PublicReferenceResponseDto })
   public category!: PublicReferenceResponseDto;
+  @ApiProperty({ type: Object })
+  public classification!: { category: 'FOOD' | 'SNACK' | 'HYGIENE' | null; foodType: 'DRY' | 'WET' | null };
   @ApiProperty({ type: [PublicProductMediaResponseDto] })
   public media!: PublicProductMediaResponseDto[];
   @ApiProperty({ type: [PublicProductVariantResponseDto] })
@@ -157,10 +159,16 @@ export class PublicProductFacetsResponseDto {
   public brands!: PublicBrandFacetOptionResponseDto[];
   @ApiProperty({ type: [PublicCategoryFacetOptionResponseDto] })
   public categories!: PublicCategoryFacetOptionResponseDto[];
+  @ApiProperty({ type: [PublicCategoryFacetOptionResponseDto] })
+  public foodTypes!: PublicCategoryFacetOptionResponseDto[];
+  @ApiProperty({ type: [PublicCategoryFacetOptionResponseDto] })
+  public subcategories!: PublicCategoryFacetOptionResponseDto[];
   @ApiProperty({ type: [PublicStringFacetOptionResponseDto] })
   public lifeStages!: PublicStringFacetOptionResponseDto[];
   @ApiProperty({ type: [PublicWeightFacetOptionResponseDto] })
   public weights!: PublicWeightFacetOptionResponseDto[];
+  @ApiProperty({ type: [PublicStringFacetOptionResponseDto] })
+  public availability!: PublicStringFacetOptionResponseDto[];
 }
 
 export class PublicPageMetaResponseDto {
@@ -192,6 +200,8 @@ export class PublicProductAutocompleteItemResponseDto {
   @ApiProperty({ format: 'uuid' }) public id!: string;
   @ApiProperty({ format: 'uuid' }) public productId!: string;
   @ApiProperty() public slug!: string;
+  @ApiPropertyOptional({ enum: ['DOG', 'CAT'], nullable: true }) public species!: string | null;
+  @ApiProperty() public categorySlug!: string;
   @ApiProperty() public name!: string;
   @ApiPropertyOptional({ nullable: true }) public presentation!: string | null;
   @ApiProperty() public displayName!: string;

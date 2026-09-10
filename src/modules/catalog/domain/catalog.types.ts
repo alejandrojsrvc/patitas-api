@@ -1,5 +1,33 @@
 export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 
+export const Species = {
+  DOG: 'DOG',
+  CAT: 'CAT',
+} as const;
+export type Species = (typeof Species)[keyof typeof Species];
+
+export const ProductCategory = {
+  FOOD: 'FOOD',
+  SNACK: 'SNACK',
+  HYGIENE: 'HYGIENE',
+} as const;
+export type ProductCategory = (typeof ProductCategory)[keyof typeof ProductCategory];
+
+export const FoodType = {
+  DRY: 'DRY',
+  WET: 'WET',
+} as const;
+export type FoodType = (typeof FoodType)[keyof typeof FoodType];
+
+export const LifeStage = {
+  PUPPY: 'PUPPY',
+  ADULT: 'ADULT',
+  SENIOR: 'SENIOR',
+} as const;
+export type LifeStage = (typeof LifeStage)[keyof typeof LifeStage];
+
+export type CatalogAvailability = 'AVAILABLE' | 'OUT_OF_STOCK';
+
 export interface Category {
   id: string;
   name: string;
@@ -98,9 +126,9 @@ export interface Product {
   analyticalComposition: Record<string, unknown> | null;
   brandId: string;
   categoryId: string | null;
-  species: string | null;
+  species: Species | null;
   line: string | null;
-  lifeStage: string | null;
+  lifeStage: LifeStage | null;
   breedSize: string | null;
   estimatedDailyGramsPerKg: string | null;
   featuredRank: number | null;
@@ -115,7 +143,7 @@ export interface ProductAutocompleteItem {
   id: string;
   productId: string;
   slug: string;
-  species: string | null;
+  species: Species | null;
   categorySlug: string;
   name: string;
   presentation: string | null;
@@ -136,7 +164,7 @@ export interface ProductAutocompleteItem {
 export interface FeedingGuideEntry {
   petWeightKgMin: number;
   petWeightKgMax: number | null;
-  lifeStage: string | null;
+  lifeStage: LifeStage | null;
   conditions: Record<string, string>;
   dailyGramsMin: number;
   dailyGramsMax: number | null;
@@ -220,11 +248,12 @@ export interface PublicProductFilter {
   q?: string;
   category?: string;
   brand?: string | string[];
-  species?: string;
+  species?: Species;
   minPrice?: string;
   maxPrice?: string;
-  lifeStage?: string | string[];
+  lifeStage?: LifeStage | LifeStage[];
   weightGrams?: number | number[];
+  availability?: CatalogAvailability;
   featured?: boolean;
   sort?: 'featured' | 'name_asc' | 'price_asc' | 'price_desc';
   page: number;
@@ -240,6 +269,20 @@ export interface PublicProductFacets {
   }>;
   lifeStages: Array<{ value: string; count: number }>;
   weights: Array<{ value: number; count: number }>;
+  availability: Array<{ value: CatalogAvailability; count: number }>;
+}
+
+export interface CatalogProductQuery extends Omit<PublicProductFilter, 'category'> {
+  category?: ProductCategory;
+  foodType?: FoodType;
+  categorySlug?: string;
+}
+
+export interface CatalogBrandCombination {
+  species: Species;
+  foodType: FoodType;
+  lifeStage: LifeStage | null;
+  brand: Brand;
 }
 
 export interface MobileProductFilter {
@@ -263,7 +306,7 @@ export interface AdminProductFilter {
   q?: string;
   brandId?: string;
   categoryId?: string;
-  species?: string;
+  species?: Species;
   hasStock?: boolean;
   sort?: 'name_asc' | 'name_desc' | 'updated_desc';
   page: number;

@@ -10,6 +10,7 @@ import { CloudflareR2StorageAdapter } from '../src/infrastructure/storage/cloudf
 import { MinioStorageAdapter } from '../src/infrastructure/storage/minio/minio-storage.adapter';
 import type { StorageProvider } from '../src/shared/application/ports/storage-provider.interface';
 import type { CatalogBrandResearchResult, CatalogResearchRunResult, CatalogResearchProductResult } from '../tools/catalog-research/types';
+import { normalizeCatalogLifeStage, normalizeCatalogSpecies } from '../src/modules/catalog/domain/catalog-classification';
 
 loadProjectEnv();
 
@@ -19,6 +20,19 @@ const APPROVAL_PATH = scriptArgs[1];
 const DRY_RUN = scriptArgs.includes('--dry-run');
 const PRODUCT_MEDIA_BUCKET = 'product-media';
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+const requiredSpecies = (value: string) => {
+  const species = normalizeCatalogSpecies(value);
+  if (!species) throw new Error(`Especie de catálogo no reconocida: ${value}.`);
+  return species;
+};
+
+const optionalLifeStage = (value?: string | null) => {
+  if (!value?.trim()) return null;
+  const lifeStage = normalizeCatalogLifeStage(value);
+  if (!lifeStage) throw new Error(`Etapa de vida no reconocida: ${value}.`);
+  return lifeStage;
+};
 
 interface ApprovalFile {
   schemaVersion: 'catalog-research.approval.v1';
@@ -86,9 +100,9 @@ const importProduct = async (
       analyticalComposition: result.product.analyticalComposition as never,
       brandId: brand.id,
       categoryId: category.id,
-      species: result.product.attributes.species ?? result.expected.species,
+      species: requiredSpecies(result.product.attributes.species ?? result.expected.species),
       line: result.product.attributes.line ?? result.expected.line ?? null,
-      lifeStage: result.product.attributes.lifeStage ?? result.expected.lifeStage ?? null,
+      lifeStage: optionalLifeStage(result.product.attributes.lifeStage ?? result.expected.lifeStage),
       breedSize: result.product.attributes.breedSize ?? result.expected.breedSize ?? null,
     },
     create: {
@@ -99,9 +113,9 @@ const importProduct = async (
       analyticalComposition: result.product.analyticalComposition as never,
       brandId: brand.id,
       categoryId: category.id,
-      species: result.product.attributes.species ?? result.expected.species,
+      species: requiredSpecies(result.product.attributes.species ?? result.expected.species),
       line: result.product.attributes.line ?? result.expected.line ?? null,
-      lifeStage: result.product.attributes.lifeStage ?? result.expected.lifeStage ?? null,
+      lifeStage: optionalLifeStage(result.product.attributes.lifeStage ?? result.expected.lifeStage),
       breedSize: result.product.attributes.breedSize ?? result.expected.breedSize ?? null,
       status: 'DRAFT',
     },

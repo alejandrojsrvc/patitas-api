@@ -36,6 +36,17 @@ enum ProductStatus {
   ARCHIVED
 }
 
+enum Species {
+  DOG
+  CAT
+}
+
+enum LifeStage {
+  PUPPY
+  ADULT
+  SENIOR
+}
+
 enum SupplierOfferStockStatus {
   AVAILABLE
   OUT_OF_STOCK
@@ -324,8 +335,8 @@ model Product {
   brandId                  String                    @map("brand_id") @db.Uuid
   categoryId               String?                   @map("category_id") @db.Uuid
   line                     String?
-  species                  String?
-  lifeStage                String?                   @map("life_stage")
+  species                  Species?
+  lifeStage                LifeStage?                @map("life_stage")
   breedSize                String?                   @map("breed_size")
   estimatedDailyGramsPerKg Decimal?                  @map("estimated_daily_grams_per_kg")
   featuredRank             Int?                      @map("featured_rank")
@@ -429,7 +440,7 @@ model FeedingGuideEntry {
   feedingGuideId String       @map("feeding_guide_id") @db.Uuid
   petWeightKgMin Decimal      @map("pet_weight_kg_min") @db.Decimal(7, 2)
   petWeightKgMax Decimal?     @map("pet_weight_kg_max") @db.Decimal(7, 2)
-  lifeStage      String?      @map("life_stage")
+  lifeStage      LifeStage?   @map("life_stage")
   conditions     Json?
   dailyGramsMin  Decimal      @map("daily_grams_min") @db.Decimal(8, 2)
   dailyGramsMax  Decimal?     @map("daily_grams_max") @db.Decimal(8, 2)

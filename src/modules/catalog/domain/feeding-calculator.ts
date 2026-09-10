@@ -1,4 +1,5 @@
-import type { FeedingGuide, FeedingGuideEntry } from './catalog.types';
+import { LifeStage, type FeedingGuide, type FeedingGuideEntry } from './catalog.types';
+import { normalizeCatalogLifeStage } from './catalog-classification';
 
 export type FeedingEstimateSource = 'MANUFACTURER' | 'GENERAL_FALLBACK';
 
@@ -38,7 +39,7 @@ export const calculateFoodDuration = (input: FeedingCalculationInput, guide: Fee
     });
   }
 
-  const stageMultiplier = fallbackStageMultiplier[input.lifeStage ?? 'adult'] ?? 1;
+  const stageMultiplier = fallbackStageMultiplier[normalizeCatalogLifeStage(input.lifeStage) ?? LifeStage.ADULT];
   const daily = input.petWeightKg * input.fallbackGramsPerKg * stageMultiplier;
   return buildResult({
     source: 'GENERAL_FALLBACK',
@@ -56,8 +57,9 @@ export const calculateFoodDuration = (input: FeedingCalculationInput, guide: Fee
 
 const resolveManufacturerEntry = (input: FeedingCalculationInput, guide: FeedingGuide): FeedingGuideEntry | null => {
   if (!hasRequiredDimensions(input.attributes ?? {}, guide.requiredDimensions)) return null;
+  const requestedLifeStage = normalizeCatalogLifeStage(input.lifeStage);
   const entries = guide.entries
-    .filter((entry) => !entry.lifeStage || entry.lifeStage === input.lifeStage)
+    .filter((entry) => !entry.lifeStage || entry.lifeStage === requestedLifeStage)
     .filter((entry) => conditionsMatch(entry.conditions, input.attributes ?? {}))
     .sort((left, right) => left.petWeightKgMin - right.petWeightKgMin);
   if (entries.length === 0) return null;
@@ -118,8 +120,7 @@ const assertPositive = (value: number, label: string) => {
   if (!Number.isFinite(value) || value <= 0) throw new Error(`${label} debe ser mayor a cero.`);
 };
 const fallbackStageMultiplier: Record<string, number> = {
-  puppy: 1.3,
-  kitten: 1.3,
-  adult: 1,
-  senior: 0.9,
+  [LifeStage.PUPPY]: 1.3,
+  [LifeStage.ADULT]: 1,
+  [LifeStage.SENIOR]: 0.9,
 };

@@ -3,34 +3,38 @@ import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { Prisma } from '../../../../infrastructure/database/generated/prisma/client';
 import { CatalogConflictError, CatalogNotFoundError, CatalogValidationError } from '../../domain/errors/catalog.error';
-import type {
-  AdminProductFilter,
-  Brand,
-  Category,
-  CursorPage,
-  CreateProductInput,
-  CreateProductMediaInput,
-  CreateReferenceInput,
-  CreateVariantInput,
-  FeedingGuide,
-  InventoryItem,
-  InventoryMovement,
-  Page,
-  Product,
-  ProductAutocompleteItem,
-  ProductMedia,
-  ProductVariant,
-  MobileProductFilter,
-  PublicProductFilter,
-  ReplaceFeedingGuideInput,
-  SetInventoryInput,
-  SupplierStockStatus,
-  UpdateProductInput,
-  UpdateReferenceInput,
-  UpdateVariantInput,
-  CompetitivePriceObservation,
+import {
+  FoodType,
+  type CatalogAvailability,
+  type CatalogBrandCombination,
+  type AdminProductFilter,
+  type Brand,
+  type Category,
+  type CursorPage,
+  type CreateProductInput,
+  type CreateProductMediaInput,
+  type CreateReferenceInput,
+  type CreateVariantInput,
+  type FeedingGuide,
+  type InventoryItem,
+  type InventoryMovement,
+  type Page,
+  type Product,
+  type ProductAutocompleteItem,
+  type ProductMedia,
+  type ProductVariant,
+  type MobileProductFilter,
+  type PublicProductFilter,
+  type ReplaceFeedingGuideInput,
+  type SetInventoryInput,
+  type SupplierStockStatus,
+  type UpdateProductInput,
+  type UpdateReferenceInput,
+  type UpdateVariantInput,
+  type CompetitivePriceObservation,
 } from '../../domain/catalog.types';
 import type { CatalogRepository } from '../../domain/repositories/catalog.repository';
+import { CATEGORY_SLUGS, normalizeCatalogLifeStage, normalizeCatalogSpecies } from '../../domain/catalog-classification';
 
 interface DecimalValue {
   toString(): string;
@@ -231,8 +235,7 @@ const publicSearchWhere = (rawQuery?: string): Prisma.ProductWhereInput | undefi
       { name: { contains: term, mode: 'insensitive' as const } },
       { slug: { contains: term, mode: 'insensitive' as const } },
       { line: { contains: term, mode: 'insensitive' as const } },
-      { species: { contains: term, mode: 'insensitive' as const } },
-      { lifeStage: { contains: term, mode: 'insensitive' as const } },
+      ...catalogSearchEnumConditions(term),
       { breedSize: { contains: term, mode: 'insensitive' as const } },
       { brand: { name: { contains: term, mode: 'insensitive' as const } } },
       { brand: { slug: { contains: term, mode: 'insensitive' as const } } },
@@ -264,6 +267,12 @@ const publicSearchWhere = (rawQuery?: string): Prisma.ProductWhereInput | undefi
   }
   if (!conditions.length) return undefined;
   return conditions.length === 1 ? conditions[0] : { AND: conditions };
+};
+
+const catalogSearchEnumConditions = (term: string): Prisma.ProductWhereInput[] => {
+  const species = normalizeCatalogSpecies(term);
+  const lifeStage = normalizeCatalogLifeStage(term);
+  return [...(species ? [{ species }] : []), ...(lifeStage ? [{ lifeStage }] : [])];
 };
 
 @Injectable()
@@ -337,7 +346,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
         id: row.variantId,
         productId: row.productId,
         slug: row.slug,
-        species: row.species,
+        species: normalizeCatalogSpecies(row.species),
         categorySlug: row.categorySlug,
         name: row.productName,
         presentation,
@@ -359,6 +368,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     const lifeStages = filter.lifeStage ? toArray(filter.lifeStage) : undefined;
     const weights = filter.weightGrams ? toArray(filter.weightGrams) : undefined;
     const categoryIds = filter.category ? await this.resolveCategoryIds(filter.category) : undefined;
+    const availableProductIds = filter.availability ? await this.listAvailableProductIds(filter) : undefined;
     const priceCondition = {
       active: true,
       sku: { not: null },
@@ -372,21 +382,12 @@ export class PrismaCatalogRepository implements CatalogRepository {
     const searchWhere = publicSearchWhere(filter.q);
     const where = {
       status: 'ACTIVE' as const,
-      ...(searchWhere || filter.species
-        ? {
-            AND: [
-              ...(searchWhere ? [searchWhere] : []),
-              ...(filter.species
-                ? [
-                    {
-                      OR: speciesAliases(filter.species).map((species) => ({
-                        species: { equals: species, mode: 'insensitive' as const },
-                      })),
-                    },
-                  ]
-                : []),
-            ],
-          }
+      ...(searchWhere ? { AND: [searchWhere] } : {}),
+      ...(filter.species ? { species: filter.species } : {}),
+      ...(availableProductIds
+        ? filter.availability === 'AVAILABLE'
+          ? { id: { in: availableProductIds } }
+          : { id: { notIn: availableProductIds } }
         : {}),
       ...(lifeStages ? { lifeStage: { in: lifeStages } } : {}),
       ...(filter.featured ? { featuredRank: { not: null } } : {}),
@@ -464,6 +465,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     const selectedBrands = filter.brand ? toArray(filter.brand) : [];
     const selectedLifeStages = filter.lifeStage ? toArray(filter.lifeStage) : [];
     const selectedWeights = filter.weightGrams ? toArray(filter.weightGrams) : [];
+    const availableProductIds = new Set(await this.listAvailableProductIds(filter));
     const priceCondition = {
       active: true,
       sku: { not: null },
@@ -476,22 +478,8 @@ export class PrismaCatalogRepository implements CatalogRepository {
     const records = await this.prisma.product.findMany({
       where: {
         status: 'ACTIVE',
-        ...(searchWhere || filter.species
-          ? {
-              AND: [
-                ...(searchWhere ? [searchWhere] : []),
-                ...(filter.species
-                  ? [
-                      {
-                        OR: speciesAliases(filter.species).map((species) => ({
-                          species: { equals: species, mode: 'insensitive' as const },
-                        })),
-                      },
-                    ]
-                  : []),
-              ],
-            }
-          : {}),
+        ...(searchWhere ? { AND: [searchWhere] } : {}),
+        ...(filter.species ? { species: filter.species } : {}),
         ...(filter.featured ? { featuredRank: { not: null } } : {}),
         brand: { active: true },
         category: {
@@ -503,6 +491,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
         variants: { some: priceCondition },
       },
       select: {
+        id: true,
         lifeStage: true,
         species: true,
         brand: { select: { slug: true } },
@@ -518,16 +507,23 @@ export class PrismaCatalogRepository implements CatalogRepository {
     const categoryCounts = new Map<string, { count: number; species: Set<string> }>();
     const lifeStageCounts = new Map<string, number>();
     const weightCounts = new Map<number, number>();
+    const availabilityCounts = new Map<CatalogAvailability, number>();
     records.forEach((record) => {
       const recordWeights = new Set(record.variants.map((variant) => variant.weightGrams).filter((value): value is number => value !== null));
       const matchesBrand = !selectedBrands.length || selectedBrands.includes(record.brand.slug);
       const matchesLifeStage = !selectedLifeStages.length || (record.lifeStage !== null && selectedLifeStages.includes(record.lifeStage));
       const matchesWeight = !selectedWeights.length || selectedWeights.some((weight) => recordWeights.has(weight));
+      const available = availableProductIds.has(record.id);
+      const matchesAvailability = !filter.availability || filter.availability === (available ? 'AVAILABLE' : 'OUT_OF_STOCK');
 
-      if (matchesLifeStage && matchesWeight) {
+      if (matchesBrand && matchesLifeStage && matchesWeight) {
+        increment(availabilityCounts, available ? 'AVAILABLE' : 'OUT_OF_STOCK');
+      }
+
+      if (matchesAvailability && matchesLifeStage && matchesWeight) {
         increment(brandCounts, record.brand.slug);
       }
-      if (record.category && matchesBrand && matchesLifeStage && matchesWeight) {
+      if (record.category && matchesAvailability && matchesBrand && matchesLifeStage && matchesWeight) {
         const category = categoryCounts.get(record.category.slug) ?? {
           count: 0,
           species: new Set<string>(),
@@ -536,10 +532,10 @@ export class PrismaCatalogRepository implements CatalogRepository {
         if (record.species) category.species.add(record.species);
         categoryCounts.set(record.category.slug, category);
       }
-      if (record.lifeStage && matchesBrand && matchesWeight) {
+      if (record.lifeStage && matchesAvailability && matchesBrand && matchesWeight) {
         increment(lifeStageCounts, record.lifeStage);
       }
-      if (matchesBrand && matchesLifeStage) {
+      if (matchesAvailability && matchesBrand && matchesLifeStage) {
         recordWeights.forEach((weight) => increment(weightCounts, weight));
       }
     });
@@ -556,7 +552,70 @@ export class PrismaCatalogRepository implements CatalogRepository {
       weights: Array.from(weightCounts.entries())
         .map(([value, count]) => ({ value, count }))
         .sort((left, right) => left.value - right.value),
+      availability: Array.from(availabilityCounts.entries())
+        .map(([value, count]) => ({ value, count }))
+        .sort((left, right) => left.value.localeCompare(right.value)),
     };
+  }
+
+  private async listAvailableProductIds(filter: PublicProductFilter): Promise<string[]> {
+    const weights = filter.weightGrams ? toArray(filter.weightGrams) : [];
+    const conditions: Prisma.Sql[] = [Prisma.sql`pv."active" = TRUE`, Prisma.sql`pv."sku" IS NOT NULL`, Prisma.sql`pv."sale_price" > 0`];
+    if (filter.minPrice) conditions.push(Prisma.sql`pv."sale_price" >= ${filter.minPrice}::numeric`);
+    if (filter.maxPrice) conditions.push(Prisma.sql`pv."sale_price" <= ${filter.maxPrice}::numeric`);
+    if (weights.length) conditions.push(Prisma.sql`pv."weight_grams" IN (${Prisma.join(weights)})`);
+    const rows = await this.prisma.$queryRaw<Array<{ productId: string }>>(Prisma.sql`
+      SELECT DISTINCT pv."product_id" AS "productId"
+      FROM "product_variants" AS pv
+      LEFT JOIN "inventory_items" AS inventory ON inventory."variant_id" = pv."id"
+      LEFT JOIN "supplier_offers" AS supplier_offer ON supplier_offer."id" = pv."preferred_supplier_offer_id"
+      WHERE ${Prisma.join(conditions, ' AND ')}
+        AND (
+          COALESCE(inventory."on_hand", 0) > COALESCE(inventory."reserved", 0)
+          OR (
+            supplier_offer."active" = TRUE
+            AND supplier_offer."stock_status" IN ('AVAILABLE', 'ON_REQUEST')
+            AND supplier_offer."lead_time_hours" IS NOT NULL
+          )
+        )
+    `);
+    return rows.map((row) => row.productId);
+  }
+
+  public async listPublicBrandTaxonomyCombinations(): Promise<CatalogBrandCombination[]> {
+    const [dryCategoryIds, wetCategoryIds] = await Promise.all([
+      this.resolveCategoryIds(CATEGORY_SLUGS.dryFood),
+      this.resolveCategoryIds(CATEGORY_SLUGS.wetFood),
+    ]);
+    const foodCategoryIds = [...new Set([...dryCategoryIds, ...wetCategoryIds])];
+    const records = await this.prisma.product.findMany({
+      where: {
+        status: 'ACTIVE',
+        species: { not: null },
+        brand: { active: true },
+        category: { is: { active: true, id: { in: foodCategoryIds } } },
+      },
+      select: {
+        species: true,
+        lifeStage: true,
+        brand: true,
+        categoryId: true,
+      },
+    });
+    const dryIds = new Set(dryCategoryIds);
+    const wetIds = new Set(wetCategoryIds);
+    const unique = new Map<string, CatalogBrandCombination>();
+    for (const record of records) {
+      const species = normalizeCatalogSpecies(record.species);
+      const lifeStage = record.lifeStage ? normalizeCatalogLifeStage(record.lifeStage) : null;
+      const foodType =
+        record.categoryId && dryIds.has(record.categoryId) ? FoodType.DRY : record.categoryId && wetIds.has(record.categoryId) ? FoodType.WET : null;
+      if (!species || !foodType) continue;
+      const combination = { species, foodType, lifeStage, brand: mapBrand(record.brand) };
+      unique.set(`${species}:${foodType}:${lifeStage ?? ''}:${record.brand.slug}`, combination);
+      unique.set(`${species}:${foodType}::${record.brand.slug}`, { ...combination, lifeStage: null });
+    }
+    return [...unique.values()];
   }
 
   public async listCalculatorProjection() {
@@ -619,14 +678,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
     const where: Prisma.ProductWhereInput = {
       status: 'ACTIVE',
       ...(searchWhere ?? {}),
-      ...(filter.species
-        ? {
-            species: {
-              in: filter.species === 'dog' ? ['dog', 'perro'] : ['cat', 'gato'],
-              mode: 'insensitive' as const,
-            },
-          }
-        : {}),
+      ...(filter.species ? { species: filter.species === 'dog' ? 'DOG' : 'CAT' } : {}),
       ...(filter.featured ? { featuredRank: { not: null } } : {}),
       brand: { active: true, ...(filter.brand ? { slug: filter.brand } : {}) },
       category: {
@@ -709,7 +761,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
 
   public async findPublicBrandBySlug(slug: string): Promise<Brand | null> {
     const brand = await this.prisma.brand.findFirst({
-      where: { slug, active: true, products: { some: sellableProductWhere } },
+      where: { slug, active: true },
     });
     return brand ? mapBrand(brand) : null;
   }
@@ -730,7 +782,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
       entries: guide.entries.map((entry) => ({
         petWeightKgMin: Number(entry.petWeightKgMin),
         petWeightKgMax: entry.petWeightKgMax === null ? null : Number(entry.petWeightKgMax),
-        lifeStage: entry.lifeStage,
+        lifeStage: normalizeCatalogLifeStage(entry.lifeStage),
         conditions: asStringRecord(entry.conditions),
         dailyGramsMin: Number(entry.dailyGramsMin),
         dailyGramsMax: entry.dailyGramsMax === null ? null : Number(entry.dailyGramsMax),
@@ -1232,9 +1284,9 @@ const mapProduct = (value: PersistenceProduct): Product => ({
   analyticalComposition: asObjectRecord(value.analyticalComposition),
   brandId: value.brandId,
   categoryId: value.categoryId,
-  species: value.species,
+  species: normalizeCatalogSpecies(value.species),
   line: value.line,
-  lifeStage: value.lifeStage,
+  lifeStage: normalizeCatalogLifeStage(value.lifeStage),
   breedSize: value.breedSize,
   estimatedDailyGramsPerKg: value.estimatedDailyGramsPerKg?.toString() ?? null,
   featuredRank: value.featuredRank,
@@ -1244,15 +1296,6 @@ const mapProduct = (value: PersistenceProduct): Product => ({
   variants: value.variants.map(mapVariant),
   media: value.media.map(mapMedia),
 });
-
-const speciesAliases = (value: string): string[] => {
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'cat' || normalized === 'gato') return ['cat', 'gato'];
-  if (normalized === 'dog' || normalized === 'perro') {
-    return ['dog', 'perro'];
-  }
-  return [normalized];
-};
 
 const onlySellableVariants = (
   product: Product,
@@ -1365,7 +1408,7 @@ const mapFeedingGuide = (guide: {
   entries: guide.entries.map((entry) => ({
     petWeightKgMin: Number(entry.petWeightKgMin),
     petWeightKgMax: entry.petWeightKgMax === null ? null : Number(entry.petWeightKgMax),
-    lifeStage: entry.lifeStage,
+    lifeStage: normalizeCatalogLifeStage(entry.lifeStage),
     conditions: asStringRecord(entry.conditions),
     dailyGramsMin: Number(entry.dailyGramsMin),
     dailyGramsMax: entry.dailyGramsMax === null ? null : Number(entry.dailyGramsMax),
