@@ -19,6 +19,7 @@ import type {
   UpdateVariantInput,
   UploadProductMediaInput,
 } from '../domain/catalog.types';
+import { normalizeCatalogLifeStage, normalizeCatalogSpecies } from '../domain/catalog-classification';
 import { randomUUID } from 'node:crypto';
 import type { StorageProvider } from '../../../shared/application/ports/storage-provider.interface';
 import { detectFileContentType } from '../../../shared/application/file-signature';
@@ -234,7 +235,7 @@ export class CatalogService {
       throw new CatalogValidationError('La marca y categoría deben existir y estar activas.');
     }
     const product = await this.repository.createProduct({
-      ...input,
+      ...normalizeProductClassification(input),
       name: input.name.trim(),
       slug: slugify(input.slug ?? input.name),
     });
@@ -320,11 +321,12 @@ export class CatalogService {
         lifeStage: first.lifeStage,
         breedSize: first.breedSize,
       };
+      const normalizedProductInput = normalizeProductClassification(productInput);
       const wasExisting = Boolean(product);
       if (product) {
-        product = await this.repository.updateProduct(product.id, productInput);
+        product = await this.repository.updateProduct(product.id, normalizedProductInput);
       } else {
-        product = await this.createProduct(productInput);
+        product = await this.createProduct(normalizedProductInput);
       }
 
       const knownImages = new Set(product.media.map((media) => media.url));
@@ -459,7 +461,7 @@ export class CatalogService {
       assertPublishable(next);
     }
     const product = await this.repository.updateProduct(id, {
-      ...input,
+      ...normalizeProductClassification(input),
       ...(input.slug ? { slug: slugify(input.slug) } : {}),
     });
     this.invalidateCatalogCache();
@@ -623,7 +625,7 @@ export class CatalogService {
       sourceLabel: input.sourceLabel.trim(),
       entries: input.entries.map((entry) => ({
         ...entry,
-        lifeStage: entry.lifeStage?.trim() || null,
+        lifeStage: entry.lifeStage ?? null,
         conditions: entry.conditions ?? {},
       })),
     });
@@ -872,14 +874,29 @@ const isSellable = (variant: { active: boolean; sku: string | null; salePrice: s
   variant.active && Boolean(variant.sku) && Number(variant.salePrice) > 0 && isValidLogisticsWeight(variant.weightGrams);
 
 const defaultFallbackGramsPerKg = (species: string | null): number => {
-  switch (species?.toLowerCase()) {
-    case 'dog':
+  switch (normalizeCatalogSpecies(species)) {
+    case 'DOG':
       return 17;
-    case 'cat':
+    case 'CAT':
       return 13;
     default:
       return 0;
   }
+};
+
+const normalizeProductClassification = <T extends { species?: unknown; lifeStage?: unknown }>(input: T): T => {
+  const normalized = { ...input };
+  if (input.species !== undefined) {
+    const species = input.species === null || input.species === '' ? null : normalizeCatalogSpecies(input.species);
+    if (input.species !== null && input.species !== '' && !species) throw new CatalogValidationError('La especie no es válida.');
+    Object.assign(normalized, { species });
+  }
+  if (input.lifeStage !== undefined) {
+    const lifeStage = input.lifeStage === null || input.lifeStage === '' ? null : normalizeCatalogLifeStage(input.lifeStage);
+    if (input.lifeStage !== null && input.lifeStage !== '' && !lifeStage) throw new CatalogValidationError('La etapa de vida no es válida.');
+    Object.assign(normalized, { lifeStage });
+  }
+  return normalized;
 };
 
 const assertPublishable = (product: {

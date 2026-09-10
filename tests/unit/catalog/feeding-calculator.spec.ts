@@ -11,7 +11,7 @@ const guide: FeedingGuide = {
     {
       petWeightKgMin: 10,
       petWeightKgMax: 10,
-      lifeStage: 'adult',
+      lifeStage: 'ADULT',
       conditions: {},
       dailyGramsMin: 300,
       dailyGramsMax: 300,
@@ -19,7 +19,7 @@ const guide: FeedingGuide = {
     {
       petWeightKgMin: 15,
       petWeightKgMax: 15,
-      lifeStage: 'adult',
+      lifeStage: 'ADULT',
       conditions: {},
       dailyGramsMin: 450,
       dailyGramsMax: 450,
@@ -89,7 +89,7 @@ describe('calculateFoodDuration', () => {
           {
             petWeightKgMin: 51,
             petWeightKgMax: null,
-            lifeStage: 'adult',
+            lifeStage: 'ADULT',
             conditions: {},
             dailyGramsMin: 560,
             dailyGramsMax: null,

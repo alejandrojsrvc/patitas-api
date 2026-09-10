@@ -19,7 +19,7 @@ export const toMobileProduct = (product: Product, shippingQuotes = new Map<strin
   name: product.name,
   slug: product.slug,
   description: product.description,
-  species: product.species,
+  species: product.species === 'DOG' ? 'dog' : product.species === 'CAT' ? 'cat' : null,
   brand: toMobileReference(product.brand),
   category: product.category ? toMobileReference(product.category) : null,
   image: product.media[0] ? { url: product.media[0].url, altText: product.media[0].altText } : null,

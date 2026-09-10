@@ -21,15 +21,28 @@ import { CATALOG_REPOSITORY, type CatalogRepository } from './domain/repositorie
 import { PrismaCatalogRepository } from './infrastructure/persistence/prisma-catalog.repository';
 import { AdminCatalogController } from './presentation/controllers/admin-catalog.controller';
 import { PublicCatalogController } from './presentation/controllers/public-catalog.controller';
+import { CatalogTaxonomyController } from './presentation/controllers/catalog-taxonomy.controller';
+import { CatalogQueryService } from './application/catalog-query.service';
+import { CatalogTaxonomyService } from './application/catalog-taxonomy.service';
 
 @Module({
   imports: [PrismaModule, AuthModule, StorageModule, PromotionsModule, SuppliersModule, ShippingModule, CustomersModule, FulfillmentModule],
-  controllers: [PublicCatalogController, AdminCatalogController],
+  controllers: [PublicCatalogController, CatalogTaxonomyController, AdminCatalogController],
   providers: [
     { provide: CATALOG_REPOSITORY, useClass: PrismaCatalogRepository },
     {
       provide: CATALOG_CACHE_INVALIDATION,
       useClass: HttpCatalogCacheInvalidationAdapter,
+    },
+    {
+      provide: CatalogQueryService,
+      inject: [CATALOG_REPOSITORY],
+      useFactory: (repository: CatalogRepository) => new CatalogQueryService(repository),
+    },
+    {
+      provide: CatalogTaxonomyService,
+      inject: [CATALOG_REPOSITORY],
+      useFactory: (repository: CatalogRepository) => new CatalogTaxonomyService(repository),
     },
     {
       provide: CatalogService,
@@ -54,6 +67,6 @@ import { PublicCatalogController } from './presentation/controllers/public-catal
       ) => new MobileCatalogService(repository, catalog, promotions, shipping, customers),
     },
   ],
-  exports: [CATALOG_REPOSITORY, CatalogService, MobileCatalogService],
+  exports: [CATALOG_REPOSITORY, CatalogService, CatalogQueryService, CatalogTaxonomyService, MobileCatalogService],
 })
 export class CatalogModule {}

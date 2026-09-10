@@ -1,6 +1,7 @@
 import type {
   AdminProductFilter,
   Brand,
+  CatalogBrandCombination,
   Category,
   CursorPage,
   CreateProductInput,
@@ -38,6 +39,7 @@ export interface CatalogRepository {
   listPublicProducts(filter: PublicProductFilter): Promise<Page<Product>>;
   autocompleteProductVariants(query: string, limit: number): Promise<ProductAutocompleteItem[]>;
   listPublicProductFacets(filter: PublicProductFilter): Promise<PublicProductFacets>;
+  listPublicBrandTaxonomyCombinations(): Promise<CatalogBrandCombination[]>;
   listCalculatorProjection(): Promise<
     Array<{
       id: string;

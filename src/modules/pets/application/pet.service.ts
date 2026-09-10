@@ -122,7 +122,7 @@ const startOfToday = (): Date => {
 
 const normalizeSpecies = (value: string): 'dog' | 'cat' | null => {
   const normalized = value.trim().toLowerCase();
-  if (['dog', 'perro'].includes(normalized)) return 'dog';
-  if (['cat', 'gato'].includes(normalized)) return 'cat';
+  if (['dog', 'perro', 'perros'].includes(normalized)) return 'dog';
+  if (['cat', 'gato', 'gatos'].includes(normalized)) return 'cat';
   return null;
 };

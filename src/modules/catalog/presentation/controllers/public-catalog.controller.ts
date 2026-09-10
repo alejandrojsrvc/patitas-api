@@ -16,6 +16,9 @@ import {
 import { CatalogExceptionFilter } from '../filters/catalog-exception.filter';
 import { PromotionService } from '../../../promotions/application/promotion.service';
 import { isWithinPeriod } from '../../../promotions/application/promotion.service';
+import { CatalogQueryService } from '../../application/catalog-query.service';
+import { CATEGORY_SLUGS, classifyCategory } from '../../domain/catalog-classification';
+import { FoodType, LifeStage, ProductCategory, Species, type Category } from '../../domain/catalog.types';
 
 @ApiTags('Public catalog')
 @UseFilters(CatalogExceptionFilter)
@@ -24,13 +27,15 @@ export class PublicCatalogController {
   public constructor(
     private readonly catalog: CatalogService,
     private readonly promotions: PromotionService,
+    private readonly queries: CatalogQueryService,
   ) {}
 
   @Get('products')
   @ApiOkResponse({ type: PublicProductPageResponseDto })
   @Header('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300')
   public async products(@Query() query: PublicProductsQueryDto) {
-    const [page, promotions] = await Promise.all([this.catalog.listPublicProducts(query), this.activePromotions()]);
+    const filter = await this.queries.resolve(query);
+    const [page, promotions] = await Promise.all([this.catalog.listPublicProducts(filter), this.activePromotions()]);
     return toHttpPage({
       ...page,
       items: page.items.map((product) => toPublicProduct(product, promotions)),
@@ -41,12 +46,13 @@ export class PublicCatalogController {
   @ApiOkResponse({ type: PublicProductFacetsResponseDto })
   @Header('Cache-Control', 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400')
   public async productFacets(@Query() query: PublicProductsQueryDto) {
+    const filter = await this.queries.resolve(query);
     const [facets, brands, categories] = await Promise.all([
-      this.catalog.listPublicProductFacets(query),
+      this.catalog.listPublicProductFacets(filter),
       this.catalog.listBrands(true),
       this.catalog.listCategories(true),
     ]);
-    return toRenderableFacets(facets, brands, categories);
+    return toRenderableFacets(facets, brands, categories, query.species);
   }
   @Get('products/projections/calculator')
   @ApiOkResponse({ type: [PublicCalculatorProductProjectionResponseDto] })
@@ -155,6 +161,7 @@ const toPublicProduct = (
   breedSize: product.breedSize,
   brand: toPublicReference(product.brand),
   category: product.category ? toPublicReference(product.category) : null,
+  classification: classifyCategory(product.category),
   media: product.media.map(({ url, altText, variantId }) => ({
     url,
     altText,
@@ -321,22 +328,10 @@ const toRenderableFacets = (
   facets: Awaited<ReturnType<CatalogService['listPublicProductFacets']>>,
   brands: Awaited<ReturnType<CatalogService['listBrands']>>,
   categories: Awaited<ReturnType<CatalogService['listCategories']>>,
+  species?: Species,
 ) => {
   const brandCounts = new Map(facets.brands.map((option) => [option.value, option.count]));
   const categoryData = new Map(facets.categories.map((option) => [option.value, option]));
-  const categoryTree = toCategoryTree(categories);
-  const decorateCategory = (category: CategoryTreeNode): CategoryFacetNode => {
-    const children = category.children.map(decorateCategory);
-    const own = categoryData.get(category.slug);
-    return {
-      ...category,
-      value: category.slug,
-      label: category.name,
-      count: (own?.count ?? 0) + children.reduce((sum, item) => sum + item.count, 0),
-      species: Array.from(new Set([...(own?.species ?? []), ...children.flatMap((item) => item.species)])).sort(),
-      children,
-    };
-  };
   const lifeStageCounts = new Map(facets.lifeStages.map((option) => [option.value, option.count]));
   const weightCounts = new Map(facets.weights.map((option) => [option.value, option.count]));
   const brandOptions = brands.map((brand) => ({
@@ -345,12 +340,35 @@ const toRenderableFacets = (
     count: brandCounts.get(brand.slug) ?? 0,
     logoUrl: brand.logoUrl,
   }));
-  const categoryOptions = categoryTree.map(decorateCategory);
+  const taxonomyOption = (value: string, label: string, slug: string) => {
+    const slugs = descendantSlugs(categories, slug);
+    const data = slugs.flatMap((item) => (categoryData.has(item) ? [categoryData.get(item)!] : []));
+    return {
+      value,
+      label,
+      count: data.reduce((sum, item) => sum + item.count, 0),
+      species: Array.from(new Set(data.flatMap((item) => item.species))).sort(),
+      children: [],
+    };
+  };
+  const categoryOptions = [
+    taxonomyOption(ProductCategory.FOOD, 'Alimentos', CATEGORY_SLUGS.food),
+    taxonomyOption(ProductCategory.SNACK, 'Snacks', CATEGORY_SLUGS.snack),
+    taxonomyOption(ProductCategory.HYGIENE, 'Higiene', CATEGORY_SLUGS.hygiene),
+  ];
   return {
     brands: brandOptions.filter((option) => option.count > 0),
     categories: categoryOptions.filter((option) => option.count > 0),
+    foodTypes: [
+      taxonomyOption(FoodType.DRY, 'Alimentos balanceados', CATEGORY_SLUGS.dryFood),
+      taxonomyOption(FoodType.WET, 'Alimentos húmedos', CATEGORY_SLUGS.wetFood),
+    ].filter((option) => option.count > 0),
+    subcategories: [
+      taxonomyOption(CATEGORY_SLUGS.bags, 'Bolsitas', CATEGORY_SLUGS.bags),
+      taxonomyOption(CATEGORY_SLUGS.litter, 'Arena', CATEGORY_SLUGS.litter),
+    ].filter((option) => option.count > 0),
     lifeStages: Array.from(lifeStageCounts.entries())
-      .map(([value, count]) => ({ value, label: facetLabel(value), count }))
+      .map(([value, count]) => ({ value, label: lifeStageFacetLabel(value, species), count }))
       .filter((option) => option.count > 0)
       .sort((left, right) => left.label.localeCompare(right.label)),
     weights: Array.from(weightCounts.entries())
@@ -361,7 +379,35 @@ const toRenderableFacets = (
       }))
       .filter((option) => option.count > 0)
       .sort((left, right) => left.value - right.value),
+    availability: facets.availability
+      .map((option) => ({
+        ...option,
+        label: option.value === 'AVAILABLE' ? 'Disponible' : 'Sin stock',
+      }))
+      .filter((option) => option.count > 0),
   };
+};
+
+const descendantSlugs = (categories: Category[], rootSlug: string): string[] => {
+  const root = categories.find((category) => category.slug === rootSlug);
+  if (!root) return [rootSlug];
+  const result = [root.slug];
+  const queue = [root.id];
+  while (queue.length) {
+    const parentId = queue.shift()!;
+    for (const category of categories.filter((candidate) => candidate.parentId === parentId)) {
+      result.push(category.slug);
+      queue.push(category.id);
+    }
+  }
+  return result;
+};
+
+const lifeStageFacetLabel = (value: string, species?: Species) => {
+  if (value === LifeStage.PUPPY) return species === Species.DOG ? 'Cachorros' : species === Species.CAT ? 'Gatitos' : 'Cachorros y gatitos';
+  if (value === LifeStage.ADULT) return 'Adultos';
+  if (value === LifeStage.SENIOR) return 'Senior';
+  return facetLabel(value);
 };
 
 const facetLabel = (value: string) =>
@@ -388,12 +434,4 @@ interface CategoryTreeNode {
   seoDescription: string | null;
   parentId: string | null;
   children: CategoryTreeNode[];
-}
-
-interface CategoryFacetNode extends Omit<CategoryTreeNode, 'children'> {
-  value: string;
-  label: string;
-  count: number;
-  species: string[];
-  children: CategoryFacetNode[];
 }
