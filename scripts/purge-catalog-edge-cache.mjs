@@ -46,10 +46,8 @@ function keysForScope(selectedScope, selectedSlug) {
   }
   if (selectedScope === 'catalog' || selectedScope === 'category') return ['catalog'];
   if (!selectedSlug) throw new Error(`--slug es obligatorio para --scope ${selectedScope}.`);
-  if (selectedScope === 'brand') {
-    return [`brand:${selectedSlug}`, 'catalog:brands', 'catalog:list', 'catalog:home', 'catalog:sitemap'];
-  }
-  return [`product:${selectedSlug}`, 'catalog:products', 'catalog:brands', 'catalog:list', 'catalog:home', 'catalog:sitemap', 'catalog:calculator'];
+  if (selectedScope === 'brand') return ['catalog'];
+  return [`product:${selectedSlug}`];
 }
 
 function normalizeKeys(values) {
@@ -73,17 +71,13 @@ async function purgeVarnish(url, token, purgeKeys) {
   const response = await fetch(url, {
     method: 'PURGE',
     headers: {
-      Accept: 'application/json',
       'X-Patitas-XKey': purgeKeys.join(' '),
       'X-Purge-Token': token,
     },
     signal: AbortSignal.timeout(5_000),
   });
   if (!response.ok) throw new Error(`Varnish rechazó el purge (${response.status}).`);
-  return {
-    success: true,
-    purgedObjects: Number(response.headers.get('x-purged-objects') ?? 0),
-  };
+  return { success: true };
 }
 
 async function purgeCloudflare(zoneId, token, purgeKeys) {

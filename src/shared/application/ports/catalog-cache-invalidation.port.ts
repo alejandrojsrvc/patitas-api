@@ -15,42 +15,18 @@ export const catalogCacheKeys = (input: CatalogCacheInvalidation | readonly Cata
     switch (invalidation.scope) {
       case 'catalog':
       case 'category':
-        keys.add('catalog');
-        break;
+      case 'brand':
       case 'products':
-        addProductGroups(keys);
-        break;
       case 'facets':
-        keys.add('catalog:list');
-        keys.add('catalog:taxonomy');
-        break;
       case 'images':
-        keys.add('catalog:products');
-        keys.add('catalog:list');
-        keys.add('catalog:home');
+        keys.add('catalog');
         break;
       case 'product':
         keys.add(`product:${invalidation.slug}`);
-        addProductGroups(keys);
-        break;
-      case 'brand':
-        keys.add(`brand:${invalidation.slug}`);
-        keys.add('catalog:brands');
-        keys.add('catalog:list');
-        keys.add('catalog:home');
-        keys.add('catalog:sitemap');
+        keys.add('catalog');
         break;
     }
   }
 
   return keys.has('catalog') ? ['catalog'] : [...keys].sort();
-};
-
-const addProductGroups = (keys: Set<string>): void => {
-  keys.add('catalog:products');
-  keys.add('catalog:brands');
-  keys.add('catalog:list');
-  keys.add('catalog:home');
-  keys.add('catalog:sitemap');
-  keys.add('catalog:calculator');
 };
