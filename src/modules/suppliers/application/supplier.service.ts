@@ -9,6 +9,7 @@ import type {
   SupplierFilter,
   SupplierOfferImportRow,
 } from '../domain/supplier.types';
+import type { CatalogCacheInvalidationPort } from '../../../shared/application/ports/catalog-cache-invalidation.port';
 
 export class SupplierValidationError extends DomainError {
   public constructor(message: string) {
@@ -29,7 +30,10 @@ export class SupplierConflictError extends DomainError {
 }
 
 export class SupplierService {
-  public constructor(private readonly repository: SupplierRepository) {}
+  public constructor(
+    private readonly repository: SupplierRepository,
+    private readonly cacheInvalidation?: CatalogCacheInvalidationPort,
+  ) {}
 
   public listSuppliers(filter: SupplierFilter) {
     return this.repository.listSuppliers(filter);
@@ -69,13 +73,17 @@ export class SupplierService {
     if (!offer) throw new SupplierNotFoundError('La oferta no existe.');
     return offer;
   }
-  public createOffer(input: CreateSupplierOfferInput) {
+  public async createOffer(input: CreateSupplierOfferInput) {
     validateOffer(input);
-    return this.repository.createOffer(input);
+    const offer = await this.repository.createOffer(input);
+    this.invalidateCatalogCache();
+    return offer;
   }
-  public updateOffer(id: string, input: UpdateSupplierOfferInput) {
+  public async updateOffer(id: string, input: UpdateSupplierOfferInput) {
     validateOffer(input);
-    return this.repository.updateOffer(id, input);
+    const offer = await this.repository.updateOffer(id, input);
+    this.invalidateCatalogCache();
+    return offer;
   }
   public importOffers(data: Uint8Array, options: SupplierOfferImportOptions) {
     let rows: SupplierOfferImportRow[];
@@ -86,8 +94,15 @@ export class SupplierService {
     }
     return this.importOfferRows(rows, options);
   }
-  public importOfferRows(rows: SupplierOfferImportRow[], options: SupplierOfferImportOptions) {
-    return this.repository.importOffers(rows, options);
+  public async importOfferRows(rows: SupplierOfferImportRow[], options: SupplierOfferImportOptions) {
+    const result = await this.repository.importOffers(rows, options);
+    if (!options.dryRun) this.invalidateCatalogCache();
+    return result;
+  }
+
+  private invalidateCatalogCache(): void {
+    if (!this.cacheInvalidation) return;
+    void this.cacheInvalidation.invalidate({ scope: 'catalog' }).catch(() => undefined);
   }
 }
 

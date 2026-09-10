@@ -1,9 +1,13 @@
 import { PromotionNotFoundError, PromotionValidationError } from '../domain/promotion.error';
 import type { PromotionRepository } from '../domain/promotion.repository';
 import type { CouponInput, PromotionInput } from '../domain/promotion.types';
+import type { CatalogCacheInvalidationPort } from '../../../shared/application/ports/catalog-cache-invalidation.port';
 
 export class PromotionService {
-  public constructor(private readonly repository: PromotionRepository) {}
+  public constructor(
+    private readonly repository: PromotionRepository,
+    private readonly cacheInvalidation?: CatalogCacheInvalidationPort,
+  ) {}
 
   public list(activeOnly = false) {
     return this.repository.list(activeOnly);
@@ -11,9 +15,11 @@ export class PromotionService {
   public listCoupons() {
     return this.repository.listCoupons();
   }
-  public create(input: PromotionInput) {
+  public async create(input: PromotionInput) {
     validatePromotion(input);
-    return this.repository.create(normalizePromotion(input));
+    const promotion = await this.repository.create(normalizePromotion(input));
+    this.invalidateCatalogCache();
+    return promotion;
   }
   public async update(id: string, input: Partial<PromotionInput>) {
     const current = await this.find(id);
@@ -21,7 +27,9 @@ export class PromotionService {
     const maxRedemptions = input.maxRedemptions !== undefined ? input.maxRedemptions : current.maxRedemptions;
     if (maxRedemptions !== null && maxRedemptions !== undefined && current.redemptionCount > maxRedemptions)
       throw new PromotionValidationError('El límite de la promoción no puede ser menor a los usos ya registrados.');
-    return this.repository.update(id, normalizePromotion(input));
+    const promotion = await this.repository.update(id, normalizePromotion(input));
+    this.invalidateCatalogCache();
+    return promotion;
   }
   public async find(id: string) {
     const promotion = await this.repository.findById(id);
@@ -74,6 +82,11 @@ export class PromotionService {
 
   private async ensurePromotion(id: string): Promise<void> {
     if (!(await this.repository.findById(id))) throw new PromotionNotFoundError('La promoción no existe.');
+  }
+
+  private invalidateCatalogCache(): void {
+    if (!this.cacheInvalidation) return;
+    void this.cacheInvalidation.invalidate({ scope: 'catalog' }).catch(() => undefined);
   }
 }
 

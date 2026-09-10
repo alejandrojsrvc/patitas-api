@@ -239,7 +239,7 @@ export class CatalogService {
       name: input.name.trim(),
       slug: slugify(input.slug ?? input.name),
     });
-    this.invalidateCatalogCache();
+    this.invalidateCatalogCache({ scope: 'product', slug: product.slug });
     return product;
   }
 
@@ -429,6 +429,7 @@ export class CatalogService {
             createMissingSuppliers: true,
           })
         : null;
+    this.invalidateCatalogCache();
     return {
       rows: rows.length,
       products: results.length,
@@ -464,14 +465,17 @@ export class CatalogService {
       ...normalizeProductClassification(input),
       ...(input.slug ? { slug: slugify(input.slug) } : {}),
     });
-    this.invalidateCatalogCache();
+    this.invalidateCatalogCache([
+      { scope: 'product', slug: current.slug },
+      { scope: 'product', slug: product.slug },
+    ]);
     return product;
   }
 
   public async createVariant(productId: string, input: CreateVariantInput) {
-    await this.getAdminProduct(productId);
+    const product = await this.getAdminProduct(productId);
     const variant = await this.repository.createVariant(productId, normalizeVariant(input, true));
-    this.invalidateCatalogCache();
+    this.invalidateCatalogCache({ scope: 'product', slug: product.slug });
     return variant;
   }
 
@@ -489,7 +493,7 @@ export class CatalogService {
       }
     }
     const variant = await this.repository.updateVariant(id, normalizeVariant(input));
-    this.invalidateCatalogCache();
+    this.invalidateCatalogCache({ scope: 'product', slug: product.slug });
     return variant;
   }
 
@@ -508,7 +512,7 @@ export class CatalogService {
       altText: input.altText.trim(),
     });
 
-    this.invalidateCatalogCache();
+    this.invalidateCatalogCache({ scope: 'product', slug: product.slug });
     return this.resolveMedia(media);
   }
 
@@ -557,7 +561,7 @@ export class CatalogService {
         displayOrder: input.displayOrder ?? 0,
       });
 
-      this.invalidateCatalogCache();
+      this.invalidateCatalogCache({ scope: 'product', slug: product.slug });
       return this.resolveMedia(media);
     } catch (error) {
       await storage.delete(storedObject).catch(() => undefined);
@@ -580,7 +584,7 @@ export class CatalogService {
       throw new CatalogValidationError('El texto alternativo es obligatorio.');
     }
     const updated = await this.repository.updateProductMedia(mediaId, next);
-    this.invalidateCatalogCache();
+    this.invalidateCatalogCache({ scope: 'product', slug: product.slug });
     return this.resolveMedia(updated);
   }
 
@@ -589,7 +593,7 @@ export class CatalogService {
     const media = product.media.find((item) => item.id === mediaId);
     if (!media) throw new CatalogNotFoundError('La imagen');
     await this.repository.deleteProductMedia(mediaId);
-    this.invalidateCatalogCache();
+    this.invalidateCatalogCache({ scope: 'product', slug: product.slug });
     if (this.storage && !isHttpUrl(media.url)) {
       await this.storage.delete({ bucket: PRODUCT_MEDIA_BUCKET, path: media.url }).catch(() => undefined);
     }
@@ -597,7 +601,7 @@ export class CatalogService {
   }
 
   public async replaceFeedingGuide(productId: string, input: ReplaceFeedingGuideInput) {
-    await this.getAdminProduct(productId);
+    const product = await this.getAdminProduct(productId);
     if (!input.sourceLabel.trim() || input.entries.length === 0) {
       throw new CatalogValidationError('La guía requiere fuente y al menos una entrada.');
     }
@@ -629,7 +633,7 @@ export class CatalogService {
         conditions: entry.conditions ?? {},
       })),
     });
-    this.invalidateCatalogCache();
+    this.invalidateCatalogCache({ scope: 'product', slug: product.slug });
     return feedingGuide;
   }
 
@@ -652,7 +656,9 @@ export class CatalogService {
       );
       assertPublishable({ ...product, variants: nextVariants });
     }
-    return this.repository.setInventory(variantId, input);
+    const inventory = await this.repository.setInventory(variantId, input);
+    this.invalidateCatalogCache({ scope: 'product', slug: product.slug });
+    return inventory;
   }
 
   public async listInventoryMovements(variantId: string) {
@@ -757,7 +763,7 @@ export class CatalogService {
     }
   }
 
-  private invalidateCatalogCache(input: CatalogCacheInvalidation = { scope: 'catalog' }): void {
+  private invalidateCatalogCache(input: CatalogCacheInvalidation | readonly CatalogCacheInvalidation[] = { scope: 'catalog' }): void {
     if (!this.cacheInvalidation) return;
     void this.cacheInvalidation.invalidate(input).catch(() => undefined);
   }
