@@ -80,7 +80,6 @@ export class HttpCatalogCacheInvalidationAdapter implements CatalogCacheInvalida
     const response = await fetch(this.varnishUrl, {
       method: 'PURGE',
       headers: {
-        Accept: 'application/json',
         'X-Patitas-XKey': keys.join(' '),
         'X-Purge-Token': this.varnishToken,
       },

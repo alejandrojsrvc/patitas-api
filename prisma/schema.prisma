@@ -30,6 +30,32 @@ enum AuthActionType {
   ADMIN_INVITATION
 }
 
+enum ShipmentStatus {
+  PENDING
+  PREPARING
+  READY_FOR_DISPATCH
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  RETURNED
+}
+
+enum CustomerClaimType {
+  ADDRESS_CHANGE
+  DELIVERY_DELAY
+  MISSING_PACKAGE
+  DAMAGED_PACKAGE
+  OTHER
+}
+
+enum CustomerClaimStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  CANCELLED
+}
+
 enum ProductStatus {
   DRAFT
   ACTIVE
@@ -522,6 +548,7 @@ model User {
   auditLogs          AdminAuditLog[]
   inventoryMovements InventoryMovement[]
   mobileAccessDaily  MobileAccessDaily[]
+  shipmentEvents     ShipmentEvent[]       @relation("ShipmentEventActor")
 
   @@map("users")
 }
@@ -609,6 +636,7 @@ model Customer {
   referralLedgerEntries  ReferralLedgerEntry[]
   savedPaymentMethods    SavedPaymentMethod[]
   inAppNotifications     InAppNotification[]
+  customerClaims         CustomerClaim[]
 
   @@index([email], map: "idx_customers_email")
   @@index([active], map: "idx_customers_active")
@@ -619,6 +647,7 @@ model Order {
   id                    String                 @id @default(uuid()) @db.Uuid
   customerId            String?                @map("customer_id") @db.Uuid
   number                String?                @unique(map: "orders_number_key")
+  orderNumber           BigInt                 @unique(map: "orders_order_number_key") @default(dbgenerated("nextval('orders_order_number_seq'::regclass)")) @map("order_number")
   source                String                 @default("STORE")
   status                OrderStatus            @default(DRAFT)
   paymentStatus         PaymentStatus          @default(UNPAID) @map("payment_status")
@@ -685,6 +714,9 @@ model Order {
   referralAttributions  ReferralAttribution[]
   statusEvents          OrderStatusEvent[]
   benefits              OrderBenefit[]
+  shipment              Shipment?
+  customerClaims        CustomerClaim[]
+  guestActivationTokens GuestOrderActivationToken[]
 
   @@index([status, createdAt], map: "idx_orders_status_created")
   @@index([customerId], map: "idx_orders_customer_id")
@@ -1395,6 +1427,73 @@ model OrderStatusEvent {
 
   @@index([orderId, occurredAt], map: "idx_order_status_events_order_occurred")
   @@map("order_status_events")
+}
+
+model Shipment {
+  id             String         @id @default(uuid()) @db.Uuid
+  orderId        String         @unique @map("order_id") @db.Uuid
+  status         ShipmentStatus @default(PENDING)
+  carrier        String?
+  trackingNumber String?        @map("tracking_number")
+  trackingUrl    String?        @map("tracking_url")
+  estimatedDate DateTime?       @map("estimated_date") @db.Date
+  estimatedSlot  String?        @map("estimated_slot")
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  events         ShipmentEvent[]
+
+  @@index([status, updatedAt], map: "idx_shipments_status_updated")
+  @@map("shipments")
+}
+
+model ShipmentEvent {
+  id             String         @id @default(uuid()) @db.Uuid
+  shipmentId     String         @map("shipment_id") @db.Uuid
+  status         ShipmentStatus
+  visibleMessage String         @map("visible_message")
+  actorUserId    String?        @map("actor_user_id") @db.Uuid
+  metadata       Json?
+  occurredAt     DateTime       @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  shipment       Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  actor          User?          @relation("ShipmentEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@unique([shipmentId, status], map: "shipment_events_shipment_status_key")
+  @@index([shipmentId, occurredAt], map: "idx_shipment_events_shipment_occurred")
+  @@map("shipment_events")
+}
+
+model CustomerClaim {
+  id         String              @id @default(uuid()) @db.Uuid
+  orderId    String              @map("order_id") @db.Uuid
+  customerId String              @map("customer_id") @db.Uuid
+  type       CustomerClaimType
+  status     CustomerClaimStatus @default(OPEN)
+  message    String
+  resolution String?
+  createdAt  DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  order      Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customer   Customer            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, createdAt], map: "idx_customer_claims_customer_created")
+  @@index([orderId, status], map: "idx_customer_claims_order_status")
+  @@map("customer_claims")
+}
+
+model GuestOrderActivationToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  orderId    String    @map("order_id") @db.Uuid
+  email      String    @db.VarChar(320)
+  tokenHash  String    @unique(map: "guest_activation_tokens_hash_key") @map("token_hash") @db.Char(64)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  order      Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, consumedAt], map: "idx_guest_activation_tokens_order_consumed")
+  @@index([expiresAt, consumedAt], map: "idx_guest_activation_tokens_expiry")
+  @@map("guest_order_activation_tokens")
 }
 
 model CheckoutHandoff {

@@ -2,7 +2,7 @@ import type { CustomerService } from '../../customers/application/customer.servi
 import type { StorageProvider } from '../../../shared/application/ports/storage-provider.interface';
 import { detectFileContentType } from '../../../shared/application/file-signature';
 import { randomUUID } from 'node:crypto';
-import { OrderNotFoundError, OrderValidationError } from '../domain/order.error';
+import { OrderConflictError, OrderNotFoundError, OrderValidationError } from '../domain/order.error';
 import type { OrderRepository } from '../domain/order.repository';
 import type { CreateOrderInput, Order, OrderFilter, OrderStatus, RegisterPaymentInput, UpdateOrderInput } from '../domain/order.types';
 
@@ -34,7 +34,9 @@ export class OrderService {
   }
 
   public async update(id: string, input: UpdateOrderInput) {
-    await this.find(id);
+    const current = await this.find(id);
+    if (input.shippingAddress && current.status !== 'PAID')
+      throw new OrderConflictError('La dirección solo puede cambiarse mientras el pedido está PAID.');
     validateOrder(input);
     return this.resolveProofUrls(await this.repository.update(id, normalizeOrder(input)));
   }

@@ -32,4 +32,9 @@ export class NotificationJobsController {
       schedules,
     };
   }
+  @Post('order-confirmations')
+  public confirmations(@Headers('x-cron-secret') secret?: string) {
+    if (!secret || secret !== this.config.get<string>('CRON_SECRET')) throw new UnauthorizedException();
+    return this.notifications.processOrderConfirmations();
+  }
 }

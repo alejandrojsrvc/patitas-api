@@ -1,4 +1,5 @@
 import { createElement, type ReactElement } from 'react';
+import { OrderConfirmationEmail, type OrderConfirmationEmailProps } from './email-templates/order-confirmation.email';
 import { AdminInvitationEmail, type AdminInvitationEmailProps } from './email-templates/admin-invitation.email';
 import { AbandonedCartEmail, type AbandonedCartEmailProps } from './email-templates/abandoned-cart.email';
 import { AccountConfirmationEmail, type AccountConfirmationEmailProps } from './email-templates/account-confirmation.email';
@@ -13,6 +14,37 @@ export interface RenderedEmail {
 type TemplateRenderer = (variables: Record<string, string>, appUrl: string) => RenderedEmail;
 
 const templateRenderers: Readonly<Record<string, TemplateRenderer>> = {
+  order_confirmation: (variables, appUrl) => {
+    const status = variables.status === 'pending' ? 'pending' : variables.status === 'failed' ? 'failed' : 'approved';
+    return {
+      subject:
+        status === 'approved'
+          ? `Pedido #${requiredVariable(variables, 'orderNumber')} confirmado | Patitas Inquietas`
+          : `Actualización del pedido #${requiredVariable(variables, 'orderNumber')} | Patitas Inquietas`,
+      element: createElement(OrderConfirmationEmail, {
+        customerName: requiredVariable(variables, 'customerName'),
+        orderNumber: requiredVariable(variables, 'orderNumber'),
+        orderDate: requiredVariable(variables, 'orderDate'),
+        paymentStatus: requiredVariable(variables, 'paymentStatus'),
+        paymentMethod: requiredVariable(variables, 'paymentMethod'),
+        items: parseItems(variables.items),
+        subtotal: requiredVariable(variables, 'subtotal'),
+        discount: requiredVariable(variables, 'discount'),
+        shipping: requiredVariable(variables, 'shipping'),
+        total: requiredVariable(variables, 'total'),
+        address: requiredVariable(variables, 'address'),
+        deliveryEstimate: requiredVariable(variables, 'deliveryEstimate'),
+        actionUrl: variables.actionUrl?.trim()
+          ? new URL(variables.actionUrl.trim(), `${appUrl}/`).toString()
+          : variables.token?.trim()
+            ? buildActionUrl(appUrl, '/activar-cuenta', { token: requiredVariable(variables, 'token') })
+            : buildActionUrl(appUrl, '/checkout/resultado', { orderId: requiredVariable(variables, 'orderId') }),
+        actionLabel: requiredVariable(variables, 'actionLabel'),
+        supportUrl: buildActionUrl(appUrl, '/contacto', {}),
+        status,
+      } satisfies OrderConfirmationEmailProps),
+    };
+  },
   account_confirmation: (variables, appUrl) => ({
     subject: 'Confirmá tu cuenta | Patitas Inquietas',
     element: createElement(AccountConfirmationEmail, {
@@ -49,6 +81,20 @@ const templateRenderers: Readonly<Record<string, TemplateRenderer>> = {
       appUrl,
     } satisfies ReplenishmentReminderEmailProps),
   }),
+};
+
+const parseItems = (value: string | undefined): OrderConfirmationEmailProps['items'] => {
+  if (!value) return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is OrderConfirmationEmailProps['items'][number] =>
+          Boolean(item && typeof item === 'object' && 'name' in item && 'quantity' in item && 'unitPrice' in item && 'total' in item),
+        )
+      : [];
+  } catch {
+    return [];
+  }
 };
 
 export const renderNotificationEmail = (template: string, variables: Record<string, string>, appUrl: string): RenderedEmail => {

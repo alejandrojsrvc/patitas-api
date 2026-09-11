@@ -373,6 +373,12 @@ const createWebhookTransaction = (order: ReturnType<typeof paymentOrder>, attemp
       findFirst: jest.fn().mockResolvedValue(null),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
+    notificationDelivery: {
+      upsert: jest.fn(),
+    },
+    shipment: {
+      upsert: jest.fn(),
+    },
   } as unknown as Prisma.TransactionClient;
 };
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Prisma } from '../../../infrastructure/database/generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { OrderConflictError, OrderNotFoundError, OrderValidationError } from '../domain/order.error';
@@ -102,7 +102,6 @@ export class PrismaOrderRepository implements OrderRepository {
         data: {
           id: randomUUID(),
           customerId: input.customerId ?? null,
-          number: createOrderNumber(),
           source: input.source ?? 'STORE',
           status: 'DRAFT',
           paymentStatus: 'UNPAID',
@@ -121,6 +120,7 @@ export class PrismaOrderRepository implements OrderRepository {
         },
         include: { lines: true },
       });
+      await transaction.order.update({ where: { id: created.id }, data: { number: created.orderNumber.toString() } });
       await reserve(transaction, created.lines, created.id);
       await recordStatusEvent(transaction, created.id, 'DRAFT');
       return mapOrder(
@@ -185,6 +185,31 @@ export class PrismaOrderRepository implements OrderRepository {
           paymentReference: input.reference ?? null,
         },
       });
+      if (paid >= Number(order.total)) {
+        await transaction.shipment.upsert({
+          where: { orderId: id },
+          create: {
+            id: randomUUID(),
+            orderId: id,
+            status: 'PENDING',
+            events: { create: { id: randomUUID(), status: 'PENDING', visibleMessage: 'Recibimos tu pedido.' } },
+          },
+          update: {},
+        });
+        await transaction.notificationDelivery.upsert({
+          where: { idempotencyKey: `order-confirmation:${id}:PAID` },
+          create: {
+            id: randomUUID(),
+            channel: 'EMAIL',
+            template: 'order_confirmation',
+            destinationHash: createHash('sha256').update(order.contactEmail.trim().toLowerCase()).digest('hex'),
+            idempotencyKey: `order-confirmation:${id}:PAID`,
+            orderId: id,
+            customerId: order.customerId,
+          },
+          update: {},
+        });
+      }
       const updated = await transaction.order.findUniqueOrThrow({
         where: { id },
         include: orderInclude,
@@ -335,8 +360,6 @@ const allowedTransitions: Record<Order['status'], Order['status'][]> = {
   CANCELLED: [],
 };
 
-const createOrderNumber = (): string => `PAT-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${randomUUID().slice(0, 8).toUpperCase()}`;
-
 const recordStatusEvent = async (transaction: Prisma.TransactionClient, orderId: string, status: Order['status']): Promise<void> => {
   const events = transaction.orderStatusEvent;
   if (!events) return;
@@ -413,7 +436,7 @@ const ship = async (transaction: OrderInventoryTransaction, lines: Array<{ varia
 const mapOrder = (value: OrderRecord): Order => ({
   id: value.id,
   customerId: value.customerId,
-  number: value.number,
+  number: value.orderNumber.toString(),
   source: value.source,
   status: value.status,
   paymentStatus: value.paymentStatus,

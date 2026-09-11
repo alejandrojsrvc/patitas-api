@@ -45,6 +45,9 @@ const sessionInclude = {
 } as const;
 const orderInclude = {
   lines: true,
+  payments: { orderBy: { createdAt: 'desc' as const } },
+  statusEvents: { orderBy: { occurredAt: 'asc' as const } },
+  shipment: { include: { events: { orderBy: { occurredAt: 'asc' as const } } } },
   replenishmentPlans: { select: { petName: true } },
   benefits: { orderBy: { createdAt: 'asc' as const } },
 } as const;
@@ -480,16 +483,20 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
           });
           const manualTransfer = session.paymentMethod === 'BANK_TRANSFER';
           const orderId = randomUUID();
-          const orderNumber = createOrderNumber();
           const reservationExpiresAt = new Date(
             Date.now() + (manualTransfer ? (transferConfiguration?.expirationMinutes ?? 120) * 60 * 1000 : RESERVATION_TTL_MS),
           );
           const couponApplied = Boolean(coupon && pricing.benefits.some((benefit) => benefit.type === 'COUPON'));
+          const [{ orderNumber: orderNumberValue }] = await transaction.$queryRaw<Array<{ orderNumber: bigint }>>(
+            Prisma.sql`SELECT nextval('orders_order_number_seq'::regclass) AS "orderNumber"`,
+          );
+          const orderNumber = orderNumberValue.toString();
           const created = await transaction.order.create({
             data: {
               id: orderId,
-              customerId: session.customerId,
+              orderNumber: BigInt(orderNumber),
               number: orderNumber,
+              customerId: session.customerId,
               source: owner.source ?? 'STORE',
               status: 'PENDING_PAYMENT',
               paymentStatus: 'PENDING',
@@ -702,7 +709,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
         where,
         select: {
           id: true,
-          number: true,
+          orderNumber: true,
           status: true,
           paymentStatus: true,
           total: true,
@@ -719,7 +726,7 @@ export class PrismaCheckoutRepository implements CheckoutRepository {
     return {
       items: orders.map((order) => ({
         id: order.id,
-        number: order.number,
+        number: order.orderNumber.toString(),
         status: order.status,
         paymentStatus: order.paymentStatus,
         total: order.total.toString(),
@@ -847,8 +854,6 @@ const validateReady = (session: SessionRecord) => {
   if (!session.contactName || !session.contactEmail || !session.shippingAddress || !session.shippingOptionId || !session.paymentMethod)
     throw new CheckoutValidationError('Completa datos, dirección, envío y pago antes de confirmar.');
 };
-
-const createOrderNumber = (): string => `PAT-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${randomUUID().slice(0, 8).toUpperCase()}`;
 
 const recordStatusEvent = async (
   transaction: Prisma.TransactionClient,
@@ -1186,8 +1191,11 @@ const mapShippingZone = (value: Prisma.ShippingZoneGetPayload<Prisma.ShippingZon
 
 const mapOrder = (value: Prisma.OrderGetPayload<{ include: typeof orderInclude }>): OrderSummary => ({
   id: value.id,
+  number: value.orderNumber.toString(),
   status: value.status,
   paymentStatus: value.paymentStatus,
+  paymentMethod: value.paymentMethod,
+  paymentProvider: value.paymentProvider,
   canRetry:
     value.status === 'PENDING_PAYMENT' &&
     value.paymentStatus === 'FAILED' &&
@@ -1199,6 +1207,12 @@ const mapOrder = (value: Prisma.OrderGetPayload<{ include: typeof orderInclude }
   subtotal: value.subtotal.toString(),
   discountTotal: value.discountTotal?.toString() ?? '0.00',
   shippingCost: value.shippingCost.toString(),
+  shippingAddress: value.shippingAddress as unknown as Record<string, unknown>,
+  deliveryInstructions: value.deliveryInstructions,
+  shippingEstimate: value.shippingEstimate,
+  shippingDeliveryDate: value.shippingDeliveryDate,
+  shippingDeliverySlot: value.shippingDeliverySlot,
+  trackingNumber: value.trackingNumber,
   total: value.total.toString(),
   currency: 'ARS',
   contactName: value.contactName,
@@ -1227,5 +1241,28 @@ const mapOrder = (value: Prisma.OrderGetPayload<{ include: typeof orderInclude }
     metadata: benefit.metadata,
     createdAt: benefit.createdAt,
   })),
+  payments: value.payments.map((payment) => ({
+    id: payment.id,
+    amount: payment.amount.toString(),
+    currency: payment.currency,
+    method: payment.method,
+    provider: payment.provider,
+    externalPaymentId: payment.externalPaymentId,
+    paidAt: payment.paidAt,
+    createdAt: payment.createdAt,
+  })),
+  statusEvents: value.statusEvents,
+  shipment: value.shipment
+    ? {
+        id: value.shipment.id,
+        status: value.shipment.status,
+        carrier: value.shipment.carrier,
+        trackingNumber: value.shipment.trackingNumber,
+        trackingUrl: value.shipment.trackingUrl,
+        estimatedDate: value.shipment.estimatedDate,
+        estimatedSlot: value.shipment.estimatedSlot,
+        events: value.shipment.events,
+      }
+    : null,
   createdAt: value.createdAt,
 });

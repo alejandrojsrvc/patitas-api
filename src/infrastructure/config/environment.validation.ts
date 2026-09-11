@@ -32,6 +32,7 @@ export interface EnvironmentVariables {
   MERCADOPAGO_PUBLIC_KEY?: string;
   MERCADOPAGO_WEBHOOK_SECRET?: string;
   MERCADOPAGO_NOTIFICATION_URL?: string;
+  PAYWAY_SITE_ID?: string;
   PAYWAY_SITE_ID_VISA?: string;
   PAYWAY_SITE_ID_MASTERCARD?: string;
   PAYWAY_SITE_ID_AMERICAN_EXPRESS?: string;
@@ -141,6 +142,7 @@ export const validateEnvironment = (environment: Record<string, unknown>): Envir
   if (!['noop', 'resend', 'http', 'smtp'].includes(notificationProvider)) {
     throw new Error('NOTIFICATION_PROVIDER debe ser noop, resend, http o smtp.');
   }
+  const paywaySiteId = optionalValue(environment['PAYWAY_SITE_ID']);
   const paywaySiteIdVisa = optionalValue(environment['PAYWAY_SITE_ID_VISA']);
   const paywaySiteIdMastercard = optionalValue(environment['PAYWAY_SITE_ID_MASTERCARD']);
   const paywaySiteIdAmericanExpress = optionalValue(environment['PAYWAY_SITE_ID_AMERICAN_EXPRESS']);
@@ -203,6 +205,7 @@ export const validateEnvironment = (environment: Record<string, unknown>): Envir
     ...(mercadoPagoPublicKey ? { MERCADOPAGO_PUBLIC_KEY: mercadoPagoPublicKey } : {}),
     ...(mercadoPagoWebhookSecret ? { MERCADOPAGO_WEBHOOK_SECRET: mercadoPagoWebhookSecret } : {}),
     ...(mercadoPagoNotificationUrl ? { MERCADOPAGO_NOTIFICATION_URL: mercadoPagoNotificationUrl } : {}),
+    ...(paywaySiteId ? { PAYWAY_SITE_ID: paywaySiteId } : {}),
     ...(paywaySiteIdVisa ? { PAYWAY_SITE_ID_VISA: paywaySiteIdVisa } : {}),
     ...(paywaySiteIdMastercard ? { PAYWAY_SITE_ID_MASTERCARD: paywaySiteIdMastercard } : {}),
     ...(paywaySiteIdAmericanExpress ? { PAYWAY_SITE_ID_AMERICAN_EXPRESS: paywaySiteIdAmericanExpress } : {}),
