@@ -101,7 +101,7 @@ export class PrismaFulfillmentOperationsRepository implements FulfillmentOperati
         });
         return mapShipment(created);
       }
-      if (current.status !== input.status && !transitions[current.status as ShipmentStatus].includes(input.status))
+      if (current.status !== input.status && !transitions[current.status].includes(input.status))
         throw new Error(`No se puede pasar el envío de ${current.status} a ${input.status}.`);
       await transaction.shipment.update({
         where: { id: current.id },
