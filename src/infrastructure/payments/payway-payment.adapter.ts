@@ -13,27 +13,21 @@ import type {
 @Injectable()
 export class PaywayPaymentAdapter implements PaymentProvider {
   public readonly name = 'payway';
-  private readonly siteIds: PaywaySiteIds;
+  private readonly siteId: string;
   private readonly privateApiKey: string;
   private readonly apiBaseUrl: string;
   private readonly webhookSecret: string;
 
   public constructor(config: ConfigService) {
-    this.siteIds = {
-      default: readConfig(config, 'PAYWAY_SITE_ID'),
-      visa: readConfig(config, 'PAYWAY_SITE_ID_VISA'),
-      mastercard: readConfig(config, 'PAYWAY_SITE_ID_MASTERCARD'),
-      americanExpress: readConfig(config, 'PAYWAY_SITE_ID_AMERICAN_EXPRESS'),
-      discover: readConfig(config, 'PAYWAY_SITE_ID_DISCOVER'),
-      cabal: readConfig(config, 'PAYWAY_SITE_ID_CABAL'),
-    };
+    this.siteId = readConfig(config, 'PAYWAY_SITE_ID') ?? '';
     this.privateApiKey = config.get<string>('PAYWAY_PRIVATE_API_KEY', '').trim();
     this.apiBaseUrl = config.get<string>('PAYWAY_API_BASE_URL', '').trim().replace(/\/$/, '');
     this.webhookSecret = config.get<string>('PAYWAY_WEBHOOK_SECRET', '').trim();
   }
 
   public assertReady(): void {
-    if (!this.privateApiKey || !this.apiBaseUrl) throw new Error('Payway requiere PAYWAY_PRIVATE_API_KEY y PAYWAY_API_BASE_URL.');
+    if (!this.siteId || !this.privateApiKey || !this.apiBaseUrl)
+      throw new Error('Payway requiere PAYWAY_SITE_ID, PAYWAY_PRIVATE_API_KEY y PAYWAY_API_BASE_URL.');
   }
 
   public createExternalReference(input: { orderId: string; attemptId: string }): string {
@@ -47,13 +41,11 @@ export class PaywayPaymentAdapter implements PaymentProvider {
     if (!input.paymentMethod.cardBin) throw new Error('Payway requiere el BIN de la tarjeta.');
     if (!Number.isInteger(input.paymentMethod.installments) || input.paymentMethod.installments < 1)
       throw new Error('Payway requiere una cantidad válida de cuotas.');
-    const siteId = this.siteIdFor(input.paymentMethod.paymentMethodReference);
-
     const response = await this.request('/payments', {
       method: 'POST',
       headers: { 'X-Idempotency-Key': input.idempotencyKey },
       body: JSON.stringify({
-        ...(siteId ? { site_id: siteId } : {}),
+        site_id: this.siteId,
         site_transaction_id: input.externalReference,
         token: input.paymentMethod.token,
         payment_method_id: input.paymentMethod.paymentMethodReference,
@@ -167,33 +159,7 @@ export class PaywayPaymentAdapter implements PaymentProvider {
     }
     return asRecord(payload);
   }
-
-  private siteIdFor(paymentMethodReference?: number): string | undefined {
-    if (!paymentMethodReference) return undefined;
-    return PAYWAY_SITE_ID_BY_PAYMENT_METHOD[paymentMethodReference]?.(this.siteIds);
-  }
 }
-
-type PaywaySiteIds = {
-  default?: string;
-  visa?: string;
-  mastercard?: string;
-  americanExpress?: string;
-  discover?: string;
-  cabal?: string;
-};
-
-const PAYWAY_SITE_ID_BY_PAYMENT_METHOD: Record<number, (siteIds: PaywaySiteIds) => string | undefined> = {
-  1: (siteIds) => siteIds.visa ?? siteIds.default,
-  31: (siteIds) => siteIds.visa ?? siteIds.default,
-  6: (siteIds) => siteIds.americanExpress ?? siteIds.default,
-  65: (siteIds) => siteIds.americanExpress ?? siteIds.default,
-  15: (siteIds) => siteIds.mastercard ?? siteIds.default,
-  66: (siteIds) => siteIds.mastercard ?? siteIds.default,
-  27: (siteIds) => siteIds.cabal ?? siteIds.default,
-  63: (siteIds) => siteIds.cabal ?? siteIds.default,
-  67: (siteIds) => siteIds.cabal ?? siteIds.default,
-};
 
 const readConfig = (config: ConfigService, key: string): string | undefined => config.get<string>(key)?.trim() || undefined;
 

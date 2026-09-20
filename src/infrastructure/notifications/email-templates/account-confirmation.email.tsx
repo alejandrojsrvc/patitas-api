@@ -1,5 +1,5 @@
-import { Button, Hr, Text } from 'react-email';
-import { EmailLayout, actionButtonStyle, actionTextStyle } from './email-layout';
+import { Button, Text } from 'react-email';
+import { EmailLayout, actionButtonStyle, actionTextStyle, noteStyle } from './email-layout';
 
 export interface AccountConfirmationEmailProps {
   actionUrl: string;
@@ -8,20 +8,20 @@ export interface AccountConfirmationEmailProps {
 export function AccountConfirmationEmail({ actionUrl }: AccountConfirmationEmailProps) {
   return (
     <EmailLayout
-      preview="Confirmá tu cuenta de Patitas Inquietas."
+      preview="Un paso más para activar tu cuenta de Patitas Inquietas."
       eyebrow="Confirmación de cuenta"
       title="Confirmá tu correo"
       footer="Este es un correo transaccional de seguridad de Patitas Inquietas."
     >
       <Text>
-        Usá este enlace para confirmar tu correo y terminar de activar tu cuenta. Si tenés instalada la app, el mismo enlace puede abrirla
-        directamente.
+        Tu cuenta está casi lista. Confirmá tu correo para consultar tus pedidos, guardar tus datos y comprar más rápido. Si tenés instalada
+        la app, el enlace puede abrirla directamente.
       </Text>
       <Button href={actionUrl} style={actionButtonStyle}>
-        Confirmar mi cuenta
+        Confirmar mi correo
       </Button>
-      <Hr />
-      <Text style={actionTextStyle}>Si no creaste una cuenta, podés ignorar este mensaje.</Text>
+      <Text style={actionTextStyle}>El enlace es temporal. Si no creaste una cuenta, ignorá este mensaje.</Text>
+      <Text style={noteStyle}>Con tu cuenta podés consultar pedidos, guardar direcciones y ver tus reposiciones.</Text>
     </EmailLayout>
   );
 }

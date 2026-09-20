@@ -19,8 +19,8 @@ const templateRenderers: Readonly<Record<string, TemplateRenderer>> = {
     return {
       subject:
         status === 'approved'
-          ? `Pedido #${requiredVariable(variables, 'orderNumber')} confirmado | Patitas Inquietas`
-          : `Actualización del pedido #${requiredVariable(variables, 'orderNumber')} | Patitas Inquietas`,
+          ? `Tu pedido #${requiredVariable(variables, 'orderNumber')} está confirmado | Patitas Inquietas`
+          : `Actualización de tu pedido #${requiredVariable(variables, 'orderNumber')} | Patitas Inquietas`,
       element: createElement(OrderConfirmationEmail, {
         customerName: requiredVariable(variables, 'customerName'),
         orderNumber: requiredVariable(variables, 'orderNumber'),
@@ -46,7 +46,7 @@ const templateRenderers: Readonly<Record<string, TemplateRenderer>> = {
     };
   },
   account_confirmation: (variables, appUrl) => ({
-    subject: 'Confirmá tu cuenta | Patitas Inquietas',
+    subject: 'Confirmá tu correo y activá tu cuenta | Patitas Inquietas',
     element: createElement(AccountConfirmationEmail, {
       actionUrl: buildActionUrl(appUrl, '/auth/confirm', {
         token: requiredVariable(variables, 'token'),
@@ -55,7 +55,7 @@ const templateRenderers: Readonly<Record<string, TemplateRenderer>> = {
     } satisfies AccountConfirmationEmailProps),
   }),
   password_recovery: (variables, appUrl) => ({
-    subject: 'Recuperá tu contraseña | Patitas Inquietas',
+    subject: 'Recuperá el acceso a tu cuenta | Patitas Inquietas',
     element: createElement(PasswordRecoveryEmail, {
       actionUrl: buildActionUrl(appUrl, '/auth/reset-password', { token: requiredVariable(variables, 'token') }),
     } satisfies PasswordRecoveryEmailProps),

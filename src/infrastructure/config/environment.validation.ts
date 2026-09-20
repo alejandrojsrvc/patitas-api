@@ -33,11 +33,6 @@ export interface EnvironmentVariables {
   MERCADOPAGO_WEBHOOK_SECRET?: string;
   MERCADOPAGO_NOTIFICATION_URL?: string;
   PAYWAY_SITE_ID?: string;
-  PAYWAY_SITE_ID_VISA?: string;
-  PAYWAY_SITE_ID_MASTERCARD?: string;
-  PAYWAY_SITE_ID_AMERICAN_EXPRESS?: string;
-  PAYWAY_SITE_ID_DISCOVER?: string;
-  PAYWAY_SITE_ID_CABAL?: string;
   PAYWAY_PRIVATE_API_KEY?: string;
   PAYWAY_API_BASE_URL?: string;
   PAYWAY_WEBHOOK_SECRET?: string;
@@ -143,11 +138,6 @@ export const validateEnvironment = (environment: Record<string, unknown>): Envir
     throw new Error('NOTIFICATION_PROVIDER debe ser noop, resend, http o smtp.');
   }
   const paywaySiteId = optionalValue(environment['PAYWAY_SITE_ID']);
-  const paywaySiteIdVisa = optionalValue(environment['PAYWAY_SITE_ID_VISA']);
-  const paywaySiteIdMastercard = optionalValue(environment['PAYWAY_SITE_ID_MASTERCARD']);
-  const paywaySiteIdAmericanExpress = optionalValue(environment['PAYWAY_SITE_ID_AMERICAN_EXPRESS']);
-  const paywaySiteIdDiscover = optionalValue(environment['PAYWAY_SITE_ID_DISCOVER']);
-  const paywaySiteIdCabal = optionalValue(environment['PAYWAY_SITE_ID_CABAL']);
   const paywayPrivateApiKey = optionalValue(environment['PAYWAY_PRIVATE_API_KEY']);
   const paywayApiBaseUrl = optionalValue(environment['PAYWAY_API_BASE_URL']);
   const paywayWebhookSecret = optionalValue(environment['PAYWAY_WEBHOOK_SECRET']);
@@ -206,11 +196,6 @@ export const validateEnvironment = (environment: Record<string, unknown>): Envir
     ...(mercadoPagoWebhookSecret ? { MERCADOPAGO_WEBHOOK_SECRET: mercadoPagoWebhookSecret } : {}),
     ...(mercadoPagoNotificationUrl ? { MERCADOPAGO_NOTIFICATION_URL: mercadoPagoNotificationUrl } : {}),
     ...(paywaySiteId ? { PAYWAY_SITE_ID: paywaySiteId } : {}),
-    ...(paywaySiteIdVisa ? { PAYWAY_SITE_ID_VISA: paywaySiteIdVisa } : {}),
-    ...(paywaySiteIdMastercard ? { PAYWAY_SITE_ID_MASTERCARD: paywaySiteIdMastercard } : {}),
-    ...(paywaySiteIdAmericanExpress ? { PAYWAY_SITE_ID_AMERICAN_EXPRESS: paywaySiteIdAmericanExpress } : {}),
-    ...(paywaySiteIdDiscover ? { PAYWAY_SITE_ID_DISCOVER: paywaySiteIdDiscover } : {}),
-    ...(paywaySiteIdCabal ? { PAYWAY_SITE_ID_CABAL: paywaySiteIdCabal } : {}),
     ...(paywayPrivateApiKey ? { PAYWAY_PRIVATE_API_KEY: paywayPrivateApiKey } : {}),
     ...(paywayApiBaseUrl ? { PAYWAY_API_BASE_URL: paywayApiBaseUrl } : {}),
     ...(paywayWebhookSecret ? { PAYWAY_WEBHOOK_SECRET: paywayWebhookSecret } : {}),

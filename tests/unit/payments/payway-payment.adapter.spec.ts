@@ -23,11 +23,7 @@ describe('PaywayPaymentAdapter', () => {
     );
     const adapter = new PaywayPaymentAdapter(
       buildConfig({
-        PAYWAY_SITE_ID_VISA: '6016737',
-        PAYWAY_SITE_ID_MASTERCARD: '6016794',
-        PAYWAY_SITE_ID_AMERICAN_EXPRESS: '6016786',
-        PAYWAY_SITE_ID_DISCOVER: '6016752',
-        PAYWAY_SITE_ID_CABAL: '6016745',
+        PAYWAY_SITE_ID: '6016737',
         PAYWAY_PRIVATE_API_KEY: 'private-key',
         PAYWAY_API_BASE_URL: 'https://payway.example/api/v2',
         PAYWAY_WEBHOOK_SECRET: 'webhook-secret',
@@ -75,6 +71,7 @@ describe('PaywayPaymentAdapter', () => {
   it('rejects a Payway request without the fields required by the API', async () => {
     const adapter = new PaywayPaymentAdapter(
       buildConfig({
+        PAYWAY_SITE_ID: '6016737',
         PAYWAY_PRIVATE_API_KEY: 'private-key',
         PAYWAY_API_BASE_URL: 'https://payway.example/api/v2',
       }),
@@ -108,6 +105,7 @@ describe('PaywayPaymentAdapter', () => {
     );
     const adapter = new PaywayPaymentAdapter(
       buildConfig({
+        PAYWAY_SITE_ID: '6016737',
         PAYWAY_PRIVATE_API_KEY: 'private-key',
         PAYWAY_API_BASE_URL: 'https://payway.example/api/v2',
       }),
@@ -147,6 +145,7 @@ describe('PaywayPaymentAdapter', () => {
     );
     const adapter = new PaywayPaymentAdapter(
       buildConfig({
+        PAYWAY_SITE_ID: '6016737',
         PAYWAY_PRIVATE_API_KEY: 'private-key',
         PAYWAY_API_BASE_URL: 'https://payway.example/api/v2',
         PAYWAY_WEBHOOK_SECRET: 'webhook-secret',
